@@ -46,6 +46,7 @@ int iExit = 0;
 #define SERVERINFO_BUFSIZE 1024
 #define CHANNELINFO_BUFSIZE 1024
 #define RETURNCODE_BUFSIZE 1024
+
 char FREQ[32];
 char FREQ2[8];
 char FREQS[8];
@@ -80,14 +81,14 @@ const char* ts3plugin_name() {
 	/* TeamSpeak expects UTF-8 encoded characters. Following demonstrates a possibility how to convert UTF-16 wchar_t into UTF-8. */
 	static char* result = NULL;  /* Static variable so it's allocated only once */
 	if(!result) {
-		const wchar_t* name = L"SIMCOM";
+		const wchar_t* name = L"BFSGSimCom";
 		if(wcharToUtf8(name, &result) == -1) {  /* Convert name into UTF-8 encoded result */
-			result = "SIMCOM";  /* Conversion failed, fallback here */
+			result = "BFSGSimCom";  /* Conversion failed, fallback here */
 		}
 	}
 	return result;
 #else
-	return "SIMCOM";
+	return "BFSGSimCom";
 #endif
 }
 
@@ -104,7 +105,7 @@ int ts3plugin_apiVersion() {
 /* Plugin author */
 const char* ts3plugin_author() {
 	/* If you want to use wchar_t, see ts3plugin_name() on how to use */
-    return "ATC ROO";
+    return "Andrew Parish - from code originally provided by ATC ROO";
 }
 
 /* Plugin description */
@@ -151,6 +152,7 @@ void ts3plugin_shutdown() {
     /* Your plugin cleanup code here */
     printf("PLUGIN: shutdown\n");
 	iExit = 1;
+
 	StopSimConnect();
 
 	/*
@@ -171,8 +173,7 @@ unsigned int uiMsgThread = 0;
 SIMCONNECT_RECV *pData = 0;
 DWORD cbData = 0;
 
-struct _ComData
-	{
+struct _ComData {
 	double Com1;
 	double Com2;
 	double Com1s;
@@ -181,79 +182,87 @@ struct _ComData
 	double qnh;
 	double qnha;
 	double altitude;
-	
-	};
+};
 
 _ComData sCD = {0.,0.};
 
-
-double FSAPI GetCom1()
-	{
-	if (NULL == hSimConnect) return 999.999;
-	else return sCD.Com1;
-	}
-
-double FSAPI GetCom2()
-	{
-	if (NULL == hSimConnect) return 999.999;
-	else return sCD.Com2;
-	}
-
-double FSAPI GetCom1s()
-	{
-	if (NULL == hSimConnect) return 999.999;
-	else return sCD.Com1s;
-	}
-
-double FSAPI GetCom2s()
-	{
-	if (NULL == hSimConnect) return 999.999;
-	else return sCD.Com2s;
-	}
-
-double FSAPI Transponder()
-	{
-	if (NULL == hSimConnect) return 0000;
-	else return sCD.Transponder;
-	}
-
-double FSAPI qnh()
-	{
-	if (NULL == hSimConnect) return 1013;
-	else return sCD.qnh;
-	}
-
-double FSAPI qnha()
-	{
-	if (NULL == hSimConnect) return 29.92;
-	else return sCD.qnha;
-	}
-double FSAPI altitude()
-	{
-	if (NULL == hSimConnect) return 0;
-	else return sCD.altitude;
-	}
-
-unsigned __stdcall MessageRoutine( void * p)
-{
-while (iExit == 0)
-	{
-	pData = 0;
+double FSAPI GetCom1() {
 	if (NULL == hSimConnect)
-		{
-		GetModuleFileName(ThisModule,ThisModuleName,MAX_PATH);
-		hr = SimConnect_Open(&hSimConnect,ThisModuleName,NULL,NULL,NULL,0);
-		}
-	if (NULL != hSimConnect) hr = SimConnect_GetNextDispatch(hSimConnect,&pData,&cbData);
-	if (NULL != pData) SimConnectDispatch(pData, cbData, NULL);
-//	if (NULL == hSimConnect) _endthreadex(0);
-	Sleep(5);
-	}
-return 0;
+		return 999.999;
+	else
+		return sCD.Com1;
 }
 
-void OnRecvOpen (SIMCONNECT_RECV_OPEN *pData, DWORD cbData, void* pContext)
-	{
+double FSAPI GetCom2() {
+	if (NULL == hSimConnect)
+		return 999.999;
+	else
+		return sCD.Com2;
+	}
+
+double FSAPI GetCom1s() {
+	if (NULL == hSimConnect)
+		return 999.999;
+	else
+		return sCD.Com1s;
+}
+
+double FSAPI GetCom2s() {
+	if (NULL == hSimConnect)
+		return 999.999;
+	else
+		return sCD.Com2s;
+}
+
+double FSAPI Transponder() {
+	if (NULL == hSimConnect)
+		return 0000;
+	else
+		return sCD.Transponder;
+}
+
+double FSAPI qnh() {
+	if (NULL == hSimConnect)
+		return 1013;
+	else
+		return sCD.qnh;
+}
+
+double FSAPI qnha() {
+	if (NULL == hSimConnect)
+		return 29.92;
+	else
+		return sCD.qnha;
+}
+
+double FSAPI altitude() {
+	if (NULL == hSimConnect)
+		return 0;
+	else
+		return sCD.altitude;
+}
+
+unsigned __stdcall MessageRoutine( void * p) {
+	while (iExit == 0) {
+		pData = 0;
+		if (NULL == hSimConnect) {
+			GetModuleFileName(ThisModule,ThisModuleName,MAX_PATH);
+			hr = SimConnect_Open(&hSimConnect,ThisModuleName,NULL,NULL,NULL,0);
+		}
+
+		if (NULL != hSimConnect) hr = SimConnect_GetNextDispatch(hSimConnect,&pData,&cbData);
+		if (NULL != pData) SimConnectDispatch(pData, cbData, NULL);
+	//	if (NULL == hSimConnect) _endthreadex(0);
+		Sleep(5);
+	}
+
+	return 0;
+}
+
+// Invoked by SimConnect once a connection is established
+void OnRecvOpen (SIMCONNECT_RECV_OPEN *pData, DWORD cbData, void* pContext) {
+
+	// Set up delivery of required information from FSX as a single package
 	hr = SimConnect_AddToDataDefinition(hSimConnect,COM_DEFINITION,"COM ACTIVE FREQUENCY:1","Mhz",SIMCONNECT_DATATYPE_FLOAT64);
 	hr = SimConnect_AddToDataDefinition(hSimConnect,COM_DEFINITION,"COM STANDBY FREQUENCY:1","Mhz",SIMCONNECT_DATATYPE_FLOAT64);
 	hr = SimConnect_AddToDataDefinition(hSimConnect,COM_DEFINITION,"COM ACTIVE FREQUENCY:2","Mhz",SIMCONNECT_DATATYPE_FLOAT64);
@@ -263,32 +272,30 @@ void OnRecvOpen (SIMCONNECT_RECV_OPEN *pData, DWORD cbData, void* pContext)
 	hr = SimConnect_AddToDataDefinition(hSimConnect,COM_DEFINITION,"KOHLSMAN SETTING HG","inHg",SIMCONNECT_DATATYPE_FLOAT64);
 	hr = SimConnect_AddToDataDefinition(hSimConnect,COM_DEFINITION,"INDICATED ALTITUDE","feet",SIMCONNECT_DATATYPE_FLOAT64);
 	hr = SimConnect_RequestDataOnSimObject(hSimConnect,COM_REQUEST,COM_DEFINITION,SIMCONNECT_OBJECT_ID_USER,SIMCONNECT_PERIOD_SECOND,SIMCONNECT_DATA_REQUEST_FLAG_CHANGED);
-	}
+}
 
-void OnRecvEvent (SIMCONNECT_RECV_EVENT *pData, DWORD cbData, void* pContext)
+void OnRecvEvent (SIMCONNECT_RECV_EVENT *pData, DWORD cbData, void* pContext) {
+}
+
+void OnRecvEventFrame (SIMCONNECT_RECV_EVENT_FRAME *pData, DWORD cbData, void* pContext) {
+}
+
+// Invoked by SimConnect to manage processing of delivered data
+void OnRecvSimobjectData(SIMCONNECT_RECV_SIMOBJECT_DATA *pData, DWORD cbData, void* pContext) {
+	switch(pData->dwDefineID)
 	{
-	}
-
-void OnRecvEventFrame (SIMCONNECT_RECV_EVENT_FRAME *pData, DWORD cbData, void* pContext)
-{
-}
-
-void OnRecvSimobjectData(SIMCONNECT_RECV_SIMOBJECT_DATA *pData, DWORD cbData, void* pContext)
-{
-switch(pData->dwDefineID)
-	{
-	case COM_DEFINITION:
-		CopyMemory(&sCD,&pData->dwData,sizeof(sCD));
-	break;
+		// If this is the COM data I've requested
+		case COM_DEFINITION:
+			// Copy the data from the buffer into my ComData structure.
+			CopyMemory(&sCD, &pData->dwData, sizeof(sCD));
+		break;
 	}
 }
 
-void OnRecvSimobjectDataByType(SIMCONNECT_RECV_SIMOBJECT_DATA_BYTYPE *pData, DWORD cbData, void* pContext)
-{
+void OnRecvSimobjectDataByType(SIMCONNECT_RECV_SIMOBJECT_DATA_BYTYPE *pData, DWORD cbData, void* pContext) {
 }
 
-void OnRecvClientData( SIMCONNECT_RECV_CLIENT_DATA* p, DWORD cbData, void* pContext)
-{
+void OnRecvClientData( SIMCONNECT_RECV_CLIENT_DATA* p, DWORD cbData, void* pContext) {
 }
 
 void OnRecvEventFileName (SIMCONNECT_RECV_EVENT_FILENAME* pData, DWORD cbData, void* pContext){}
@@ -337,7 +344,7 @@ void ts3plugin_registerPluginID(const char* id) {
 
 /* Static title shown in the left column in the info frame */
 const char* ts3plugin_infoTitle() {
-	return "Your Simulator info";
+	return "BFSG SimCom";
 }
 
 /*
@@ -347,35 +354,38 @@ const char* ts3plugin_infoTitle() {
  * "data" to NULL to have the client ignore the info data.
  */
 void ts3plugin_infoData(uint64 serverConnectionHandlerID, uint64 id, enum PluginItemType type, char** data) {
-	char* name;
+	//char* name;
 
-	/* For demonstration purpose, display the name of the currently selected server, channel or client. */
-	switch(type) {
-		case PLUGIN_SERVER:
-			if(ts3Functions.getServerVariableAsString(serverConnectionHandlerID, VIRTUALSERVER_NAME, &name) != ERROR_ok) {
-				printf("Error getting info\n");
-				return;
-			}
-			break;
-		case PLUGIN_CHANNEL:
-			if(ts3Functions.getChannelVariableAsString(serverConnectionHandlerID, id, CHANNEL_NAME, &name) != ERROR_ok) {
-				printf("Error getting info\n");
-				return;
-			}
-			break;
-		case PLUGIN_CLIENT:
-			if(ts3Functions.getClientVariableAsString(serverConnectionHandlerID, (anyID)id, CLIENT_NICKNAME, &name) != ERROR_ok) {
-				printf("Error getting info\n");
-				return;
-			}
-			break;
-		default:
-			printf("Invalid item type: %d\n", type);
-			data = NULL;  /* Ignore */
-			return;
-	}
+	///* For demonstration purpose, display the name of the currently selected server, channel or client. */
+	//switch(type) {
+	//	case PLUGIN_SERVER:
+	//		if(ts3Functions.getServerVariableAsString(serverConnectionHandlerID, VIRTUALSERVER_NAME, &name) != ERROR_ok) {
+	//			printf("Error getting info\n");
+	//			return;
+	//		}
+	//		break;
+	//	case PLUGIN_CHANNEL:
+	//		if(ts3Functions.getChannelVariableAsString(serverConnectionHandlerID, id, CHANNEL_NAME, &name) != ERROR_ok) {
+	//			printf("Error getting info\n");
+	//			return;
+	//		}
+	//		break;
+	//	case PLUGIN_CLIENT:
+	//		if(ts3Functions.getClientVariableAsString(serverConnectionHandlerID, (anyID)id, CLIENT_NICKNAME, &name) != ERROR_ok) {
+	//			printf("Error getting info\n");
+	//			return;
+	//		}
+	//		break;
+	//	default:
+	//		printf("Invalid item type: %d\n", type);
+	//		data = NULL;  /* Ignore */
+	//		return;
+	//}
 
+	// Allocate space for the data that's going to be displayed in the TS Information window.
 	*data = (char*)malloc(INFODATA_BUFSIZE * sizeof(char));  /* Must be allocated in the plugin! */
+
+	// Write the simulator settings into their respective strings...
 	sprintf_s(FREQ, "%3.3f", GetCom1());
 	sprintf_s(FREQ2, "%3.3f", GetCom2());
 	sprintf_s(FREQS, "%3.3f", GetCom1s());
@@ -385,31 +395,34 @@ void ts3plugin_infoData(uint64 serverConnectionHandlerID, uint64 id, enum Plugin
 	sprintf_s(QNHA, "%4.2f", qnha());
 	sprintf_s(SQUAWK, "%4.0f", Transponder());
 
-			 if(GetCom1() > 136.999 || GetCom1() < 118.000) {
-			snprintf(*data, INFODATA_BUFSIZE, "[COLOR=#E42217][B]IS NOT AVAILABLE![/B][/COLOR]");
-		 } else if(qnh() == 0 && qnha() == 0.00) {
-			snprintf(*data, INFODATA_BUFSIZE, "Com 1:[COLOR=#437C17][B] %s[/B][/COLOR] Mhz\nCom 2:[COLOR=#437C17][B] %s[/B][/COLOR] Mhz \n[COLOR=#151B8D][B]You are an Air Traffic Controller[/B][/COLOR]", FREQ, FREQS);
-		} else if(Transponder() < 10) {
-			snprintf(*data, INFODATA_BUFSIZE, "Com 1 Active:[COLOR=#437C17][B] %s[/B][/COLOR] Mhz Standby:[COLOR=#E56717][B]  %s[/B][/COLOR] Mhz\nCom 2 Active:[COLOR=#437C17][B] %s[/B][/COLOR] Mhz Standby:[COLOR=#E56717][B]  %s[/B][/COLOR] Mhz\nAltitude is:[COLOR=#151B8D][B]  %s[/B][/COLOR] ft \nQNH:[COLOR=#151B8D][B]  %s[/B][/COLOR] or [COLOR=#151B8D][B]  %s[/B][/COLOR] Altimeter Setting\nSquawking: [COLOR=#151B8D][B]000%s[/B][/COLOR]", FREQ, FREQ2, FREQS, FREQ2S, ALT, QNH, QNHA, SQUAWK);
-		} else if(Transponder() < 100) {
-			snprintf(*data, INFODATA_BUFSIZE, "Com 1 Active:[COLOR=#437C17][B] %s[/B][/COLOR] Mhz Standby:[COLOR=#E56717][B]  %s[/B][/COLOR] Mhz\nCom 2 Active:[COLOR=#437C17][B] %s[/B][/COLOR] Mhz Standby:[COLOR=#E56717][B]  %s[/B][/COLOR] Mhz\nAltitude is:[COLOR=#151B8D][B]  %s[/B][/COLOR] ft \nQNH:[COLOR=#151B8D][B]  %s[/B][/COLOR] or [COLOR=#151B8D][B]  %s[/B][/COLOR] Altimeter Setting\nSquawking: [COLOR=#151B8D][B]00%s[/B][/COLOR]", FREQ, FREQ2, FREQS, FREQ2S, ALT, QNH, QNHA, SQUAWK);
-		} else if(Transponder() < 1000) {
-			snprintf(*data, INFODATA_BUFSIZE, "Com 1 Active:[COLOR=#437C17][B] %s[/B][/COLOR] Mhz Standby:[COLOR=#E56717][B]  %s[/B][/COLOR] Mhz\nCom 2 Active:[COLOR=#437C17][B] %s[/B][/COLOR] Mhz Standby:[COLOR=#E56717][B]  %s[/B][/COLOR] Mhz\nAltitude is:[COLOR=#151B8D][B]  %s[/B][/COLOR] ft \nQNH:[COLOR=#151B8D][B]  %s[/B][/COLOR] or [COLOR=#151B8D][B]  %s[/B][/COLOR] Altimeter Setting\nSquawking: [COLOR=#151B8D][B]0%s[/B][/COLOR]", FREQ, FREQ2, FREQS, FREQ2S, ALT, QNH, QNHA, SQUAWK);
-		} else if(Transponder() == 1200) {
-			snprintf(*data, INFODATA_BUFSIZE, "Com 1 Active:[COLOR=#437C17][B] %s[/B][/COLOR] Mhz Standby:[COLOR=#E56717][B]  %s[/B][/COLOR] Mhz\nCom 2 Active:[COLOR=#437C17][B] %s[/B][/COLOR] Mhz Standby:[COLOR=#E56717][B]  %s[/B][/COLOR] Mhz\nAltitude is:[COLOR=#151B8D][B]  %s[/B][/COLOR] ft \nQNH:[COLOR=#151B8D][B]  %s[/B][/COLOR] or [COLOR=#151B8D][B]  %s[/B][/COLOR] Altimeter Setting\nSquawking:[COLOR=#151B8D][B]  1200 US VFR[/B][/COLOR]", FREQ, FREQ2, FREQS, FREQ2S, ALT, QNH, QNHA);
-		} else if(Transponder() == 7000) {
-			snprintf(*data, INFODATA_BUFSIZE, "Com 1 Active:[COLOR=#437C17][B] %s[/B][/COLOR] Mhz Standby:[COLOR=#E56717][B]  %s[/B][/COLOR] Mhz\nCom 2 Active:[COLOR=#437C17][B] %s[/B][/COLOR] Mhz Standby:[COLOR=#E56717][B]  %s[/B][/COLOR] Mhz\nAltitude is:[COLOR=#151B8D][B]  %s[/B][/COLOR] ft \nQNH:[COLOR=#151B8D][B]  %s[/B][/COLOR] or [COLOR=#151B8D][B]  %s[/B][/COLOR] Altimeter Setting\nSquawking:[COLOR=#151B8D][B]  7000 EU General Conspicuity[/B][/COLOR]", FREQ, FREQ2, FREQS, FREQ2S, ALT, QNH, QNHA);
-		} else if(Transponder() == 0000) {
-			snprintf(*data, INFODATA_BUFSIZE, "Com 1 Active:[COLOR=#437C17][B] %s[/B][/COLOR] Mhz Standby:[COLOR=#E56717][B]  %s[/B][/COLOR] Mhz\nCom 2 Active:[COLOR=#437C17][B] %s[/B][/COLOR] Mhz Standby:[COLOR=#E56717][B]  %s[/B][/COLOR] Mhz\nAltitude is:[COLOR=#151B8D][B]  %s[/B][/COLOR] ft \nQNH:[COLOR=#151B8D][B]  %s[/B][/COLOR] or [COLOR=#151B8D][B]  %s[/B][/COLOR] Altimeter Setting\nSquawking:[COLOR=#151B8D][B]  SSR Data Unreliable[/B][/COLOR]", FREQ, FREQ2, FREQS, FREQ2S, ALT, QNH, QNHA);
-		} else if(Transponder() == 7500) {
-			snprintf(*data, INFODATA_BUFSIZE, "Com 1 Active:[COLOR=#437C17][B] %s[/B][/COLOR] Mhz Standby:[COLOR=#E56717][B]  %s[/B][/COLOR] Mhz\nCom 2 Active:[COLOR=#437C17][B] %s[/B][/COLOR] Mhz Standby:[COLOR=#E56717][B]  %s[/B][/COLOR] Mhz\nAltitude is:[COLOR=#151B8D][B]  %s[/B][/COLOR] ft \nQNH:[COLOR=#151B8D][B]  %s[/B][/COLOR] or [COLOR=#151B8D][B]  %s[/B][/COLOR] Altimeter Setting\nSquawking:[COLOR=#E42217][B]  7500 HIJACK![/B][/COLOR]", FREQ, FREQ2, FREQS, FREQ2S, ALT, QNH, QNHA);
-		} else if(Transponder() == 7600) {
-			snprintf(*data, INFODATA_BUFSIZE, "Com 1 Active:[COLOR=#437C17][B] %s[/B][/COLOR] Mhz Standby:[COLOR=#E56717][B]  %s[/B][/COLOR] Mhz\nCom 2 Active:[COLOR=#437C17][B] %s[/B][/COLOR] Mhz Standby:[COLOR=#E56717][B]  %s[/B][/COLOR] Mhz\nAltitude is:[COLOR=#151B8D][B]  %s[/B][/COLOR] ft \nQNH:[COLOR=#151B8D][B]  %s[/B][/COLOR] or [COLOR=#151B8D][B]  %s[/B][/COLOR] Altimeter Setting\nSquawking:[COLOR=#E42217][B]  7600 RADIO FAILURE![/B][/COLOR]", FREQ, FREQ2, FREQS, FREQ2S, ALT, QNH, QNHA);
-		} else if(Transponder() == 7700) {
-			snprintf(*data, INFODATA_BUFSIZE, "Com 1 Active:[COLOR=#437C17][B] %s[/B][/COLOR] Mhz Standby:[COLOR=#E56717][B]  %s[/B][/COLOR] Mhz\nCom 2 Active:[COLOR=#437C17][B] %s[/B][/COLOR] Mhz Standby:[COLOR=#E56717][B]  %s[/B][/COLOR] Mhz\nAltitude is:[COLOR=#151B8D][B]  %s[/B][/COLOR] ft \nQNH:[COLOR=#151B8D][B]  %s[/B][/COLOR] or [COLOR=#151B8D][B]  %s[/B][/COLOR] Altimeter Setting\nSquawking:[COLOR=#E42217][B]  7700 EMERGENCY![/B][/COLOR]", FREQ, FREQ2, FREQS, FREQ2S, ALT, QNH, QNHA);
-		} else {
-			snprintf(*data, INFODATA_BUFSIZE, "Com 1 Active:[COLOR=#437C17][B] %s[/B][/COLOR] Mhz Standby:[COLOR=#E56717][B]  %s[/B][/COLOR] Mhz\nCom 2 Active:[COLOR=#437C17][B] %s[/B][/COLOR] Mhz Standby:[COLOR=#E56717][B]  %s[/B][/COLOR] Mhz\nAltitude is:[COLOR=#151B8D][B]  %s[/B][/COLOR] ft \nQNH:[COLOR=#151B8D][B]  %s[/B][/COLOR] or [COLOR=#151B8D][B]  %s[/B][/COLOR] Altimeter Setting\nSquawking:[COLOR=#151B8D][B]  %s[/B][/COLOR]", FREQ, FREQ2, FREQS, FREQ2S, ALT, QNH, QNHA, SQUAWK);
-		}
+	// Prepare the actual string sent to the data window in TS.
+	if (GetCom1() > 136.999 || GetCom1() < 118.000) {
+		snprintf(*data, INFODATA_BUFSIZE, "[COLOR=#E42217][B]IS NOT AVAILABLE![/B][/COLOR]");
+	} else if(qnh() == 0 && qnha() == 0.00) {
+		snprintf(*data, INFODATA_BUFSIZE, "Com 1:[COLOR=#437C17][B] %s[/B][/COLOR] Mhz\nCom 2:[COLOR=#437C17][B] %s[/B][/COLOR] Mhz \n[COLOR=#151B8D][B]You are an Air Traffic Controller[/B][/COLOR]", FREQ, FREQS);
+	} else if(Transponder() < 10) {
+		snprintf(*data, INFODATA_BUFSIZE, "Com 1 Active:[COLOR=#437C17][B] %s[/B][/COLOR] Mhz Standby:[COLOR=#E56717][B]  %s[/B][/COLOR] Mhz\nCom 2 Active:[COLOR=#437C17][B] %s[/B][/COLOR] Mhz Standby:[COLOR=#E56717][B]  %s[/B][/COLOR] Mhz\nAltitude is:[COLOR=#151B8D][B]  %s[/B][/COLOR] ft \nQNH:[COLOR=#151B8D][B]  %s[/B][/COLOR] or [COLOR=#151B8D][B]  %s[/B][/COLOR] Altimeter Setting\nSquawking: [COLOR=#151B8D][B]000%s[/B][/COLOR]", FREQ, FREQ2, FREQS, FREQ2S, ALT, QNH, QNHA, SQUAWK);
+	} else if(Transponder() < 100) {
+		snprintf(*data, INFODATA_BUFSIZE, "Com 1 Active:[COLOR=#437C17][B] %s[/B][/COLOR] Mhz Standby:[COLOR=#E56717][B]  %s[/B][/COLOR] Mhz\nCom 2 Active:[COLOR=#437C17][B] %s[/B][/COLOR] Mhz Standby:[COLOR=#E56717][B]  %s[/B][/COLOR] Mhz\nAltitude is:[COLOR=#151B8D][B]  %s[/B][/COLOR] ft \nQNH:[COLOR=#151B8D][B]  %s[/B][/COLOR] or [COLOR=#151B8D][B]  %s[/B][/COLOR] Altimeter Setting\nSquawking: [COLOR=#151B8D][B]00%s[/B][/COLOR]", FREQ, FREQ2, FREQS, FREQ2S, ALT, QNH, QNHA, SQUAWK);
+	} else if(Transponder() < 1000) {
+		snprintf(*data, INFODATA_BUFSIZE, "Com 1 Active:[COLOR=#437C17][B] %s[/B][/COLOR] Mhz Standby:[COLOR=#E56717][B]  %s[/B][/COLOR] Mhz\nCom 2 Active:[COLOR=#437C17][B] %s[/B][/COLOR] Mhz Standby:[COLOR=#E56717][B]  %s[/B][/COLOR] Mhz\nAltitude is:[COLOR=#151B8D][B]  %s[/B][/COLOR] ft \nQNH:[COLOR=#151B8D][B]  %s[/B][/COLOR] or [COLOR=#151B8D][B]  %s[/B][/COLOR] Altimeter Setting\nSquawking: [COLOR=#151B8D][B]0%s[/B][/COLOR]", FREQ, FREQ2, FREQS, FREQ2S, ALT, QNH, QNHA, SQUAWK);
+	} else if(Transponder() == 1200) {
+		snprintf(*data, INFODATA_BUFSIZE, "Com 1 Active:[COLOR=#437C17][B] %s[/B][/COLOR] Mhz Standby:[COLOR=#E56717][B]  %s[/B][/COLOR] Mhz\nCom 2 Active:[COLOR=#437C17][B] %s[/B][/COLOR] Mhz Standby:[COLOR=#E56717][B]  %s[/B][/COLOR] Mhz\nAltitude is:[COLOR=#151B8D][B]  %s[/B][/COLOR] ft \nQNH:[COLOR=#151B8D][B]  %s[/B][/COLOR] or [COLOR=#151B8D][B]  %s[/B][/COLOR] Altimeter Setting\nSquawking:[COLOR=#151B8D][B]  1200 US VFR[/B][/COLOR]", FREQ, FREQ2, FREQS, FREQ2S, ALT, QNH, QNHA);
+	} else if(Transponder() == 7000) {
+		snprintf(*data, INFODATA_BUFSIZE, "Com 1 Active:[COLOR=#437C17][B] %s[/B][/COLOR] Mhz Standby:[COLOR=#E56717][B]  %s[/B][/COLOR] Mhz\nCom 2 Active:[COLOR=#437C17][B] %s[/B][/COLOR] Mhz Standby:[COLOR=#E56717][B]  %s[/B][/COLOR] Mhz\nAltitude is:[COLOR=#151B8D][B]  %s[/B][/COLOR] ft \nQNH:[COLOR=#151B8D][B]  %s[/B][/COLOR] or [COLOR=#151B8D][B]  %s[/B][/COLOR] Altimeter Setting\nSquawking:[COLOR=#151B8D][B]  7000 EU General Conspicuity[/B][/COLOR]", FREQ, FREQ2, FREQS, FREQ2S, ALT, QNH, QNHA);
+	} else if(Transponder() == 0000) {
+		snprintf(*data, INFODATA_BUFSIZE, "Com 1 Active:[COLOR=#437C17][B] %s[/B][/COLOR] Mhz Standby:[COLOR=#E56717][B]  %s[/B][/COLOR] Mhz\nCom 2 Active:[COLOR=#437C17][B] %s[/B][/COLOR] Mhz Standby:[COLOR=#E56717][B]  %s[/B][/COLOR] Mhz\nAltitude is:[COLOR=#151B8D][B]  %s[/B][/COLOR] ft \nQNH:[COLOR=#151B8D][B]  %s[/B][/COLOR] or [COLOR=#151B8D][B]  %s[/B][/COLOR] Altimeter Setting\nSquawking:[COLOR=#151B8D][B]  SSR Data Unreliable[/B][/COLOR]", FREQ, FREQ2, FREQS, FREQ2S, ALT, QNH, QNHA);
+	} else if(Transponder() == 7500) {
+		snprintf(*data, INFODATA_BUFSIZE, "Com 1 Active:[COLOR=#437C17][B] %s[/B][/COLOR] Mhz Standby:[COLOR=#E56717][B]  %s[/B][/COLOR] Mhz\nCom 2 Active:[COLOR=#437C17][B] %s[/B][/COLOR] Mhz Standby:[COLOR=#E56717][B]  %s[/B][/COLOR] Mhz\nAltitude is:[COLOR=#151B8D][B]  %s[/B][/COLOR] ft \nQNH:[COLOR=#151B8D][B]  %s[/B][/COLOR] or [COLOR=#151B8D][B]  %s[/B][/COLOR] Altimeter Setting\nSquawking:[COLOR=#E42217][B]  7500 HIJACK![/B][/COLOR]", FREQ, FREQ2, FREQS, FREQ2S, ALT, QNH, QNHA);
+	} else if(Transponder() == 7600) {
+		snprintf(*data, INFODATA_BUFSIZE, "Com 1 Active:[COLOR=#437C17][B] %s[/B][/COLOR] Mhz Standby:[COLOR=#E56717][B]  %s[/B][/COLOR] Mhz\nCom 2 Active:[COLOR=#437C17][B] %s[/B][/COLOR] Mhz Standby:[COLOR=#E56717][B]  %s[/B][/COLOR] Mhz\nAltitude is:[COLOR=#151B8D][B]  %s[/B][/COLOR] ft \nQNH:[COLOR=#151B8D][B]  %s[/B][/COLOR] or [COLOR=#151B8D][B]  %s[/B][/COLOR] Altimeter Setting\nSquawking:[COLOR=#E42217][B]  7600 RADIO FAILURE![/B][/COLOR]", FREQ, FREQ2, FREQS, FREQ2S, ALT, QNH, QNHA);
+	} else if(Transponder() == 7700) {
+		snprintf(*data, INFODATA_BUFSIZE, "Com 1 Active:[COLOR=#437C17][B] %s[/B][/COLOR] Mhz Standby:[COLOR=#E56717][B]  %s[/B][/COLOR] Mhz\nCom 2 Active:[COLOR=#437C17][B] %s[/B][/COLOR] Mhz Standby:[COLOR=#E56717][B]  %s[/B][/COLOR] Mhz\nAltitude is:[COLOR=#151B8D][B]  %s[/B][/COLOR] ft \nQNH:[COLOR=#151B8D][B]  %s[/B][/COLOR] or [COLOR=#151B8D][B]  %s[/B][/COLOR] Altimeter Setting\nSquawking:[COLOR=#E42217][B]  7700 EMERGENCY![/B][/COLOR]", FREQ, FREQ2, FREQS, FREQ2S, ALT, QNH, QNHA);
+	} else {
+		snprintf(*data, INFODATA_BUFSIZE, "Com 1 Active:[COLOR=#437C17][B] %s[/B][/COLOR] Mhz Standby:[COLOR=#E56717][B]  %s[/B][/COLOR] Mhz\nCom 2 Active:[COLOR=#437C17][B] %s[/B][/COLOR] Mhz Standby:[COLOR=#E56717][B]  %s[/B][/COLOR] Mhz\nAltitude is:[COLOR=#151B8D][B]  %s[/B][/COLOR] ft \nQNH:[COLOR=#151B8D][B]  %s[/B][/COLOR] or [COLOR=#151B8D][B]  %s[/B][/COLOR] Altimeter Setting\nSquawking:[COLOR=#151B8D][B]  %s[/B][/COLOR]", FREQ, FREQ2, FREQS, FREQ2S, ALT, QNH, QNHA, SQUAWK);
+	}
+
+	// Release the memory used by the strings we built (really - they're character arrays!?)
 	ts3Functions.freeMemory(FREQ);
 	ts3Functions.freeMemory(FREQ2);
 	ts3Functions.freeMemory(FREQS);
@@ -418,11 +431,14 @@ void ts3plugin_infoData(uint64 serverConnectionHandlerID, uint64 id, enum Plugin
 	ts3Functions.freeMemory(QNHA);
 	ts3Functions.freeMemory(ALT);
 	ts3Functions.freeMemory(SQUAWK);
-		}
+
+}
+
 /* Required to release the memory for parameter "data" allocated in ts3plugin_infoData and ts3plugin_initMenus */
 void ts3plugin_freeMemory(void* data) {
 	free(data);
 }
+
 /*
  * Plugin requests to be always automatically loaded by the TeamSpeak 3 client unless
  * the user manually disabled it in the plugin dialog.
@@ -434,24 +450,39 @@ int ts3plugin_requestAutoload() {
 
 /************************** TeamSpeak callbacks ***************************/
 
+// Invoked by TS whenever the talk status of any client changes?
 void ts3plugin_onTalkStatusChangeEvent(uint64 serverConnectionHandlerID, int status, int isReceivedWhisper, anyID clientID) {
     /*Start Channel Switch */
-    if (NULL == hSimConnect) StartSimConnect();
-        uint64 channelId = 0;
-		sprintf_s(FREQ, "%3.3f", GetCom1());
-	char *chpath[] = {"Air Traffic Control", FREQ, ""}; // Channel Structure
-        anyID myId = 0;
-        // Get the ID from the name
-		        if (ts3Functions.getChannelIDFromChannelNames(serverConnectionHandlerID, chpath, &channelId) == ERROR_ok && channelId > 0) {
-            ts3Functions.getClientID(serverConnectionHandlerID, &myId);
-            if (myId == clientID)
-                {
-                uint64 uiMyChannel = 0;
-			ts3Functions.getChannelOfClient(serverConnectionHandlerID, myId, &uiMyChannel);
-                if (uiMyChannel != channelId) ts3Functions.requestClientMove(serverConnectionHandlerID, myId, channelId, "", NULL);
-                }
-        }
 
-        /* End Channel Switch */
+	// If no connection to simulator, then establish one.
+    if (NULL == hSimConnect) StartSimConnect();
+
+	// Build up the parameters required to change room
+    uint64 channelId = 0;
+	sprintf_s(FREQ, "%3.3f", GetCom1());
+	char *chpath[] = {"Air Traffic Control", FREQ, ""}; // Channel Structure
+
+	// Reset my ID
+	anyID myId = 0;
+
+    // Get the channel ID for the frequency room from the channel path created earlier
+	if (ts3Functions.getChannelIDFromChannelNames(serverConnectionHandlerID, chpath, &channelId) == ERROR_ok && channelId > 0)
+	{
+		// Get my ID from the server
+		ts3Functions.getClientID(serverConnectionHandlerID, &myId);
+
+		// If it's me who's PTT status is changed
+		if (myId == clientID)
+		{
+			// Work out what channel I'm in
+			uint64 uiMyChannel = 0;
+			ts3Functions.getChannelOfClient(serverConnectionHandlerID, myId, &uiMyChannel);
+
+			// Move me if a different channel exists for the frequency I'm tuned to
+			if (uiMyChannel != channelId) ts3Functions.requestClientMove(serverConnectionHandlerID, myId, channelId, "", NULL);
+		}
+	}
+
+	/* End Channel Switch */
 }
 
