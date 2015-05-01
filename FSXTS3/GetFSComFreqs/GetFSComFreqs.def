@@ -1,0 +1,9 @@
+LIBRARY	"GetFSComFreqs.dll"
+
+EXPORTS
+DLLStart
+DLLStop
+StartSimConnect
+StopSimConnect
+GetCom1
+GetCom2
