@@ -27,12 +27,18 @@
     <ClInclude Include="plugin.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="TS3Channels.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GetFSComFreqs.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="SimConnectProcs.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TS3Channels.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
