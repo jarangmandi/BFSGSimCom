@@ -80,9 +80,9 @@ void OnRecvEventFrame (SIMCONNECT_RECV_EVENT_FRAME *pData, DWORD cbData, void* p
 void OnRecvSimobjectData(SIMCONNECT_RECV_SIMOBJECT_DATA *pData, DWORD cbData, void* pContext);
 void OnRecvEventFileName (SIMCONNECT_RECV_EVENT_FILENAME* pData, DWORD cbData, void* pContext);
 void OnRecvEventWeatherMode( SIMCONNECT_WEATHER_MODE* pData, DWORD cbData, void* pContext);
-void OnRecvEventMultiPlayerServerStarted ( SIMCONNECT_RECV_EVENT_MULTIPLAYER_SERVER_STARTED *pData, DWORD cbData, void* pContext);
-void OnRecvEventMultiPlayerClientStarted ( SIMCONNECT_RECV_EVENT_MULTIPLAYER_CLIENT_STARTED *pData, DWORD cbData, void* pContext);
-void OnRecvEventMultiPlayerSessionEnded ( SIMCONNECT_RECV_EVENT_MULTIPLAYER_SESSION_ENDED *pData, DWORD cbData, void* pContext);
+//void OnRecvEventMultiPlayerServerStarted ( SIMCONNECT_RECV_EVENT_MULTIPLAYER_SERVER_STARTED *pData, DWORD cbData, void* pContext);
+//void OnRecvEventMultiPlayerClientStarted ( SIMCONNECT_RECV_EVENT_MULTIPLAYER_CLIENT_STARTED *pData, DWORD cbData, void* pContext);
+//void OnRecvEventMultiPlayerSessionEnded ( SIMCONNECT_RECV_EVENT_MULTIPLAYER_SESSION_ENDED *pData, DWORD cbData, void* pContext);
 void OnRecvSimobjectDataByType(SIMCONNECT_RECV_SIMOBJECT_DATA_BYTYPE *pData, DWORD cbData, void* pContext);
 void OnRecvSimObjectFrame( SIMCONNECT_RECV_EVENT_FRAME *pData, DWORD cbData, void* pContext );
 void OnRecvWeatherObservation(SIMCONNECT_RECV_WEATHER_OBSERVATION *pWeather, DWORD cbData, void* pContext);
@@ -97,8 +97,8 @@ void OnRecvAirportList( SIMCONNECT_RECV_AIRPORT_LIST* pData, DWORD cbData, void*
 void OnRecvVORList( SIMCONNECT_RECV_VOR_LIST* pData, DWORD cbData, void* pContext);
 void OnRecvNDBList( SIMCONNECT_RECV_NDB_LIST* pData, DWORD cbData, void* pContext);
 void OnRecvWaypointList( SIMCONNECT_RECV_WAYPOINT_LIST* pData, DWORD cbData, void* pContext);
-void OnRecvRaceEnd( SIMCONNECT_RECV_EVENT_RACE_END* pData, DWORD cbData, void* pContext);
-void OnRecvRaceLap( SIMCONNECT_RECV_EVENT_RACE_LAP* pData, DWORD cbData, void* pContext);
+//void OnRecvRaceEnd( SIMCONNECT_RECV_EVENT_RACE_END* pData, DWORD cbData, void* pContext);
+//void OnRecvRaceLap( SIMCONNECT_RECV_EVENT_RACE_LAP* pData, DWORD cbData, void* pContext);
 /*
 void OnRecvOberserverData( SIMCONNECT_RECV_OBSERVER_DATA* pData, DWORD cbData, void* pContext);
 void OnRecvGroundInfo( SIMCONNECT_RECV_GROUND_INFO* pData, DWORD cbData, void* pContext);
