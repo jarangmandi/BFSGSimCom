@@ -14,13 +14,13 @@ int _tmain(int argc, _TCHAR* argv[])
     TS3Channels tch;
     uint64 result;
 
-    tch.addOrUpdate("122.80 - Unicom",2);
-    tch.addOrUpdate("118.30 - Tauranga Tower",3);
-    tch.addOrUpdate("123.450 - Andyville", 4);
-    tch.addOrUpdate("123.425 - Missed A", 5);
-    tch.addOrUpdate("Auckland Information - 121.10",6);
-    tch.addOrUpdate("Test - 234.45", 7);
-    tch.addOrUpdate("Test2 - 123.46", 8);
+    tch.addOrUpdateChannel("122.80 - Unicom",2);
+    tch.addOrUpdateChannel("118.30 - Tauranga Tower", 3);
+    tch.addOrUpdateChannel("123.450 - Andyville", 4);
+    tch.addOrUpdateChannel("123.425 - Missed A", 5);
+    tch.addOrUpdateChannel("Auckland Information - 121.10", 6);
+    tch.addOrUpdateChannel("Test - 234.45", 7);
+    tch.addOrUpdateChannel("Test2 - 123.46", 8);
 
     result = tch.getChannelID(uint16_t(12345));
     result = tch.getChannelID(uint16_t(11830));

@@ -40,7 +40,7 @@ uint16_t TS3Channels::getFrequencyFromString(string str)
 uint16_t TS3Channels::addOrUpdateChannel(string channelName, uint64 channelID)
 {
     uint16_t frequency;
-    
+
     // Look for a frequency in the channel name we were passed
     frequency = getFrequencyFromString(channelName);
 
@@ -49,7 +49,7 @@ uint16_t TS3Channels::addOrUpdateChannel(string channelName, uint64 channelID)
         // Save the channel ID, indexed by the frequency that we found.
         channelMap[frequency] = channelID;
     }
-    
+
     return frequency;
 }
 
@@ -79,6 +79,7 @@ uint64 TS3Channels::getChannelID(uint16_t frequency)
 {
     uint64 returnValue;
 
+    // Get the channel ID from the map - throws an exception if it's not foun.
     try
     {
         returnValue = channelMap.at(frequency);
@@ -87,12 +88,14 @@ uint64 TS3Channels::getChannelID(uint16_t frequency)
     {
         returnValue = CHANNEL_ID_NOT_FOUND;
     }
-    
+
     return returnValue;
 }
 
+// Returns the ID of the channel corresponding to a frequency provided as a double.
 uint64 TS3Channels::getChannelID(double frequency)
 {
     // Need to get the rounding right
+    // Try 128.300 to see why this is needed!
     return getChannelID(uint16_t(0.1 * round(1000 * frequency)));
 }
