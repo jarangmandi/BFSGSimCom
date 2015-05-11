@@ -17,7 +17,7 @@ With acknowledgements to Adam Szofran (author of original FS6IPC).
 			IPC client stuff
 ******************************************************************************/
 
-DWORD	FSUIPC_Version = 0;
+DWORD FSUIPC_Version = 0;
 DWORD FSUIPC_FS_Version = 0;
 DWORD FSUIPC_Lib_Version = LIB_VERSION;
 
@@ -27,6 +27,13 @@ static ATOM    m_atom = 0;       // global atom containing name of file-mapping 
 static HANDLE  m_hMap = 0;       // handle of file-mapping object
 static BYTE*   m_pView = 0;      // pointer to view of file-mapping object
 static BYTE*   m_pNext = 0;
+
+/******************************************************************************
+            For 64-bit compatibility
+******************************************************************************/
+
+static int iIndex = 0;
+static void* pDestArray[MAX_SIZE / sizeof(FS6IPC_READSTATEDATA_HDR)];
 
 /******************************************************************************
 			FSUIPC_Close
@@ -109,7 +116,7 @@ BOOL FSUIPC_Open(DWORD dwFSReq, DWORD *pdwResult)
 
 	// create the file-mapping object
 	m_hMap = CreateFileMapping(
-					(HANDLE)0xFFFFFFFF, // use system paging file
+					(HANDLE)-1, 		// use system paging file
 					NULL,               // security
 					PAGE_READWRITE,     // protection
 					0, MAX_SIZE+256,       // size
@@ -181,6 +188,9 @@ BOOL FSUIPC_Open(DWORD dwFSReq, DWORD *pdwResult)
 		return FALSE;
 	}
 
+    // If we've got here, everything is set up, so re-initialise our read index
+    iIndex = 0;
+
 	*pdwResult = FSUIPC_ERR_OK;
 	return TRUE;
 }
@@ -191,6 +201,7 @@ BOOL FSUIPC_Open(DWORD dwFSReq, DWORD *pdwResult)
 
 BOOL FSUIPC_Process(DWORD *pdwResult)
 {	DWORD dwError;
+	DWORD_PTR p_dwError = &dwError;
 	DWORD *pdw;
 	FS6IPC_READSTATEDATA_HDR *pHdrR;
 	FS6IPC_WRITESTATEDATA_HDR *pHdrW;
@@ -216,8 +227,8 @@ BOOL FSUIPC_Process(DWORD *pdwResult)
 			m_atom,       // wParam: name of file-mapping object
 			0,            // lParam: offset of request into file-mapping obj
 			SMTO_BLOCK,   // halt this thread until we get a response
-			2000,			  // time out interval
-			&dwError))    // return value
+			2000,			 // time out interval
+			&p_dwError))    // return value
 	{	Sleep(100); // Allow for things to happen
 	}
 
@@ -226,7 +237,7 @@ BOOL FSUIPC_Process(DWORD *pdwResult)
 		return FALSE;
 	}
 
-	if (dwError != FS6IPC_MESSAGE_SUCCESS)
+	if (p_dwError != FS6IPC_MESSAGE_SUCCESS)
 	{	*pdwResult = FSUIPC_ERR_DATA; // FSUIPC didn't like something in the data!
 		return FALSE;
 	}
@@ -239,8 +250,8 @@ BOOL FSUIPC_Process(DWORD *pdwResult)
 		{	case FS6IPC_READSTATEDATA_ID:
 				pHdrR = (FS6IPC_READSTATEDATA_HDR *) pdw;
 				m_pNext += sizeof(FS6IPC_READSTATEDATA_HDR);
-				if (pHdrR->pDest && pHdrR->nBytes)
-					CopyMemory(pHdrR->pDest, m_pNext, pHdrR->nBytes);
+				if (pDestArray[pHdrR->iDest] && pHdrR->nBytes)
+					CopyMemory(pDestArray[pHdrR->iDest], m_pNext, pHdrR->nBytes);
 				m_pNext += pHdrR->nBytes;
 				break;
 
@@ -260,6 +271,7 @@ BOOL FSUIPC_Process(DWORD *pdwResult)
 	}
 
 	m_pNext = m_pView;
+    iIndex = 0;
 	*pdwResult = FSUIPC_ERR_OK;
 	return TRUE;
 }
@@ -287,7 +299,10 @@ BOOL FSUIPC_Read(DWORD dwOffset, DWORD dwSize, void *pDest, DWORD *pdwResult)
 	pHdr->dwId = FS6IPC_READSTATEDATA_ID;
 	pHdr->dwOffset = dwOffset;
 	pHdr->nBytes = dwSize;
-	pHdr->pDest = (BYTE *) pDest;
+    pHdr->iDest = iIndex;
+
+    // Save the destination data pointer into the array for later
+    pDestArray[iIndex] = pDest;
 
 	// Zero the reception area, so rubbish won't be returned
 	if (dwSize) ZeroMemory(&m_pNext[sizeof(FS6IPC_READSTATEDATA_HDR)], dwSize);
