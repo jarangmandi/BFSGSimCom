@@ -157,6 +157,7 @@
     <ClCompile Include="IPCuser.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="FSUIPC_User.h" />
     <ClInclude Include="IPCuser.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -26,5 +26,8 @@
     <ClInclude Include="IPCuser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="FSUIPC_User.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

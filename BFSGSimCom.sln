@@ -3,6 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BFSGSimCom", "BFSGSimCom\BFSGSimCom.vcxproj", "{757728E5-6C32-4DB9-9E89-9EF98A7C6436}"
+	ProjectSection(ProjectDependencies) = postProject
+		{BB84A669-9AA7-4787-92C7-CAEC86EB8A0B} = {BB84A669-9AA7-4787-92C7-CAEC86EB8A0B}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ConsoleApplication1", "ConsoleApplication1\ConsoleApplication1.vcxproj", "{86F175FC-6A43-41BC-8637-6295EDD667AE}"
 	ProjectSection(ProjectDependencies) = postProject

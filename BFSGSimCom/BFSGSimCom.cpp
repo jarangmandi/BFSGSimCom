@@ -20,6 +20,7 @@
 #include "public_rare_definitions.h"
 #include "ts3_functions.h"
 #include "BFSGSimCom.h"
+#include "FSUIPCWrapper.h"
 #include "config.h"
 
 static struct TS3Functions ts3Functions;
@@ -41,6 +42,8 @@ static struct TS3Functions ts3Functions;
 #define RETURNCODE_BUFSIZE 128
 
 static char* pluginID = NULL;
+
+static FSUIPCWrapper* fsuipc = NULL;
 
 #ifdef _WIN32
 /* Helper function to convert wchar_T to Utf-8 encoded strings on Windows */
@@ -126,6 +129,11 @@ int ts3plugin_init() {
 
     printf("PLUGIN: App path: %s\nResources path: %s\nConfig path: %s\nPlugin path: %s\n", appPath, resourcesPath, configPath, pluginPath);
 
+    if (fsuipc == NULL)
+    {
+        fsuipc = new FSUIPCWrapper();
+    }
+
     return 0;  /* 0 = success, 1 = failure, -2 = failure but client will not show a "failed to load" warning */
     /* -2 is a very special case and should only be used if a plugin displays a dialog (e.g. overlay) asking the user to disable
      * the plugin again, avoiding the show another dialog by the client telling the user the plugin failed to load.
@@ -142,6 +150,11 @@ void ts3plugin_shutdown() {
      * If your plugin implements a settings dialog, it must be closed and deleted here, else the
      * TeamSpeak client will most likely crash (DLL removed but dialog from DLL code still open).
      */
+
+    if (fsuipc)
+    {
+        delete fsuipc;
+    }
 
     /* Free pluginID if we registered it */
     if (pluginID) {

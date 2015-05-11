@@ -16,6 +16,9 @@
     <ClCompile Include="GeneratedFiles\Win32\moc_config.cpp">
       <Filter>Generated Files\Win32</Filter>
     </ClCompile>
+    <ClCompile Include="FSUIPCWrapper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="TS3Channels.h">
@@ -29,6 +32,9 @@
     </ClInclude>
     <ClInclude Include="GeneratedFiles\Win32\ui_config.h">
       <Filter>Generated Files\Win32</Filter>
+    </ClInclude>
+    <ClInclude Include="FSUIPCWrapper.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

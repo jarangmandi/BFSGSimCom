@@ -12,7 +12,7 @@
 #define SIM_FS2K4	7
 #define SIM_FSX		8
 #define SIM_ESP		9
-#define SIM_P3D	 10
+#define SIM_P3D	    10
 
 // Error numbers
 #define FSUIPC_ERR_OK		0
@@ -46,10 +46,10 @@ extern DWORD FSUIPC_Lib_Version;
 
 // Library routines
 extern BOOL FSUIPC_Open(DWORD dwFSReq, DWORD *pdwResult); // For use externally (IPCuser.lib)
-extern BOOL FSUIPC_Open2(DWORD dwFSReq, DWORD *pdwResult, BYTE *pMem, DWORD dwSize); // For use internally (ModuleUser.lib)
+//extern BOOL FSUIPC_Open2(DWORD dwFSReq, DWORD *pdwResult, BYTE *pMem, DWORD dwSize); // For use internally (ModuleUser.lib)
 extern void FSUIPC_Close(void);
 extern BOOL FSUIPC_Read(DWORD dwOffset, DWORD dwSize, void *pDest, DWORD *pdwResult);
-extern BOOL FSUIPC_ReadSpecial(DWORD dwOffset, DWORD dwSize, void *pDest, DWORD *pdwResult);
+//extern BOOL FSUIPC_ReadSpecial(DWORD dwOffset, DWORD dwSize, void *pDest, DWORD *pdwResult);
 extern BOOL FSUIPC_Write(DWORD dwOffset, DWORD dwSize, void *pSrce, DWORD *pdwResult);
 extern BOOL FSUIPC_Process(DWORD *pdwResult);
 
