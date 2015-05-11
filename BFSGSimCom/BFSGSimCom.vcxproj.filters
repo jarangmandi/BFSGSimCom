@@ -1,0 +1,62 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="BFSGSimCom.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TS3Channels.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="config.cpp">
+      <Filter>GUI Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\x64\moc_config.cpp">
+      <Filter>Generated Files\x64</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Win32\moc_config.cpp">
+      <Filter>Generated Files\Win32</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="TS3Channels.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BFSGSimCom.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GeneratedFiles\x64\ui_config.h">
+      <Filter>Generated Files\x64</Filter>
+    </ClInclude>
+    <ClInclude Include="GeneratedFiles\Win32\ui_config.h">
+      <Filter>Generated Files\Win32</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="config.h">
+      <Filter>GUI Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="config.ui">
+      <Filter>GUI Files</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Generated Files">
+      <UniqueIdentifier>{c2042988-b676-4a5b-9659-c9595e313cbb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Generated Files\Win32">
+      <UniqueIdentifier>{09a1a36c-2db3-4680-b245-4d61d9ee5f2d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Generated Files\x64">
+      <UniqueIdentifier>{75aa4f2a-288b-4403-b287-6eb57a63c3ef}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="GUI Files">
+      <UniqueIdentifier>{05e24857-819a-4138-8d97-1ab39febaaa5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{a214fedd-ec1c-42e9-981f-b6955d39ad38}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{7cfa1699-92c5-404b-bb29-9de3654087f6}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
