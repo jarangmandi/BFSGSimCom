@@ -17,8 +17,15 @@ int _tmain(int argc, _TCHAR* argv[])
     uint64 result;
     DWORD dwResult;
 
+    uint16_t com1;
+
     if (FSUIPC_Open(SIM_ANY, &dwResult))
     {
+        if (FSUIPC_Read(0x034e, 2, &com1, &dwResult))
+        {
+            FSUIPC_Process(&dwResult);
+        }
+
         tch.addOrUpdateChannel("122.80 - Unicom", 2);
         tch.addOrUpdateChannel("118.30 - Tauranga Tower", 3);
         tch.addOrUpdateChannel("123.450 - Andyville", 4);
@@ -37,7 +44,8 @@ int _tmain(int argc, _TCHAR* argv[])
         if (result == TS3Channels::CHANNEL_ID_NOT_FOUND) printf("Ha");
     }
 
-
+    FSUIPC_Close();
+    
 	return 0;
 }
 

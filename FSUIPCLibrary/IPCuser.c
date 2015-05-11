@@ -8,8 +8,8 @@ With acknowledgements to Adam Szofran (author of original FS6IPC).
 ******************************************************************************/
 
 #define LIB_VERSION 2002 // 2.002
-#define MAX_SIZE 0x7F00 // Largest data (kept below 32k to avoid
-								// any possible 16-bit sign problems)
+#define MAX_SIZE 0x7F00 // Largest data (kept below 32k to avoid any possible 16-bit sign problems)
+#define MAX_MSGS (MAX_SIZE / sizeof(FS6IPC_READSTATEDATA_HDR))
 
 #include "IPCuser.h"
 
@@ -33,7 +33,7 @@ static BYTE*   m_pNext = 0;
 ******************************************************************************/
 
 static int iIndex = 0;
-static void* pDestArray[MAX_SIZE / sizeof(FS6IPC_READSTATEDATA_HDR)];
+static void* pDestArray[MAX_MSGS];
 
 /******************************************************************************
 			FSUIPC_Close
@@ -201,7 +201,7 @@ BOOL FSUIPC_Open(DWORD dwFSReq, DWORD *pdwResult)
 
 BOOL FSUIPC_Process(DWORD *pdwResult)
 {	DWORD dwError;
-	DWORD_PTR p_dwError = &dwError;
+	DWORD_PTR pdwError = (DWORD_PTR)&dwError;
 	DWORD *pdw;
 	FS6IPC_READSTATEDATA_HDR *pHdrR;
 	FS6IPC_WRITESTATEDATA_HDR *pHdrW;
@@ -228,7 +228,7 @@ BOOL FSUIPC_Process(DWORD *pdwResult)
 			0,            // lParam: offset of request into file-mapping obj
 			SMTO_BLOCK,   // halt this thread until we get a response
 			2000,			 // time out interval
-			&p_dwError))    // return value
+			&pdwError))    // return value
 	{	Sleep(100); // Allow for things to happen
 	}
 
@@ -237,7 +237,7 @@ BOOL FSUIPC_Process(DWORD *pdwResult)
 		return FALSE;
 	}
 
-	if (p_dwError != FS6IPC_MESSAGE_SUCCESS)
+	if (pdwError != FS6IPC_MESSAGE_SUCCESS)
 	{	*pdwResult = FSUIPC_ERR_DATA; // FSUIPC didn't like something in the data!
 		return FALSE;
 	}
@@ -290,7 +290,8 @@ BOOL FSUIPC_Read(DWORD dwOffset, DWORD dwSize, void *pDest, DWORD *pdwResult)
 	}
 
 	// Check have space for this request (including terminator)
-	if (((m_pNext - m_pView) + 4 + (dwSize + sizeof(FS6IPC_READSTATEDATA_HDR))) > MAX_SIZE)
+	if (((m_pNext - m_pView) + 4 + (dwSize + sizeof(FS6IPC_READSTATEDATA_HDR))) > MAX_SIZE
+		|| iIndex == MAX_MSGS)
 	{	*pdwResult = FSUIPC_ERR_SIZE;
 		return FALSE;
 	}
@@ -302,7 +303,7 @@ BOOL FSUIPC_Read(DWORD dwOffset, DWORD dwSize, void *pDest, DWORD *pdwResult)
     pHdr->iDest = iIndex;
 
     // Save the destination data pointer into the array for later
-    pDestArray[iIndex] = pDest;
+    pDestArray[iIndex++] = pDest;
 
 	// Zero the reception area, so rubbish won't be returned
 	if (dwSize) ZeroMemory(&m_pNext[sizeof(FS6IPC_READSTATEDATA_HDR)], dwSize);
