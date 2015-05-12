@@ -2,6 +2,7 @@
 
 #include <cstdlib>
 #include <cstdint>
+
 #include <map>
 #include <string>
 
@@ -17,8 +18,10 @@ class TS3Channels
         uint64 parentChannelID;
         string channelName;
         uint16_t frequency;
+        map<uint64, channelInfo*> childChannels;
 
         channelInfo(uint16_t channelFrequency, uint64 channelID, uint64 parentChannelID, string channelName);
+        ~channelInfo();
     };
 
 private:

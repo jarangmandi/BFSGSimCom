@@ -12,11 +12,18 @@ TS3Channels::channelInfo::channelInfo(uint16_t frequency, uint64 channelID, uint
     this->channelID = channelID;
     this->parentChannelID = parentID;
     this->channelName = channelName;
+    this->childChannels.empty();
+}
+
+TS3Channels::channelInfo::~channelInfo()
+{
+    this->childChannels.empty();
 }
 
 TS3Channels::TS3Channels()
 {
     deleteAllChannels();
+    addOrUpdateChannel("Root", 0, CHANNEL_ID_NOT_FOUND);
 }
 
 TS3Channels::~TS3Channels()
@@ -49,10 +56,20 @@ uint16_t TS3Channels::getFrequencyFromString(string str)
 
 uint16_t TS3Channels::addOrUpdateChannel(string channelName, uint64 channelID, uint64 parentChannel)
 {
+    uint64 currentParent;
     uint16_t frequency;
     channelInfo* chInfo;
 
-    // First, delete the channel from the list
+    // First, delete the channel from the lists
+    chInfo = channelIDMap[channelID];
+    currentParent = chInfo->parentChannelID;
+
+    if (currentParent != CHANNEL_ID_NOT_FOUND)
+    {
+        map<uint64, channelInfo*> chList = channelIDMap[parentChannel]->childChannels;
+        chList.erase(chList.find(channelID));
+    }
+
     deleteChannel(channelID);
 
     // Look for a frequency in the channel name we were passed
@@ -63,6 +80,10 @@ uint16_t TS3Channels::addOrUpdateChannel(string channelName, uint64 channelID, u
 
     // Save the channel info indexed by the channel ID
     channelIDMap[channelID] = chInfo;
+
+    // Add this channel to the list of its parent's children
+    if (parentChannel != CHANNEL_ID_NOT_FOUND)
+        channelIDMap[parentChannel]->childChannels[channelID] = chInfo;
 
     // If we found one, then
     if (frequency != 0) {
