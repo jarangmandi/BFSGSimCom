@@ -19,8 +19,11 @@
 #include "public_definitions.h"
 #include "public_rare_definitions.h"
 #include "ts3_functions.h"
+
 #include "BFSGSimCom.h"
 #include "FSUIPCWrapper.h"
+#include "TS3Channels.h"
+
 #include "config.h"
 
 static struct TS3Functions ts3Functions;
@@ -44,6 +47,7 @@ static struct TS3Functions ts3Functions;
 static char* pluginID = NULL;
 
 static FSUIPCWrapper* fsuipc = NULL;
+static TS3Channels ts3Channels;
 
 #ifdef _WIN32
 /* Helper function to convert wchar_T to Utf-8 encoded strings on Windows */
@@ -649,6 +653,45 @@ int ts3plugin_requestAutoload() {
 /* Clientlib */
 
 void ts3plugin_onConnectStatusChangeEvent(uint64 serverConnectionHandlerID, int newStatus, unsigned int errorNumber) {
+
+    uint64* channelList;
+
+    switch (newStatus)
+    {
+    case STATUS_DISCONNECTED:
+        ts3Channels.deleteAllChannels();
+        break;
+    case STATUS_CONNECTION_ESTABLISHED:
+        if (ts3Functions.getChannelList(serverConnectionHandlerID, &channelList) == ERROR_ok)
+        {
+            //for (uint64* channelIndex = channelList; *channelIndex != NULL; channelIndex++)
+            int i;
+            for (i = 0; channelList[i] != NULL; i++)
+            {
+                string strName;
+                char* cName;
+                uint64 parent;
+
+//                ts3Functions.getChannelVariableAsString(serverConnectionHandlerID, *channelIndex, CHANNEL_NAME, &cName);
+//                ts3Functions.getParentChannelOfChannel(serverConnectionHandlerID, *channelIndex, &parent);
+//                ts3Channels.addOrUpdateChannel(cName, *channelIndex, parent);
+
+                ts3Functions.getChannelVariableAsString(serverConnectionHandlerID, channelList[i], CHANNEL_NAME, &cName);
+                ts3Functions.getParentChannelOfChannel(serverConnectionHandlerID, channelList[i], &parent);
+                ts3Channels.addOrUpdateChannel(cName, channelList[i], parent);
+
+                ts3Functions.freeMemory(cName);
+            }
+
+            ts3Functions.freeMemory(channelList);
+        }
+        break;
+    default:
+        break;
+    }
+
+
+/// Anything below here is sample code ///
     /* Some example code following to show how to use the information query functions. */
 
     if (newStatus == STATUS_CONNECTION_ESTABLISHED) {  /* connection established and we have client and channels available */

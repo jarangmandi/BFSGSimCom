@@ -6,6 +6,14 @@
 
 using namespace std;
 
+TS3Channels::channelInfo::channelInfo(uint16_t frequency, uint64 channelID, uint64 parentID, string channelName)
+{
+    this->frequency = frequency;
+    this->channelID = channelID;
+    this->parentChannelID = parentID;
+    this->channelName = channelName;
+}
+
 TS3Channels::TS3Channels()
 {
     deleteAllChannels();
@@ -17,7 +25,8 @@ TS3Channels::~TS3Channels()
 
 void TS3Channels::deleteAllChannels(void)
 {
-    channelMap.clear();
+    channelFrequencyMap.clear();
+    channelIDMap.clear();
 }
 
 uint16_t TS3Channels::getFrequencyFromString(string str)
@@ -31,23 +40,34 @@ uint16_t TS3Channels::getFrequencyFromString(string str)
 
     // Look for a frequency in the string we were passed.
     if (std::regex_search(str, matchedFrequency, r)) {
+        string str = matchedFrequency.str();
         frequency = uint16_t(100 * std::stod(matchedFrequency.str()));
     }
 
     return frequency;
 }
 
-uint16_t TS3Channels::addOrUpdateChannel(string channelName, uint64 channelID)
+uint16_t TS3Channels::addOrUpdateChannel(string channelName, uint64 channelID, uint64 parentChannel)
 {
     uint16_t frequency;
+    channelInfo* chInfo;
+
+    // First, delete the channel from the list
+    deleteChannel(channelID);
 
     // Look for a frequency in the channel name we were passed
     frequency = getFrequencyFromString(channelName);
 
+    // Create a channel information entity
+    chInfo = new channelInfo(frequency, channelID, parentChannel, channelName);
+
+    // Save the channel info indexed by the channel ID
+    channelIDMap[channelID] = chInfo;
+
     // If we found one, then
     if (frequency != 0) {
-        // Save the channel ID, indexed by the frequency that we found.
-        channelMap[frequency] = channelID;
+        // Save the channel info, indexed by the frequency that we found.
+        channelFrequencyMap[frequency] = chInfo;
     }
 
     return frequency;
@@ -57,20 +77,45 @@ uint64 TS3Channels::deleteChannel(uint64 channelID)
 {
     // Assume we're not going to find the channel
     uint64 retValue = CHANNEL_ID_NOT_FOUND;
+    channelInfo* chInfo = NULL;
+    uint16_t frequency = 0;
 
-    // Iterate across everything in the map
-    for (map<uint16_t, uint64>::iterator it = channelMap.begin(); it != channelMap.end(); it++) {
+    map<uint64, channelInfo*>::iterator chId = channelIDMap.end();
+    map<uint16_t, channelInfo*>::iterator chFreq = channelFrequencyMap.end();
+        
+    chId = channelIDMap.find(channelID);
 
-        // Get the channel information from the iterator
-        uint64 chInfo = uint64(it->second);
+    if (chId != channelIDMap.end())
+    {
+        chInfo = chId->second;
 
-        // If this is the channel we're looking for, then remove it from the map and exit the loop.
-        if (chInfo == channelID) {
-            channelMap.erase(it);
-            retValue = channelID;
-            break;
+        chFreq = channelFrequencyMap.find(chInfo->frequency);
+
+        if (chFreq != channelFrequencyMap.end())
+        {
+            channelFrequencyMap.erase(chFreq);
         }
+
+        channelIDMap.erase(chId);
+
+        retValue = chInfo->channelID;
+        delete chInfo;
     }
+
+
+    //// Iterate across everything in the frequency map
+    //for (map<uint16_t, channelInfo>::iterator it = channelFrequencyMap.begin(); it != channelFrequencyMap.end(); it++) {
+
+    //    // Get the channel information from the iterator
+    //    channelInfo chInfo = channelInfo(it->second);
+
+    //    // If this is the channel we're looking for, then remove it from the map and exit the loop.
+    //    if (chInfo.channelID == channelID) {
+    //        channelMap.erase(it);
+    //        retValue = channelID;
+    //        break;
+    //    }
+    //}
 
     return retValue;
 }
@@ -82,7 +127,7 @@ uint64 TS3Channels::getChannelID(uint16_t frequency)
     // Get the channel ID from the map - throws an exception if it's not foun.
     try
     {
-        returnValue = channelMap.at(frequency);
+        returnValue = channelFrequencyMap.at(frequency)->channelID;
     }
     catch (const std::out_of_range&)
     {
