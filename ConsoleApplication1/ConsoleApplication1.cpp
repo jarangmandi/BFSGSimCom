@@ -37,6 +37,9 @@ int _tmain(int argc, _TCHAR* argv[])
     tch.deleteChannel(6);
     tch.addOrUpdateChannel("Different Information - 121.10", 6);
     tch.addOrUpdateChannel("123.45 - a", 5);
+        tch.deleteChannel(6);
+        tch.addOrUpdateChannel("Different Information - 121.10", 6);
+        tch.addOrUpdateChannel("123.45 - a", 5);
 
     result = tch.getChannelID(uint16_t(12345));
     result = tch.getChannelID(uint16_t(11830));
