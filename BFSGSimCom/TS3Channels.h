@@ -5,23 +5,12 @@
 #include <map>
 #include <string>
 
-#include <boost/multi_index_container.hpp>
-#include <boost/multi_index/ordered_index.hpp>
-#include <boost/multi_index/identity.hpp>
-#include <boost/multi_index/member.hpp>
-
 #include "public_definitions.h"
 
-using namespace ::std;
-
-using namespace ::boost;
-using namespace ::boost::multi_index;
-
-
+using namespace std;
 
 class TS3Channels
 {
-
     struct channelInfo
     {
         uint64 channelID;
@@ -30,17 +19,7 @@ class TS3Channels
         uint16_t frequency;
 
         channelInfo(uint16_t channelFrequency, uint64 channelID, uint64 parentChannelID, string channelName);
-
-        bool operator<(const channelInfo& c)const{ return channelID < c.channelID; }
     };
-
-    typedef multi_index_container<
-        channelInfo,
-        indexed_by<
-        ordered_unique<::boost::multi_index::identity<channelInfo>>,
-        ordered_non_unique<member<channelInfo,uint16_t, &channelInfo::frequency>>
-        >
-    > channelInfo_set;
 
 private:
     map<uint16_t, channelInfo*> channelFrequencyMap;
