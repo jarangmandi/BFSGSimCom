@@ -6,12 +6,9 @@
 
 using namespace std;
 
-TS3Channels::channelInfo::channelInfo(uint16_t frequency, uint64 channelID, uint64 parentID, string channelName)
+TS3Channels::channelInfo::channelInfo(uint16_t frequency, uint64 channelID, uint64 parentID, string channelName) :
+frequency(frequency), channelID(channelID), parentChannelID(parentID), channelName(channelName)
 {
-    this->frequency = frequency;
-    this->channelID = channelID;
-    this->parentChannelID = parentID;
-    this->channelName = channelName;
 }
 
 TS3Channels::TS3Channels()
