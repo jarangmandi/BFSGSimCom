@@ -27,31 +27,43 @@ int _tmain(int argc, _TCHAR* argv[])
         }
     }
 
-    tch.addOrUpdateChannel("122.80 - Unicom", 2);
-    tch.addOrUpdateChannel("118.30 - Tauranga Tower", 3);
-    tch.addOrUpdateChannel("123.450 - Andyville", 4);
-    tch.addOrUpdateChannel("123.425 - Missed A", 5);
-    tch.addOrUpdateChannel("Auckland Information - 121.10", 6);
-    tch.addOrUpdateChannel("Test - 234.45", 7);
-    tch.addOrUpdateChannel("Test2 - 123.46", 8);
-    tch.deleteChannel(6);
-    tch.addOrUpdateChannel("Different Information - 121.10", 6);
-    tch.addOrUpdateChannel("123.45 - a", 5);
-        tch.deleteChannel(6);
-        tch.addOrUpdateChannel("Different Information - 121.10", 6);
-        tch.addOrUpdateChannel("123.45 - a", 5);
+    tch.addOrUpdateChannel("Lobby", 1, 0);
+    tch.addOrUpdateChannel("Fly-in 1", 2, 0);
+    tch.addOrUpdateChannel("F1 Dep - 118.300", 3, 2);
+    tch.addOrUpdateChannel("F1 Unicom - 122.800", 4, 2);
+    tch.addOrUpdateChannel("F1 Dep - 119.125", 5, 2);
+    tch.addOrUpdateChannel("Fly-in 2", 6, 0);
+    tch.addOrUpdateChannel("F2 Departure", 7, 6);
+    tch.addOrUpdateChannel("F2D Ground - 118.300", 8, 7);
+    tch.addOrUpdateChannel("F2D Tower - 125.100", 9, 7);
+    tch.addOrUpdateChannel("F2D Departure - 119.125", 10, 7);
+    tch.addOrUpdateChannel("F2 EnRoute", 11, 6);
+    tch.addOrUpdateChannel("F2 Unicom - 122.800", 12, 11);
+    tch.addOrUpdateChannel("F2 Arrival", 13, 6);
+    tch.addOrUpdateChannel("F2D Departure - 118.300", 14, 13);
+    tch.addOrUpdateChannel("F2D Tower - 125.100", 15, 13);
+    tch.addOrUpdateChannel("F2D Ground - 119.125", 16, 13);
+    tch.addOrUpdateChannel("F2 Other - 118.300", 17, 6);
+    tch.addOrUpdateChannel("F2 Other - 118.400", 18, 17);
+    tch.addOrUpdateChannel("F2 Other - 118.300", 19, 18);
 
-    result = tch.getChannelID(uint16_t(12345));
-    result = tch.getChannelID(uint16_t(11830));
-    result = tch.getChannelID(122.80);
-    result = tch.getChannelID(123.42);
-    result = tch.getChannelID(uint16_t(12110));
-    result = tch.getChannelID(1.);
 
-    if (result == TS3Channels::CHANNEL_ID_NOT_FOUND) printf("Ha");
+    result = tch.getChannelID(uint16_t(11830)); // should return 3 - first in the list
+    result = tch.getChannelID(uint16_t(11830), 4); // should return 3 - first in the list with a common parent
+    result = tch.getChannelID(uint16_t(11830), 9); // should return 8 - first in the list with a common parent
+    result = tch.getChannelID(uint16_t(11830), 12); // should return 17 - first in the list with a common parent
+    result = tch.getChannelID(uint16_t(11830), 15); // should return 14 - first in the list with a common parent
+    result = tch.getChannelID(uint16_t(11830), 9, 0); //
+    result = tch.getChannelID(uint16_t(11830), 15, 0);
+    result = tch.getChannelID(uint16_t(11830), 9, 6); // should return 8
+    result = tch.getChannelID(uint16_t(11830), 9, 15); // should return not found
+    result = tch.getChannelID(uint16_t(11830), 9, 13); // should return not found
+    result = tch.getChannelID(uint16_t(12280), 3, 2); // should return not found
+    result = tch.getChannelID(uint16_t(12280), 9, 7); // should return not found
+    result = tch.getChannelID(uint16_t(12280), 9, 6); // should return not found
 
-    FSUIPC_Close();
-
-    return 0;
+    //tch.addOrUpdateChannel("F2D Tower2 - 125.100");
+    
+	return 0;
 }
 

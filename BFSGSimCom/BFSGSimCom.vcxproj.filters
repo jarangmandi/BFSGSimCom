@@ -19,6 +19,18 @@
     <ClCompile Include="FSUIPCWrapper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\SQLiteCpp\Column.cpp">
+      <Filter>SQLiteCpp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SQLiteCpp\Database.cpp">
+      <Filter>SQLiteCpp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SQLiteCpp\Statement.cpp">
+      <Filter>SQLiteCpp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SQLiteCpp\Transaction.cpp">
+      <Filter>SQLiteCpp</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="TS3Channels.h">
@@ -35,6 +47,27 @@
     </ClInclude>
     <ClInclude Include="FSUIPCWrapper.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\SQLiteCpp\Assertion.h">
+      <Filter>SQLiteCpp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\SQLiteCpp\Column.h">
+      <Filter>SQLiteCpp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\SQLiteCpp\Database.h">
+      <Filter>SQLiteCpp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\SQLiteCpp\Exception.h">
+      <Filter>SQLiteCpp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\SQLiteCpp\SQLiteCpp.h">
+      <Filter>SQLiteCpp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\SQLiteCpp\Statement.h">
+      <Filter>SQLiteCpp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\SQLiteCpp\Transaction.h">
+      <Filter>SQLiteCpp</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -63,6 +96,9 @@
     </Filter>
     <Filter Include="Source Files">
       <UniqueIdentifier>{7cfa1699-92c5-404b-bb29-9de3654087f6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SQLiteCpp">
+      <UniqueIdentifier>{b5009649-274c-4523-973e-757f94985372}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

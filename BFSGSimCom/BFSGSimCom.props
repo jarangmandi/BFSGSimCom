@@ -4,6 +4,7 @@
   <PropertyGroup Label="UserMacros">
     <QTDIR32>C:\Qt\5.2.1\msvc2012</QTDIR32>
     <QTDIR64>C:\Qt\5.2.1\msvc2012_64</QTDIR64>
+    <SQLITEDIR>C:\Dev\sqlite3</SQLITEDIR>
   </PropertyGroup>
   <PropertyGroup />
   <ItemDefinitionGroup />
@@ -15,6 +16,9 @@
     <BuildMacro Include="QTDIR64">
       <Value>$(QTDIR64)</Value>
       <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="SQLITEDIR">
+      <Value>$(SQLITEDIR)</Value>
     </BuildMacro>
   </ItemGroup>
 </Project>
