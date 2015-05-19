@@ -16,90 +16,64 @@ TS3Channels::_init TS3Channels::_initialiser;
 TS3Channels::_init::_init()
 {
 #if defined(_DEBUG)
-    WCHAR wpath[_MAX_PATH];
+    WCHAR* wpath;
     char cpath[_MAX_PATH];
     char defChar = ' ';
 
-    if (SUCCEEDED(SHGetFolderPath(NULL, CSIDL_PERSONAL, NULL, 0, wpath)))
+    if (SUCCEEDED(SHGetKnownFolderPath(FOLDERID_Documents, 0, NULL, &wpath)))
     {
         int rc = WideCharToMultiByte(CP_ACP, 0, wpath, -1, cpath, _MAX_PATH, &defChar, NULL);
         TS3Channels::mDbFile = string(cpath) + "\\bfsgsimcom.db3";
     }
+
+    CoTaskMemFree(static_cast<void*>(wpath));
 #else
     TS3Channels::mDbFile = ":memory:";
 #endif
 }
 
-int TS3Channels::initDatabase()
-{
-    int retValue = SQLITE_OK;
-
-    static const string createTables = \
-        "DROP TABLE IF EXISTS channels;" \
-        "DROP TABLE IF EXISTS closure;" \
-        "CREATE TABLE IF NOT EXISTS channels(" \
-                "   channelID UNSIGNED BIG INT PRIMARY KEY NOT NULL, "  \
-                "   frequency INT, "    \
-                "   parent UNSIGNED BIG INT, "  \
-                "   description CHAR(256)" \
-                "); " \
-        "CREATE TABLE IF NOT EXISTS closure(" \
-                "   parent UNSIGNED BIG INT NOT NULL," \
-                "   child UNSIGNED BIG INT NOT NULL," \
-                "   depth INT NOT NULL," \
-                "   frequency" \
-                ");" \
-                "INSERT INTO closure (parent, child, depth) VALUES (0, 0, 0);"
-        "";
-
-    try
-    {
-        mDb.exec(createTables);
-    }
-    catch (SQLite::Exception& e)
-    {
-        e;
-        retValue = mDb.getErrorCode();
-    }
-
-    return retValue;
-}
-
-
-//TS3Channels::channelInfo::channelInfo(uint16_t frequency, uint64 channelID, uint64 parentID, string channelName)
-//{
-//    this->frequency = frequency;
-//    this->channelID = channelID;
-//    this->parentChannelID = parentID;
-//    this->channelName = channelName;
-//
-//}
-
 TS3Channels::TS3Channels() : mDb(TS3Channels::mDbFile, SQLITE_OPEN_CREATE | SQLITE_OPEN_READWRITE)
 {
     initDatabase();
-    deleteAllChannels();
 }
 
 TS3Channels::~TS3Channels()
 {
 }
 
-int TS3Channels::deleteAllChannels(void)
+const string TS3Channels::aInitDatabase = \
+"DROP TABLE IF EXISTS channels;" \
+"DROP TABLE IF EXISTS closure;" \
+"CREATE TABLE IF NOT EXISTS channels(" \
+"   channelID UNSIGNED BIG INT PRIMARY KEY NOT NULL, "  \
+"   frequency INT, "    \
+"   parent UNSIGNED BIG INT, "  \
+"   description CHAR(256)," \
+"   FOREIGN KEY (parent) REFERENCES channels (channelID)" \
+"); " \
+"CREATE TABLE IF NOT EXISTS closure(" \
+"   parent UNSIGNED BIG INT NOT NULL," \
+"   child UNSIGNED BIG INT NOT NULL," \
+"   depth INT NOT NULL," \
+"   frequency" \
+");" \
+"CREATE UNIQUE INDEX IF NOT EXISTS closureprntchld ON closure(parent, child, depth);" \
+"CREATE UNIQUE INDEX IF NOT EXISTS closurechldprnt ON closure(child, parent, depth);"
+"CREATE INDEX parent_idx ON channels(parent);" \
+"INSERT INTO closure(parent, child, depth) VALUES (0, 0, 0);" \
+"";
+
+int TS3Channels::initDatabase()
 {
     int retValue = SQLITE_OK;
 
-    static const string deleteChannels = \
-        "DELETE FROM channels;" \
-        "";
-
     try
     {
-        SQLite::Statement aStmt(mDb, deleteChannels);
-        aStmt.exec();
+        mDb.exec(aInitDatabase);
     }
-    catch (SQLite::Exception&)
+    catch (SQLite::Exception& e)
     {
+        e;
         retValue = mDb.getErrorCode();
     }
 
@@ -124,59 +98,28 @@ uint16_t TS3Channels::getFrequencyFromString(string str)
     return frequency;
 }
 
-
-uint64 TS3Channels::getParentChannel(uint64 channelID)
-{
-    uint64 retValue;
-
-    static const string aSelectChFromFreq = \
-        "SELECT parent FROM channels WHERE channelID = :channelID;" \
-        "";
-
-    try
-    {
-        SQLite::Statement aStmt(mDb, aSelectChFromFreq);
-        aStmt.bind(":channelID", sqlite3_int64(channelID));
-        if (aStmt.executeStep())
-        {
-            retValue = aStmt.getColumn(0).getInt64();
-        }
-        else
-        {
-            retValue = CHANNEL_ID_NOT_FOUND;
-        }
-    }
-    catch (SQLite::Exception&)
-    {
-        uint64 retValue = CHANNEL_ID_NOT_FOUND;
-    }
-
-    return retValue;
-}
-
+// Define queries here - they get resolved at compile time...
 const string TS3Channels::aAddInsertChannel = \
-    "INSERT INTO channels (channelID, frequency, parent, description)" \
-    "VALUES" \
-    "(:channelId, :frequency, :parent, :description)" \
-    ";" \
-    "";
+"INSERT INTO channels (channelID, frequency, parent, description)" \
+"VALUES" \
+"(:channelId, :frequency, :parent, :description)" \
+";" \
+"";
 
 const string TS3Channels::aAddInsertClosure1 = \
 "INSERT INTO closure (parent, child, depth, frequency)" \
-"VALUES (:child1, :child2, 0, :frequency);";
+"VALUES (:child, :child, 0, :frequency);";
 
 const string TS3Channels::aAddInsertClosure2 = \
-    "INSERT INTO closure (parent, child, depth, frequency)" \
-    "SELECT p.parent, c.child, p.depth + c.depth + 1, :frequency " \
-    "FROM closure p, closure c " \
-    "WHERE p.child = :parent and c.parent = :child" \
-    ";" \
-    "";
-
+"INSERT INTO closure (parent, child, depth, frequency)" \
+"SELECT p.parent, c.child, p.depth + c.depth + 1, :frequency " \
+"FROM closure p, closure c " \
+"WHERE p.child = :parent and c.parent = :child" \
+";" \
+"";
 
 uint16_t TS3Channels::addOrUpdateChannel(string channelName, uint64 channelID, uint64 parentChannel)
 {
-
     uint16_t frequency;
 
     // First, delete the channel from the list
@@ -196,18 +139,17 @@ uint16_t TS3Channels::addOrUpdateChannel(string channelName, uint64 channelID, u
         SQLite::Statement aClosureStmt2(mDb, aAddInsertClosure2);
 
         aChannelStmt.bind(":channelId", sqlite3_int64(channelID));
-        aChannelStmt.bind(":frequency", frequency);
+        (frequency) ? aChannelStmt.bind(":frequency", frequency) : aChannelStmt.bind(":frequency");
         aChannelStmt.bind(":parent", sqlite3_int64(parentChannel));
         aChannelStmt.bind(":description", channelName);
         aChannelStmt.exec();
 
-        aClosureStmt1.bind(":child1", sqlite3_int64(channelID));
-        aClosureStmt1.bind(":child2", sqlite3_int64(channelID));
-        aClosureStmt1.bind(":frequency", frequency);
+        aClosureStmt1.bind(":child", sqlite3_int64(channelID));
+        (frequency) ? aClosureStmt1.bind(":frequency", frequency) : aClosureStmt1.bind(":frequency");
         aClosureStmt1.exec();
         aClosureStmt2.bind(":parent", sqlite3_int64(parentChannel));
         aClosureStmt2.bind(":child", sqlite3_int64(channelID));
-        aClosureStmt2.bind(":frequency", frequency);
+        (frequency) ? aClosureStmt2.bind(":frequency", frequency) : aClosureStmt2.bind(":frequency");
         aClosureStmt2.exec();
 
         aTrans.commit();
@@ -225,121 +167,110 @@ uint16_t TS3Channels::addOrUpdateChannel(string channelName, uint64 channelID, u
     }
 
     return retValue;
-
-    //// Create a channel information entity
-    //chInfo = new channelInfo(frequency, channelID, parentChannel, channelName);
-
-    //// Save the channel info indexed by the channel ID
-    //channelIDMap[channelID] = chInfo;
-
-    //// If we found one, then
-    //if (frequency != 0) {
-    //    // Save the channel info, indexed by the frequency that we found.
-    //    channelFrequencyMap[frequency] = chInfo;
-    //}
-
-    //return frequency;
 }
+
+const string TS3Channels::aDeleteChannels = \
+"delete from channels where channelID in (" \
+"    select child from closure where parent = :delete" \
+");" \
+"";
+
+const string TS3Channels::aDeleteClosure = \
+"delete from closure where rowid in (" \
+"    select distinct link.rowid " \
+"    from closure p, closure link, closure c, closure to_delete " \
+"    where " \
+"        p.parent = link.parent and " \
+"        c.child = link.child and " \
+"        p.child = to_delete.parent and " \
+"        c.parent = to_delete.child and " \
+"        (to_delete.parent = :delete or to_delete.child = :delete) " \
+"    union " \
+"    select rowid " \
+"    from closure " \
+"    where  " \
+"        parent in (" \
+"        select child from closure where parent = :delete " \
+"        ) " \
+");" \
+"";
 
 int TS3Channels::deleteChannel(uint64 channelID)
 {
-    static const string deleteChannels = \
-        "DELETE FROM channels WHERE channelID = :delete;" \
-        "";
-
     int retValue = SQLITE_OK;
 
     try
     {
-        SQLite::Statement aStmt(mDb, deleteChannels);
-        aStmt.bind(":delete", sqlite3_int64(channelID));
-        aStmt.exec();
+        SQLite::Transaction aTrans(mDb);
+
+        SQLite::Statement aChannelStmt(mDb, aDeleteChannels);
+        aChannelStmt.bind(":delete", sqlite3_int64(channelID));
+        aChannelStmt.exec();
+
+        SQLite::Statement aClosureStmt(mDb, aDeleteClosure);
+        aClosureStmt.bind(":delete", sqlite3_int64(channelID));
+        aClosureStmt.exec();
+
+        aTrans.commit();
     }
-    catch (SQLite::Exception&)
+    catch (SQLite::Exception& e)
     {
+        e;
         retValue = mDb.getErrorCode();
     }
 
     return retValue;
 
-    //// Assume we're not going to find the channel
-    //uint64 retValue = CHANNEL_ID_NOT_FOUND;
-    //channelInfo* chInfo = NULL;
-    //uint16_t frequency = 0;
+}
 
-    //map<uint64, channelInfo*>::iterator chId = channelIDMap.end();
-    //map<uint16_t, channelInfo*>::iterator chFreq = channelFrequencyMap.end();
-    //    
-    //chId = channelIDMap.find(channelID);
-
-    //if (chId != channelIDMap.end())
-    //{
-    //    chInfo = chId->second;
-
-    //    chFreq = channelFrequencyMap.find(chInfo->frequency);
-
-    //    if (chFreq != channelFrequencyMap.end())
-    //    {
-    //        channelFrequencyMap.erase(chFreq);
-    //    }
-
-    //    channelIDMap.erase(chId);
-
-    //    retValue = chInfo->channelID;
-    //    delete chInfo;
-    //}
-
-
-    ////// Iterate across everything in the frequency map
-    ////for (map<uint16_t, channelInfo>::iterator it = channelFrequencyMap.begin(); it != channelFrequencyMap.end(); it++) {
-
-    ////    // Get the channel information from the iterator
-    ////    channelInfo chInfo = channelInfo(it->second);
-
-    ////    // If this is the channel we're looking for, then remove it from the map and exit the loop.
-    ////    if (chInfo.channelID == channelID) {
-    ////        channelMap.erase(it);
-    ////        retValue = channelID;
-    ////        break;
-    ////    }
-    ////}
-
-    //return retValue;
+void TS3Channels::deleteAllChannels(void)
+{
+    // Easier to just do this than play around...
+    initDatabase();
 }
 
 const string TS3Channels::aGetChannelFromFreqCurrPrnt = \
-    "select down.child from " \
-    "(select * from closure where child = :current and parent in (select child from closure where parent = :root)) as up," \
-    "(select * from closure where frequency = :frequency) as down "
-    "where " \
-    "up.parent = down.parent " \
-    "order by up.depth + down.depth, down.depth desc " \
-    "limit 1" \
-    ";"\
-    "";
+"select down.child from " \
+"(select * from closure where child = :current and parent in (select child from closure where parent = :root)) as up," \
+"(select * from closure where frequency = :frequency) as down "
+"where " \
+"up.parent = down.parent " \
+"order by up.depth + down.depth, down.depth desc " \
+"limit 1" \
+";"\
+"";
 
 uint64 TS3Channels::getChannelID(uint16_t frequency, uint64 current, uint64 root)
 {
+    // Define this here - it gets resolved at compile time...
+    // Default scenario is that we don't find a result
     uint64 retValue = CHANNEL_ID_NOT_FOUND;
 
     try
     {
+        // Create the statement
         SQLite::Statement aStmt(mDb, aGetChannelFromFreqCurrPrnt);
+
+        // Bind the variables
         aStmt.bind(":frequency", frequency);
         aStmt.bind(":current", sqlite3_int64(current));
         aStmt.bind(":root", sqlite3_int64(root));
 
+        // Execute the query, and if we get a result.
         if (aStmt.executeStep())
         {
+            // The query is written to return a single value in a single row...
             retValue = aStmt.getColumn(0).getInt64();
         }
         else
         {
+            // With no results, reiterate the return value.
             retValue = CHANNEL_ID_NOT_FOUND;
         }
     }
     catch (SQLite::Exception&)
     {
+        // If anything goes wrong (it shouldn't) then we've not found a frequency.
         uint64 retValue = CHANNEL_ID_NOT_FOUND;
     }
 

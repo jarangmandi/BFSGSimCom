@@ -44,7 +44,7 @@ int _tmain(int argc, _TCHAR* argv[])
     tch.addOrUpdateChannel("F2D Tower - 125.100", 15, 13);
     tch.addOrUpdateChannel("F2D Ground - 119.125", 16, 13);
     tch.addOrUpdateChannel("F2 Other - 118.300", 17, 6);
-    tch.addOrUpdateChannel("F2 Other - 118.400", 18, 17);
+    tch.addOrUpdateChannel("F2 Other - 122.800", 18, 17);
     tch.addOrUpdateChannel("F2 Other - 118.300", 19, 18);
 
 
@@ -58,9 +58,22 @@ int _tmain(int argc, _TCHAR* argv[])
     result = tch.getChannelID(uint16_t(11830), 9, 6); // should return 8
     result = tch.getChannelID(uint16_t(11830), 9, 15); // should return not found
     result = tch.getChannelID(uint16_t(11830), 9, 13); // should return not found
-    result = tch.getChannelID(uint16_t(12280), 3, 2); // should return not found
+    result = tch.getChannelID(uint16_t(12280), 3, 2); // should return 4
     result = tch.getChannelID(uint16_t(12280), 9, 7); // should return not found
-    result = tch.getChannelID(uint16_t(12280), 9, 6); // should return not found
+    result = tch.getChannelID(uint16_t(12280), 9, 6); // should return 12
+
+    tch.deleteChannel(11);
+
+    result = tch.getChannelID(uint16_t(12280), 9, 6); // should return 18
+
+    tch.addOrUpdateChannel("F2 EnRoute", 11, 6);
+    tch.addOrUpdateChannel("F2 Unicom - 122.900", 12, 11);
+
+    result = tch.getChannelID(uint16_t(12280), 9, 6); // should still return 18
+
+    tch.addOrUpdateChannel("F2 Unicom - 122.800", 12, 11);
+
+    result = tch.getChannelID(uint16_t(12280), 9, 6); // should return 12 again
 
     //tch.addOrUpdateChannel("F2D Tower2 - 125.100");
     
