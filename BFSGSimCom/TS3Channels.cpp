@@ -285,3 +285,53 @@ uint64 TS3Channels::getChannelID(double frequency, uint64 current, uint64 root)
     // Try 128.300 to see why this is needed!
     return getChannelID(uint16_t(0.1 * round(1000 * frequency)), current, root);
 }
+
+
+TS3Channels::ChannelInfo::ChannelInfo(uint64 ch, int d, string str)
+{
+    channelID = ch;
+    depth = d;
+    description = str;
+}
+
+const string TS3Channels::aGetChannelList = \
+"select ch.channelID, cl.depth, ch.description from closure as cl, channels as ch where ch.channelID = cl.child and cl.parent = :root";
+
+
+list<TS3Channels::ChannelInfo> TS3Channels::getChannelList(uint64 root)
+{
+    list<TS3Channels::ChannelInfo> retValue;
+
+    try
+    {
+        // Create the statement
+        SQLite::Statement aStmt(mDb, aGetChannelList);
+
+        // Bind the variables
+        aStmt.bind(":root", sqlite3_int64(root));
+
+        while (aStmt.executeStep())
+        // Execute the query, and if we get a result.
+        {
+            uint64 channelID;
+            int depth;
+            string description;
+
+            // The query is written to return a single value in a single row...
+            channelID = aStmt.getColumn(0).getInt64();
+            depth = aStmt.getColumn(1).getInt();
+            description = aStmt.getColumn(2).getText();
+
+            ChannelInfo ch(channelID, depth, description);
+
+            retValue.push_back(ch);
+        }
+    }
+    catch (SQLite::Exception& e)
+    {
+        e;
+    }
+
+    return retValue;
+
+}

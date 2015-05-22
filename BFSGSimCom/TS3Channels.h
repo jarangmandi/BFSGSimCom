@@ -2,7 +2,7 @@
 
 #include <cstdlib>
 #include <cstdint>
-#include <map>
+#include <list>
 #include <string>
 
 #include <SQLiteCpp\Database.h>
@@ -22,6 +22,7 @@ private:
     static const string aDeleteChannels;
     static const string aDeleteClosure;
     static const string aGetChannelFromFreqCurrPrnt;
+    static const string aGetChannelList;
     static const string aInitDatabase;
 
     SQLite::Database mDb;
@@ -31,6 +32,16 @@ private:
     uint16_t getFrequencyFromString(string);
 
 public:
+    struct ChannelInfo
+    {
+        uint64 channelID;
+        int depth;
+        string description;
+
+    public:
+        ChannelInfo(uint64, int, string);
+    };
+
     TS3Channels();
     ~TS3Channels();
 
@@ -41,6 +52,8 @@ public:
     uint16_t addOrUpdateChannel(string, uint64, uint64 parentChannel = 0);
     uint64 getChannelID(uint16_t frequency, uint64 current = 0, uint64 root = 0);
     uint64 getChannelID(double frequency, uint64 current = 0, uint64 root = 0);
+
+    list<ChannelInfo> getChannelList(uint64 root = 0);
 
     static class _init
     {
