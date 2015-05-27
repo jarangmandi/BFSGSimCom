@@ -47,7 +47,7 @@ int _tmain(int argc, _TCHAR* argv[])
     tch.addOrUpdateChannel("F2 Other - 122.800", 18, 17);
     tch.addOrUpdateChannel("F2 Other - 118.300", 19, 18);
 
-    list<TS3Channels::ChannelInfo> l = tch.getChannelList();
+    vector<TS3Channels::ChannelInfo> l = tch.getChannelList();
 
 
     result = tch.getChannelID(uint16_t(11830)); // should return 3 - first in the list

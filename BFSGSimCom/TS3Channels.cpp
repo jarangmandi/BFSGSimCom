@@ -10,11 +10,10 @@
 
 using namespace std;
 
-string TS3Channels::mDbFile;
-TS3Channels::_init TS3Channels::_initialiser;
-
-TS3Channels::_init::_init()
+string TS3Channels::determineDbFileName(void)
 {
+    string retValue = "";
+
 #if defined(_DEBUG)
     WCHAR* wpath;
     char cpath[_MAX_PATH];
@@ -23,16 +22,20 @@ TS3Channels::_init::_init()
     if (SUCCEEDED(SHGetKnownFolderPath(FOLDERID_Documents, 0, NULL, &wpath)))
     {
         int rc = WideCharToMultiByte(CP_ACP, 0, wpath, -1, cpath, _MAX_PATH, &defChar, NULL);
-        TS3Channels::mDbFile = string(cpath) + "\\bfsgsimcom.db3";
+        retValue = string(cpath) + "\\bfsgsimcom.db3";
     }
 
     CoTaskMemFree(static_cast<void*>(wpath));
 #else
-    TS3Channels::mDbFile = ":memory:";
+    retValue = ":memory:";
 #endif
+
+    return retValue;
 }
 
-TS3Channels::TS3Channels() : mDb(TS3Channels::mDbFile, SQLITE_OPEN_CREATE | SQLITE_OPEN_READWRITE)
+
+// Constructor for the TS3 channel class
+TS3Channels::TS3Channels() : mDbFileName(determineDbFileName()), mDb(TS3Channels::mDbFileName, SQLITE_OPEN_CREATE | SQLITE_OPEN_READWRITE)
 {
     initDatabase();
 }
@@ -41,31 +44,32 @@ TS3Channels::~TS3Channels()
 {
 }
 
-const string TS3Channels::aInitDatabase = \
-"DROP TABLE IF EXISTS channels;" \
-"DROP TABLE IF EXISTS closure;" \
-"CREATE TABLE IF NOT EXISTS channels(" \
-"   channelID UNSIGNED BIG INT PRIMARY KEY NOT NULL, "  \
-"   frequency INT, "    \
-"   parent UNSIGNED BIG INT, "  \
-"   description CHAR(256)," \
-"   FOREIGN KEY (parent) REFERENCES channels (channelID)" \
-"); " \
-"CREATE TABLE IF NOT EXISTS closure(" \
-"   parent UNSIGNED BIG INT NOT NULL," \
-"   child UNSIGNED BIG INT NOT NULL," \
-"   depth INT NOT NULL," \
-"   frequency" \
-");" \
-"CREATE UNIQUE INDEX IF NOT EXISTS closureprntchld ON closure(parent, child, depth);" \
-"CREATE UNIQUE INDEX IF NOT EXISTS closurechldprnt ON closure(child, parent, depth);"
-"CREATE INDEX parent_idx ON channels(parent);" \
-"INSERT INTO closure(parent, child, depth) VALUES (0, 0, 0);" \
-"";
-
 int TS3Channels::initDatabase()
 {
     int retValue = SQLITE_OK;
+
+    static const string aInitDatabase = \
+        "DROP TABLE IF EXISTS channels;" \
+        "DROP TABLE IF EXISTS closure;" \
+        "CREATE TABLE IF NOT EXISTS channels(" \
+        "   channelId UNSIGNED BIG INT PRIMARY KEY NOT NULL, "  \
+        "   frequency INT, "    \
+        "   parent UNSIGNED BIG INT, "  \
+        "   description CHAR(256)," \
+        "   FOREIGN KEY (parent) REFERENCES channels (channelId)" \
+        "); " \
+        "create table if not exists closure(" \
+        "   parent unsigned big int not null," \
+        "   child unsigned big int not null," \
+        "   depth int not null," \
+        "   frequency" \
+        ");" \
+        "create unique index if not exists closureprntchld on closure(parent, child, depth);" \
+        "create unique index if not exists closurechldprnt on closure(child, parent, depth);"
+        "create index parent_idx on channels(parent);" \
+        "insert into channels(channelId, frequency, parent, description) values (0, null, 0, 'Root');"
+        "insert into closure(parent, child, depth) values (0, 0, 0);" \
+        "";
 
     try
     {
@@ -100,21 +104,21 @@ uint16_t TS3Channels::getFrequencyFromString(string str)
 
 // Define queries here - they get resolved at compile time...
 const string TS3Channels::aAddInsertChannel = \
-"INSERT INTO channels (channelID, frequency, parent, description)" \
-"VALUES" \
+"insert into channels (channelId, frequency, parent, description)" \
+"values" \
 "(:channelId, :frequency, :parent, :description)" \
 ";" \
 "";
 
 const string TS3Channels::aAddInsertClosure1 = \
-"INSERT INTO closure (parent, child, depth, frequency)" \
-"VALUES (:child, :child, 0, :frequency);";
+"insert into closure (parent, child, depth, frequency)" \
+"values (:child, :child, 0, :frequency);";
 
 const string TS3Channels::aAddInsertClosure2 = \
-"INSERT INTO closure (parent, child, depth, frequency)" \
-"SELECT p.parent, c.child, p.depth + c.depth + 1, :frequency " \
-"FROM closure p, closure c " \
-"WHERE p.child = :parent and c.parent = :child" \
+"insert into closure (parent, child, depth, frequency)" \
+"select p.parent, c.child, p.depth + c.depth + 1, :frequency " \
+"from closure p, closure c " \
+"where p.child = :parent and c.parent = :child" \
 ";" \
 "";
 
@@ -147,6 +151,7 @@ uint16_t TS3Channels::addOrUpdateChannel(string channelName, uint64 channelID, u
         aClosureStmt1.bind(":child", sqlite3_int64(channelID));
         (frequency) ? aClosureStmt1.bind(":frequency", frequency) : aClosureStmt1.bind(":frequency");
         aClosureStmt1.exec();
+
         aClosureStmt2.bind(":parent", sqlite3_int64(parentChannel));
         aClosureStmt2.bind(":child", sqlite3_int64(channelID));
         (frequency) ? aClosureStmt2.bind(":frequency", frequency) : aClosureStmt2.bind(":frequency");
@@ -170,7 +175,7 @@ uint16_t TS3Channels::addOrUpdateChannel(string channelName, uint64 channelID, u
 }
 
 const string TS3Channels::aDeleteChannels = \
-"delete from channels where channelID in (" \
+"delete from channels where channelId in (" \
 "    select child from closure where parent = :delete" \
 ");" \
 "";
@@ -295,12 +300,23 @@ TS3Channels::ChannelInfo::ChannelInfo(uint64 ch, int d, string str)
 }
 
 const string TS3Channels::aGetChannelList = \
-"select ch.channelID, cl.depth, ch.description from closure as cl, channels as ch where ch.channelID = cl.child and cl.parent = :root";
+"with recursive r(channelId, depth, path, description) as " \
+"( " \
+"select channelId, 0, '', description from channels where channelId = :root " \
+"union all " \
+"select cl.child, r.depth + 1, r.path || printf(\" % 08p\", cl.child), ch.description " \
+"from " \
+"closure cl " \
+"inner join channels ch on cl.child = ch.channelId " \
+"inner join r on cl.parent = r.channelId " \
+"where cl.depth = 1 " \
+") " \
+"select channelId, depth, description from r order by path; " \
+";";
 
-
-list<TS3Channels::ChannelInfo> TS3Channels::getChannelList(uint64 root)
+vector<TS3Channels::ChannelInfo> TS3Channels::getChannelList(uint64 root)
 {
-    list<TS3Channels::ChannelInfo> retValue;
+    vector<TS3Channels::ChannelInfo> retValue;
 
     try
     {
@@ -328,6 +344,10 @@ list<TS3Channels::ChannelInfo> TS3Channels::getChannelList(uint64 root)
         }
     }
     catch (SQLite::Exception& e)
+    {
+        e;
+    }
+    catch (exception& e)
     {
         e;
     }

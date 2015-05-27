@@ -26,7 +26,7 @@
 
 #include "config.h"
 
-static struct TS3Functions ts3Functions;
+struct TS3Functions ts3Functions;
 
 #ifdef _WIN32
 #define _strcpy(dest, destSize, src) strcpy_s(dest, destSize, src)
@@ -47,7 +47,8 @@ static struct TS3Functions ts3Functions;
 static char* pluginID = NULL;
 
 static FSUIPCWrapper* fsuipc = NULL;
-static TS3Channels ts3Channels;
+
+TS3Channels ts3Channels;
 
 #ifdef _WIN32
 /* Helper function to convert wchar_T to Utf-8 encoded strings on Windows */
@@ -138,6 +139,29 @@ int ts3plugin_init() {
         fsuipc = new FSUIPCWrapper();
     }
 
+#if defined(_DEBUG)
+    ts3Channels.addOrUpdateChannel("Lobby", 1, 0);
+    ts3Channels.addOrUpdateChannel("Fly-in 1", 2, 0);
+    ts3Channels.addOrUpdateChannel("F1 Dep - 118.300", 3, 2);
+    ts3Channels.addOrUpdateChannel("F1 Unicom - 122.800", 4, 2);
+    ts3Channels.addOrUpdateChannel("F1 Dep - 119.125", 5, 2);
+    ts3Channels.addOrUpdateChannel("Fly-in 2", 6, 0);
+    ts3Channels.addOrUpdateChannel("F2 Departure", 7, 6);
+    ts3Channels.addOrUpdateChannel("F2D Ground - 118.300", 8, 7);
+    ts3Channels.addOrUpdateChannel("F2D Tower - 125.100", 9, 7);
+    ts3Channels.addOrUpdateChannel("F2D Departure - 119.125", 10, 7);
+    ts3Channels.addOrUpdateChannel("F2 EnRoute", 11, 6);
+    ts3Channels.addOrUpdateChannel("F2 Unicom - 122.800", 12, 11);
+    ts3Channels.addOrUpdateChannel("F2 Arrival", 13, 6);
+    ts3Channels.addOrUpdateChannel("F2D Departure - 118.300", 14, 13);
+    ts3Channels.addOrUpdateChannel("F2D Tower - 125.100", 15, 13);
+    ts3Channels.addOrUpdateChannel("F2D Ground - 119.125", 16, 13);
+    ts3Channels.addOrUpdateChannel("F2 Other - 118.300", 17, 6);
+    ts3Channels.addOrUpdateChannel("F2 Other - 122.800", 18, 17);
+    ts3Channels.addOrUpdateChannel("F2 Other - 118.300", 19, 18);
+#endif
+
+
     return 0;  /* 0 = success, 1 = failure, -2 = failure but client will not show a "failed to load" warning */
     /* -2 is a very special case and should only be used if a plugin displays a dialog (e.g. overlay) asking the user to disable
      * the plugin again, avoiding the show another dialog by the client telling the user the plugin failed to load.
@@ -189,7 +213,7 @@ void ts3plugin_configure(void* handle, void* qParentWidget) {
     printf("PLUGIN: configure\n");
 
     /* Execute the config dialog */
-    Config cfg;
+    Config cfg(ts3Channels);
     cfg.exec();
 }
 
@@ -664,9 +688,11 @@ void ts3plugin_onConnectStatusChangeEvent(uint64 serverConnectionHandlerID, int 
     case STATUS_CONNECTION_ESTABLISHED:
         if (ts3Functions.getChannelList(serverConnectionHandlerID, &channelList) == ERROR_ok)
         {
+            //TS3Channels ch;
+            //ts3Channels = ch;
+
             //for (uint64* channelIndex = channelList; *channelIndex != NULL; channelIndex++)
-            int i;
-            for (i = 0; channelList[i] != NULL; i++)
+            for (int i = 0; channelList[i] != NULL; i++)
             {
                 string strName;
                 char* cName;
