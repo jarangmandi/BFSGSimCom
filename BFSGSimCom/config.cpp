@@ -14,13 +14,21 @@
 #define CONF_APP				"TS3Client"   // application folder
 #define CONF_OBJ(x)			QSettings x(QSettings::IniFormat, QSettings::UserScope, CONF_APP, CONF_FILE);
 
-void Config::addChannel(QTreeWidgetItem* parent, vector<TS3Channels::ChannelInfo>& ch, uint* index, int indent)
+QStringList Config::getChannelTreeViewEntry(TS3Channels::ChannelInfo ch)
 {
-    int localIndent = indent;
+    QStringList strings;
     std::ostringstream convert;
 
+    strings.append(QString(ch.description.c_str()));
+    convert << ch.channelID;
+    strings.append(QString(convert.str().c_str()));
+
+    return strings;
+}
+
+void Config::addChannel(QTreeWidgetItem* parent, vector<TS3Channels::ChannelInfo>& ch, uint* index, int indent)
+{
     QTreeWidgetItem* tree;
-    QStringList strings;
 
     while ((*index) < ch.size())
     {
@@ -30,16 +38,7 @@ void Config::addChannel(QTreeWidgetItem* parent, vector<TS3Channels::ChannelInfo
         }
         else if (ch[*index].depth == indent)
         {
-            strings.clear();
-            convert.str("");
-
-            strings.append(QString(ch[*index].description.c_str()));
-            convert << ch[*index].channelID;
-            strings.append(QString(convert.str().c_str()));
-
-            tree = new QTreeWidgetItem((QTreeWidgetItem*)parent, strings);
-
-            (*index)++;
+            tree = new QTreeWidgetItem(parent, getChannelTreeViewEntry(ch[(*index)++]));
         }
         else if (ch[*index].depth > indent)
         {
@@ -51,44 +50,25 @@ void Config::addChannel(QTreeWidgetItem* parent, vector<TS3Channels::ChannelInfo
 void Config::addChannelList(QTreeWidget* parent, vector<TS3Channels::ChannelInfo>& ch, uint* index, int indent)
 {
     QTreeWidgetItem* tree;
-    QStringList strings;
-    std::ostringstream convert;
 
+    // Empty out anything that was already there.
     parent->clear();
 
+    // Set up the headers, but hide column 1 which is information for us, not the user...
     QTreeWidgetItem* headerItem = new QTreeWidgetItem();
     headerItem->setText(0, QStringLiteral("Room"));
     headerItem->setText(1, QStringLiteral("Channel"));
-
     parent->setHeaderItem(headerItem);
+    parent->setHeaderHidden(false);
+    parent->hideColumn(1);
 
-    (*index)++;
-    indent++;
+    // Populate the tree view with the root entry, and any children if there are any
+    tree = new QTreeWidgetItem(parent, getChannelTreeViewEntry(ch[(*index)++]));
+    if ((*index < ch.size()))
+        addChannel(tree, ch, index, ch[*index].depth);
 
-    while ((*index) < ch.size())
-    {
-        if (ch[*index].depth < indent)
-        {
-            break;
-        }
-        else if (ch[*index].depth == indent)
-        {
-            strings.clear();
-            convert.str("");
-
-            strings.append(QString(ch[*index].description.c_str()));
-            convert << ch[*index].channelID;
-            strings.append(QString(convert.str().c_str()));
-
-            tree = new QTreeWidgetItem(parent, strings);
-
-            (*index)++;
-        }
-        else if (ch[*index].depth > indent)
-        {
-            addChannel(tree, ch, index, ch[*index].depth);
-        }
-    }
+    // Expand the root item to show its contents
+    parent->expandItem(tree);
 }
 
 

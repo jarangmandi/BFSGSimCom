@@ -34,7 +34,7 @@ protected slots:
 
 private:
     TS3Channels* chList = NULL;
-
+    QStringList getChannelTreeViewEntry(TS3Channels::ChannelInfo ch);
     void addChannelList(QTreeWidget* qtree, vector<TS3Channels::ChannelInfo>& channels, uint* index, int indent);
     void addChannel(QTreeWidgetItem* qtree, vector<TS3Channels::ChannelInfo>& channels, uint* index, int indent);
 };
