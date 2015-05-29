@@ -10,7 +10,7 @@
  * ini file location: %APPDATA%\TS3Client
  */
 
-#define CONF_FILE				"test_plugin" // ini file
+#define CONF_FILE				"BFSGSimCom" // ini file
 #define CONF_APP				"TS3Client"   // application folder
 #define CONF_OBJ(x)			QSettings x(QSettings::IniFormat, QSettings::UserScope, CONF_APP, CONF_FILE);
 
@@ -52,12 +52,14 @@ QTreeWidgetItem* Config::addChannel(QTreeWidgetItem* parent, vector<TS3Channels:
             (*index)++;
         }
         // If the current node is at a level deeper than that at which we're working, then drop down into
-        // that level passing the most recently added node as the parent.
+        // that level passing the most recently added node as the parent and getting back the node which
+        // matches the selection we're looking for.
         else if (ch[*index].depth > indent)
         {
             QTreeWidgetItem* t = addChannel(tree, ch, index, ch[*index].depth, selection);
             if (t != NULL)
             {
+                // if we have a match for the selection, then expand the parent node and save it for returning
                 tree->setExpanded(true);
                 retValue = t;
             }
@@ -65,6 +67,7 @@ QTreeWidgetItem* Config::addChannel(QTreeWidgetItem* parent, vector<TS3Channels:
         }
     }
 
+    // return any node from this or lower levels that matches the one we're looking for.
     return retValue;
 }
 
@@ -103,7 +106,6 @@ void Config::addChannelList(QTreeWidget* parent, vector<TS3Channels::ChannelInfo
     {
         tree->setSelected(true);
     }
-
 }
 
 
