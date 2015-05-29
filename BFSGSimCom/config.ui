@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>390</width>
+    <width>393</width>
     <height>531</height>
    </rect>
   </property>
@@ -85,7 +85,7 @@
      <bool>true</bool>
     </property>
     <property name="headerHidden">
-     <bool>false</bool>
+     <bool>true</bool>
     </property>
     <property name="columnCount">
      <number>2</number>
@@ -178,7 +178,7 @@
     </font>
    </property>
    <property name="text">
-    <string>Use the selected channel when none matches the tuned channel.</string>
+    <string>Use the selected channel when none matches the tuned frequency.</string>
    </property>
   </widget>
   <widget class="QTreeWidget" name="treeUntunedChannel">
@@ -210,7 +210,7 @@
     </property>
    </column>
   </widget>
-  <widget class="QGroupBox" name="groupBox_3">
+  <widget class="QGroupBox" name="gbUntuned">
    <property name="geometry">
     <rect>
      <x>10</x>
@@ -267,7 +267,7 @@
     </property>
    </widget>
   </widget>
-  <zorder>groupBox_3</zorder>
+  <zorder>gbUntuned</zorder>
   <zorder>buttonBox</zorder>
   <zorder>groupBox</zorder>
   <zorder>label_2</zorder>
@@ -286,8 +286,8 @@
      <y>490</y>
     </hint>
     <hint type="destinationlabel">
-     <x>389</x>
-     <y>423</y>
+     <x>394</x>
+     <y>497</y>
     </hint>
    </hints>
   </connection>
@@ -298,12 +298,12 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>134</x>
-     <y>490</y>
+     <x>369</x>
+     <y>509</y>
     </hint>
     <hint type="destinationlabel">
-     <x>389</x>
-     <y>384</y>
+     <x>394</x>
+     <y>514</y>
     </hint>
    </hints>
   </connection>
@@ -330,12 +330,12 @@
    <slot>newUntuned()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>268</x>
-     <y>402</y>
+     <x>185</x>
+     <y>397</y>
     </hint>
     <hint type="destinationlabel">
-     <x>389</x>
-     <y>264</y>
+     <x>390</x>
+     <y>362</y>
     </hint>
    </hints>
   </connection>
@@ -350,8 +350,8 @@
      <y>434</y>
     </hint>
     <hint type="destinationlabel">
-     <x>376</x>
-     <y>333</y>
+     <x>390</x>
+     <y>416</y>
     </hint>
    </hints>
   </connection>
@@ -362,12 +362,12 @@
    <slot>columnResize(QTreeWidgetItem*)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>145</x>
-     <y>406</y>
+     <x>217</x>
+     <y>418</y>
     </hint>
     <hint type="destinationlabel">
-     <x>14</x>
-     <y>335</y>
+     <x>390</x>
+     <y>400</y>
     </hint>
    </hints>
   </connection>
@@ -382,8 +382,8 @@
      <y>177</y>
     </hint>
     <hint type="destinationlabel">
-     <x>4</x>
-     <y>200</y>
+     <x>394</x>
+     <y>180</y>
     </hint>
    </hints>
   </connection>
@@ -398,8 +398,88 @@
      <y>165</y>
     </hint>
     <hint type="destinationlabel">
-     <x>374</x>
-     <y>195</y>
+     <x>394</x>
+     <y>203</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>rbDisabled</sender>
+   <signal>clicked()</signal>
+   <receiver>Config</receiver>
+   <slot>modeChanged()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>269</x>
+     <y>39</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>392</x>
+     <y>38</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>rbEasyMode</sender>
+   <signal>clicked()</signal>
+   <receiver>Config</receiver>
+   <slot>modeChanged()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>287</x>
+     <y>55</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>398</x>
+     <y>59</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>rbExpertMode</sender>
+   <signal>clicked()</signal>
+   <receiver>Config</receiver>
+   <slot>modeChanged()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>341</x>
+     <y>79</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>412</x>
+     <y>82</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>rbUntunedStay</sender>
+   <signal>clicked()</signal>
+   <receiver>Config</receiver>
+   <slot>untunedChanged()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>318</x>
+     <y>287</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>403</x>
+     <y>287</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>rbUntunedMove</sender>
+   <signal>clicked()</signal>
+   <receiver>Config</receiver>
+   <slot>untunedChanged()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>331</x>
+     <y>307</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>420</x>
+     <y>309</y>
     </hint>
    </hints>
   </connection>
@@ -408,5 +488,7 @@
   <slot>newRoot()</slot>
   <slot>newUntuned()</slot>
   <slot>columnResize(QTreeWidgetItem*)</slot>
+  <slot>modeChanged()</slot>
+  <slot>untunedChanged()</slot>
  </slots>
 </ui>

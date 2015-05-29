@@ -36,6 +36,8 @@ protected slots:
     void newRoot();
     void newUntuned();
     void columnResize(QTreeWidgetItem*);
+    void modeChanged();
+    void untunedChanged();
 
 private:
     ConfigMode mode;

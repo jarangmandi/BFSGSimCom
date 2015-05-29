@@ -120,6 +120,21 @@ Config::Config(TS3Channels& tch)
 
     vector<TS3Channels::ChannelInfo> channels;
 
+    iRoot = cfg.value("channel/root", TS3Channels::CHANNEL_ID_NOT_FOUND).toULongLong();
+    iUntuned = cfg.value("channel/untuned", TS3Channels::CHANNEL_ID_NOT_FOUND).toULongLong();
+
+    // Populate the root channel view...
+    // As we do this, the untuned channel view should be automatically populated!
+    channels = tch.getChannelList();
+    addChannelList(treeParentChannel, channels, iRoot);
+    treeParentChannel->resizeColumnToContents(0);
+    treeParentChannel->resizeColumnToContents(1);
+
+    blU = cfg.value("untuned/move").toBool();
+    rbUntunedMove->setChecked(blU);
+    rbUntunedStay->setChecked(!blU);
+    untunedChanged();
+
     // Set up the mode radio buttons and define the "mode" variable.
     blD = cfg.value("mode/disabled").toBool();
     rbDisabled->setChecked(blD);
@@ -138,19 +153,7 @@ Config::Config(TS3Channels& tch)
     mode = CONFIG_DISABLED;
     if (blM) mode = CONFIG_MANUAL;
     else if (blA) mode = CONFIG_AUTO;
-
-    blU = cfg.value("untuned/move").toBool();
-    rbUntunedMove->setChecked(blU);
-
-    iRoot = cfg.value("channel/root", TS3Channels::CHANNEL_ID_NOT_FOUND).toULongLong();
-    iUntuned = cfg.value("channel/untuned", TS3Channels::CHANNEL_ID_NOT_FOUND).toULongLong();
-
-    // Populate the root channel view...
-    // As we do this, the untuned channel view should be automatically populated!
-    channels = tch.getChannelList();
-    addChannelList(treeParentChannel, channels, iRoot);
-    treeParentChannel->resizeColumnToContents(0);
-    treeParentChannel->resizeColumnToContents(1);
+    modeChanged();
 
     // No longer initialising...
     initialising = false;
@@ -249,4 +252,23 @@ void Config::columnResize(QTreeWidgetItem* item)
     QTreeWidget* qtw = item->treeWidget();
     qtw->resizeColumnToContents(0);
     qtw->resizeColumnToContents(1);
+}
+
+void Config::modeChanged()
+{
+    bool bl = !(rbDisabled->isChecked());
+
+    treeParentChannel->setEnabled(bl);
+    gbUntuned->setEnabled(bl);
+    
+    untunedChanged();
+  
+}
+
+void Config::untunedChanged()
+{
+    bool bl = !(rbUntunedStay->isChecked());
+
+    treeUntunedChannel->setEnabled(bl && gbUntuned->isEnabled());
+
 }
