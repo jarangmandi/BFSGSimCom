@@ -106,6 +106,19 @@ void Config::addChannelList(QTreeWidget* parent, vector<TS3Channels::ChannelInfo
 
 }
 
+int Config::exec(void)
+{
+    vector<TS3Channels::ChannelInfo> channels;
+
+    // Populate the root channel view...
+    // As we do this, the untuned channel view should be automatically populated!
+    channels = chList->getChannelList();
+    addChannelList(treeParentChannel, channels, iRoot);
+    treeParentChannel->resizeColumnToContents(0);
+    treeParentChannel->resizeColumnToContents(1);
+
+    return QDialog::exec();
+}
 
 Config::Config(TS3Channels& tch)
 {
@@ -120,15 +133,16 @@ Config::Config(TS3Channels& tch)
 
     vector<TS3Channels::ChannelInfo> channels;
 
+    // Restore selected channel IDs
     iRoot = cfg.value("channel/root", TS3Channels::CHANNEL_ID_NOT_FOUND).toULongLong();
     iUntuned = cfg.value("channel/untuned", TS3Channels::CHANNEL_ID_NOT_FOUND).toULongLong();
 
-    // Populate the root channel view...
-    // As we do this, the untuned channel view should be automatically populated!
-    channels = tch.getChannelList();
-    addChannelList(treeParentChannel, channels, iRoot);
-    treeParentChannel->resizeColumnToContents(0);
-    treeParentChannel->resizeColumnToContents(1);
+    //// Populate the root channel view...
+    //// As we do this, the untuned channel view should be automatically populated!
+    //channels = tch.getChannelList();
+    //addChannelList(treeParentChannel, channels, iRoot);
+    //treeParentChannel->resizeColumnToContents(0);
+    //treeParentChannel->resizeColumnToContents(1);
 
     blU = cfg.value("untuned/move").toBool();
     rbUntunedMove->setChecked(blU);
@@ -164,6 +178,7 @@ Config::~Config()
 
 }
 
+// OK button pressed.
 void Config::accept()
 {
 	CONF_OBJ(cfg);
@@ -173,6 +188,7 @@ void Config::accept()
     bool blA;
     bool blU;
 
+    // Save the state of the operation mode buttons.
     blD = rbDisabled->isChecked();
     cfg.setValue("mode/disabled", blD);
 
@@ -186,10 +202,11 @@ void Config::accept()
     if (blM) mode = CONFIG_MANUAL;
     else if (blA) mode = CONFIG_AUTO;
 
+    // Save the state of the "untuned" buttons.
     blU = rbUntunedMove->isChecked();
     cfg.setValue("untuned/move", blU);
 
-
+    // Save the channel IDs of each of the channel trees.
     iRoot = getSelectedChannelId(treeParentChannel);
     cfg.setValue("channel/root", iRoot);
 
@@ -199,18 +216,22 @@ void Config::accept()
 	QDialog::accept();
 }
 
+// Cancel button pressed...
 void Config::reject()
 {
 	QDialog::reject();
 }
 
+// Returns the ID (from the second column) of the selected channel
 uint64 Config::getSelectedChannelId(QTreeWidget* parent)
 {
     uint64 iChannel = TS3Channels::CHANNEL_ID_NOT_FOUND;
 
+    // Get the list of seleted items (there should be 0 or 1).
     QList<QTreeWidgetItem*> t = parent->selectedItems();
     if (t.size() > 0)
     {
+        // Get the item, then the text, then an integer.
         QTreeWidgetItem* qtwi = t.at(0);
         QString channel = qtwi->text(1);
         iChannel = channel.toLongLong();
@@ -219,6 +240,7 @@ uint64 Config::getSelectedChannelId(QTreeWidget* parent)
     return iChannel;
 }
 
+// Invoked when a new channel is selected in the root channel tree.
 void Config::newRoot()
 {
     vector<TS3Channels::ChannelInfo> channels;
@@ -228,9 +250,6 @@ void Config::newRoot()
 
     // Get the root channel (which is the selected channel in the real root widget.
     iChannel = getSelectedChannelId(treeParentChannel);
-
-    // Reset the currently selected untuned channel to the root if we're not initialising.
-    // if (!initialising) iUntuned = iChannel;
 
     // If we've selected a new channel
     if (iChannel != TS3Channels::CHANNEL_ID_NOT_FOUND)
@@ -242,11 +261,13 @@ void Config::newRoot()
     }
 }
 
+// Invoked when the selected "untuned" channel is changed.
 void Config::newUntuned()
 {
     iUntuned = getSelectedChannelId(treeUntunedChannel);
 }
 
+// Forces a resize of the column(s) that make up the tree so that everything is visible.
 void Config::columnResize(QTreeWidgetItem* item)
 {
     QTreeWidget* qtw = item->treeWidget();
@@ -254,6 +275,7 @@ void Config::columnResize(QTreeWidgetItem* item)
     qtw->resizeColumnToContents(1);
 }
 
+// Invoked when the radio buttons that manage the operating mode.
 void Config::modeChanged()
 {
     bool bl = !(rbDisabled->isChecked());
@@ -262,9 +284,9 @@ void Config::modeChanged()
     gbUntuned->setEnabled(bl);
     
     untunedChanged();
-  
 }
 
+// Invoked when the radio buttons that manage the action on an untuned channel are changed.
 void Config::untunedChanged()
 {
     bool bl = !(rbUntunedStay->isChecked());
