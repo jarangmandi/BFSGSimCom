@@ -8,7 +8,7 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="config.cpp">
-      <Filter>GUI Files</Filter>
+      <Filter>Header Files\GUI Files</Filter>
     </ClCompile>
     <ClCompile Include="GeneratedFiles\x64\moc_config.cpp">
       <Filter>Generated Files\x64</Filter>
@@ -72,10 +72,10 @@
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="config.h">
-      <Filter>GUI Files</Filter>
+      <Filter>Header Files\GUI Files</Filter>
     </CustomBuild>
     <CustomBuild Include="config.ui">
-      <Filter>GUI Files</Filter>
+      <Filter>Header Files\GUI Files</Filter>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
@@ -88,9 +88,6 @@
     <Filter Include="Generated Files\x64">
       <UniqueIdentifier>{75aa4f2a-288b-4403-b287-6eb57a63c3ef}</UniqueIdentifier>
     </Filter>
-    <Filter Include="GUI Files">
-      <UniqueIdentifier>{05e24857-819a-4138-8d97-1ab39febaaa5}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files">
       <UniqueIdentifier>{a214fedd-ec1c-42e9-981f-b6955d39ad38}</UniqueIdentifier>
     </Filter>
@@ -99,6 +96,9 @@
     </Filter>
     <Filter Include="SQLiteCpp">
       <UniqueIdentifier>{b5009649-274c-4523-973e-757f94985372}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\GUI Files">
+      <UniqueIdentifier>{05e24857-819a-4138-8d97-1ab39febaaa5}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

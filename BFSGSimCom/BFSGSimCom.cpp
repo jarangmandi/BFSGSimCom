@@ -63,6 +63,12 @@ static int wcharToUtf8(const wchar_t* str, char** result) {
 }
 #endif
 
+void callback(FSUIPCWrapper::SimComData data)
+{
+    bool retValue = true;
+}
+
+
 /*********************************** Required functions ************************************/
 /*
  * If any of these required functions is not implemented, TS3 will refuse to load the plugin
@@ -136,10 +142,15 @@ int ts3plugin_init() {
 
     if (fsuipc == NULL)
     {
-        fsuipc = new FSUIPCWrapper();
+        fsuipc = new FSUIPCWrapper(&callback);
     }
 
     cfg = new Config(ts3Channels);
+
+    if (fsuipc)
+	{
+		fsuipc->start();
+	}
 
 #if defined(_DEBUG)
     ts3Channels.addOrUpdateChannel("Lobby", 1, 0);
@@ -183,6 +194,7 @@ void ts3plugin_shutdown() {
 
     if (fsuipc)
     {
+	    fsuipc->stop();
         delete fsuipc;
     }
 
@@ -1247,3 +1259,4 @@ void ts3plugin_onHotkeyEvent(const char* keyword) {
 ///* Called when client custom nickname changed */
 //void ts3plugin_onClientDisplayNameChanged(uint64 serverConnectionHandlerID, anyID clientID, const char* displayName, const char* uniqueClientIdentifier) {
 //}
+
