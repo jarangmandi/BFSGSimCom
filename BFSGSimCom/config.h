@@ -27,7 +27,9 @@ public:
     int exec(void);
 
     ConfigMode getMode(void) { return mode; };
+    void setMode(ConfigMode m);
     bool getUntuned(void) { return blUntuned; };
+    void setUntuned(bool bl);
     uint64 getRootChannel(void) { return iRoot; };
     uint64 getUntunedChannel(void) { return iUntuned; };
 
@@ -52,6 +54,7 @@ private:
     uint64 getSelectedChannelId(QTreeWidget* parent);
     void addChannelList(QTreeWidget* qtree, vector<TS3Channels::ChannelInfo>& channels, uint64 selection);
     QTreeWidgetItem* addChannel(QTreeWidgetItem* qtree, vector<TS3Channels::ChannelInfo>& channels, uint* index, int indent, uint64 selection);
+    void saveSettings(void);
 
 };
 

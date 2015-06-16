@@ -10,9 +10,9 @@
  * ini file location: %APPDATA%\TS3Client
  */
 
-#define CONF_FILE				"BFSGSimCom" // ini file
-#define CONF_APP				"TS3Client"   // application folder
-#define CONF_OBJ(x)			QSettings x(QSettings::IniFormat, QSettings::UserScope, CONF_APP, CONF_FILE);
+//#define CONF_FILE				"BFSGSimCom" // ini file
+//#define CONF_APP				"TS3Client"   // application folder
+//#define CONF_OBJ(x)			QSettings x(QSettings::IniFormat, QSettings::UserScope, CONF_APP, CONF_FILE);
 
 // Utility function to generate the string list required to populate a QTreeViewWidget
 QStringList Config::getChannelTreeViewEntry(TS3Channels::ChannelInfo ch)
@@ -122,22 +122,58 @@ int Config::exec(void)
     return QDialog::exec();
 }
 
+void Config::setMode(ConfigMode mode)
+{
+    switch (mode)
+    {
+    case ConfigMode::CONFIG_DISABLED:
+        rbDisabled->setChecked(true);
+        break;
+    case ConfigMode::CONFIG_MANUAL:
+        rbEasyMode->setChecked(true);
+        break;
+    case ConfigMode::CONFIG_AUTO:
+        rbExpertMode->setChecked(true);
+        break;
+    default:
+        break;
+    }
+
+    modeChanged();
+}
+
+void Config::setUntuned(bool untuned)
+{
+    rbUntunedMove->setChecked(!untuned);
+    rbUntunedStay->setChecked(untuned);
+
+    untunedChanged();
+}   
+
 Config::Config(TS3Channels& tch)
 {
     bool blD;
     bool blM;
     bool blA;
     bool blU;
+
+    QCoreApplication::setOrganizationName("BFSG");
+    QCoreApplication::setApplicationName("BFSGSimCom");
+    QSettings::setDefaultFormat(QSettings::IniFormat);
+
     setupUi(this);
-	CONF_OBJ(cfg);
+
+    QSettings settings;
+    
+	//CONF_OBJ(cfg);
 
     chList = &tch;
 
     vector<TS3Channels::ChannelInfo> channels;
 
     // Restore selected channel IDs
-    iRoot = cfg.value("channel/root", TS3Channels::CHANNEL_ID_NOT_FOUND).toULongLong();
-    iUntuned = cfg.value("channel/untuned", TS3Channels::CHANNEL_ID_NOT_FOUND).toULongLong();
+    iRoot = settings.value("channel/root", TS3Channels::CHANNEL_ID_NOT_FOUND).toULongLong();
+    iUntuned = settings.value("channel/untuned", TS3Channels::CHANNEL_ID_NOT_FOUND).toULongLong();
 
     //// Populate the root channel view...
     //// As we do this, the untuned channel view should be automatically populated!
@@ -146,19 +182,19 @@ Config::Config(TS3Channels& tch)
     //treeParentChannel->resizeColumnToContents(0);
     //treeParentChannel->resizeColumnToContents(1);
 
-    blU = cfg.value("untuned/move").toBool();
+    blU = settings.value("untuned/move").toBool();
     rbUntunedMove->setChecked(blU);
     rbUntunedStay->setChecked(!blU);
     untunedChanged();
 
     // Set up the mode radio buttons and define the "mode" variable.
-    blD = cfg.value("mode/disabled").toBool();
+    blD = settings.value("mode/disabled").toBool();
     rbDisabled->setChecked(blD);
 
-    blM = cfg.value("mode/manual").toBool();
+    blM = settings.value("mode/manual").toBool();
     rbEasyMode->setChecked(blM);
 
-    blA = cfg.value("mode/auto").toBool();
+    blA = settings.value("mode/auto").toBool();
     rbExpertMode->setChecked(blA);
 
     if (!(rbDisabled->isChecked() || rbEasyMode->isChecked() || rbExpertMode->isChecked()))
@@ -180,10 +216,10 @@ Config::~Config()
 
 }
 
-// OK button pressed.
-void Config::accept()
+void Config::saveSettings()
 {
-	CONF_OBJ(cfg);
+    //CONF_OBJ(cfg);
+    QSettings settings;
 
     bool blD;
     bool blM;
@@ -192,13 +228,13 @@ void Config::accept()
 
     // Save the state of the operation mode buttons.
     blD = rbDisabled->isChecked();
-    cfg.setValue("mode/disabled", blD);
+    settings.setValue("mode/disabled", blD);
 
     blM = rbEasyMode->isChecked();
-    cfg.setValue("mode/manual", blM);
+    settings.setValue("mode/manual", blM);
 
     blA = rbExpertMode->isChecked();
-    cfg.setValue("mode/auto", blA);
+    settings.setValue("mode/auto", blA);
 
     mode = CONFIG_DISABLED;
     if (blM) mode = CONFIG_MANUAL;
@@ -206,15 +242,21 @@ void Config::accept()
 
     // Save the state of the "untuned" buttons.
     blU = rbUntunedMove->isChecked();
-    cfg.setValue("untuned/move", blU);
+    settings.setValue("untuned/move", blU);
 
     // Save the channel IDs of each of the channel trees.
     iRoot = getSelectedChannelId(treeParentChannel);
-    cfg.setValue("channel/root", iRoot);
+    settings.setValue("channel/root", iRoot);
 
     iUntuned = getSelectedChannelId(treeUntunedChannel);
-    cfg.setValue("channel/untuned", iUntuned);
-    
+    settings.setValue("channel/untuned", iUntuned);
+
+}
+
+// OK button pressed.
+void Config::accept()
+{
+    saveSettings();
 	QDialog::accept();
 }
 
