@@ -118,6 +118,8 @@ void ts3plugin_setFunctionPointers(const struct TS3Functions funcs) {
     ts3Functions = funcs;
 }
 
+void loadChannels(uint64);
+
 /*
  * Custom code called right after loading the plugin. Returns 0 on success, 1 on failure.
  * If the function returns 1 on failure, the plugin will be unloaded again.
@@ -174,6 +176,8 @@ int ts3plugin_init() {
     ts3Channels.addOrUpdateChannel("F2 Other - 118.300", 19, 18);
 #endif
 
+    uint64 serverConnectionHandlerID = ts3Functions.getCurrentServerConnectionHandlerID();
+    loadChannels(serverConnectionHandlerID);
 
     return 0;  /* 0 = success, 1 = failure, -2 = failure but client will not show a "failed to load" warning */
     /* -2 is a very special case and should only be used if a plugin displays a dialog (e.g. overlay) asking the user to disable
@@ -695,19 +699,10 @@ void ts3plugin_initHotkeys(struct PluginHotkey*** hotkeys) {
 
 /* Clientlib */
 
-void ts3plugin_onConnectStatusChangeEvent(uint64 serverConnectionHandlerID, int newStatus, unsigned int errorNumber) {
-
+void loadChannels(uint64 serverConnectionHandlerID)
+{
     uint64* channelList;
 
-    switch (newStatus)
-    {
-    // When we disconnect, forget everything.
-    case STATUS_DISCONNECTED:
-        ts3Channels.deleteAllChannels();
-        break;
-    // When we connect...
-    case STATUS_CONNECTION_ESTABLISHED:
-        // Get a list of all of the channels on the server, and iterate through it.
         if (ts3Functions.getChannelList(serverConnectionHandlerID, &channelList) == ERROR_ok)
         {
             for (int i = 0; channelList[i] != NULL; i++)
@@ -728,6 +723,21 @@ void ts3plugin_onConnectStatusChangeEvent(uint64 serverConnectionHandlerID, int 
             // And not forgetting to free up the memory we've used for the channel list.
             ts3Functions.freeMemory(channelList);
         }
+
+}
+
+void ts3plugin_onConnectStatusChangeEvent(uint64 serverConnectionHandlerID, int newStatus, unsigned int errorNumber) {
+
+    switch (newStatus)
+    {
+    // When we disconnect, forget everything.
+    case STATUS_DISCONNECTED:
+        ts3Channels.deleteAllChannels();
+        break;
+    // When we connect...
+    case STATUS_CONNECTION_ESTABLISHED:
+        // Get a list of all of the channels on the server, and iterate through it.
+        loadChannels(serverConnectionHandlerID);
         break;
     default:
         break;
@@ -1193,22 +1203,20 @@ void ts3plugin_onMenuItemEvent(uint64 serverConnectionHandlerID, enum PluginMenu
         switch (menuItemID) {
         case MENU_ID_SIMCOM_CONFIGURE:
             /* Menu global 1 was triggered */
+            cfg->exec();
             break;
         case MENU_ID_SIMCOM_MODE_DISABLE:
             /* Menu global 1 was triggered */
+            cfg->setMode(Config::ConfigMode::CONFIG_DISABLED);
             break;
         case MENU_ID_SIMCOM_MODE_MANUAL:
             /* Menu global 1 was triggered */
+            cfg->setMode(Config::ConfigMode::CONFIG_MANUAL);
             break;
         case MENU_ID_SIMCOM_MODE_AUTO:
             /* Menu global 1 was triggered */
+            cfg->setMode(Config::ConfigMode::CONFIG_AUTO);
             break;
-        //case MENU_ID_SIMCOM_UNTUNED_STAY:
-//            /* Menu global 1 was triggered */
-//            break;
-        //case MENU_ID_SIMCOM_UNTUNED_MOVE:
-        //    /* Menu global 1 was triggered */
-//            break;
         default:
             break;
         }
@@ -1240,15 +1248,15 @@ void ts3plugin_onHotkeyEvent(const char* keyword) {
 
     if (strKeyword == "BFSGSimCom_Off")
     {
-
+        cfg->setMode(Config::ConfigMode::CONFIG_DISABLED);
     }
     else if (strKeyword == "BFSGSimCom_Man")
     {
-
+        cfg->setMode(Config::ConfigMode::CONFIG_MANUAL);
     }
     else if (strKeyword == "BFSGSimCom_Aut")
     {
-
+        cfg->setMode(Config::ConfigMode::CONFIG_AUTO);
     }
 }
 
