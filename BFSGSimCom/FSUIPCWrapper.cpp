@@ -39,8 +39,6 @@ void FSUIPCWrapper::workerThread(void)
     WORD com2s;
     BYTE rSwitch;
 
-    bool blFirst = true;
-
     while (blRun)
     {
         FSUIPC_Read(0x034E, 2, &com1);
@@ -84,21 +82,13 @@ void FSUIPCWrapper::workerThread(void)
                 selectedCom = rSwitch;
             }
 
-            if (blChanged && !blFirst)
+            if (blChanged)
             {
                 if (callback != NULL)
                 {
                     (*callback)(getSimComData());
                 }
             }
-            else
-            {
-                blFirst = false;
-            }
-        }
-        else
-        {
-            blFirst = true;
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -166,7 +156,7 @@ BOOL FSUIPCWrapper::FSUIPC_Read(DWORD dwOffset, DWORD dwSize, void* pDest)
         }
     }
 
-    blFSUIPCConnected = (dwResult != FSUIPC_ERR_NOTOPEN);
+    blFSUIPCConnected = (dwResult == FSUIPC_ERR_OK);
 
     return retValue;
 }
@@ -210,7 +200,7 @@ BOOL FSUIPCWrapper::FSUIPC_Process()
         }
     }
 
-    blFSUIPCConnected = (dwResult != FSUIPC_ERR_NOTOPEN);
+    blFSUIPCConnected = (dwResult == FSUIPC_ERR_OK);
 
     return retValue;
 }

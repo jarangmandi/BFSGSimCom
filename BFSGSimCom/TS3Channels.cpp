@@ -96,7 +96,7 @@ uint16_t TS3Channels::getFrequencyFromString(string str)
     // Look for a frequency in the string we were passed.
     if (std::regex_search(str, matchedFrequency, r)) {
         string str = matchedFrequency.str();
-        frequency = uint16_t(100 * std::stod(matchedFrequency.str()));
+        frequency = uint16_t(100 * std::stod(matchedFrequency.str()) + 0.5);
     }
 
     return frequency;

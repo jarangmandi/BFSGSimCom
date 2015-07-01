@@ -1,4 +1,5 @@
 #include <QtCore/QSettings>
+#include <QtWidgets/QMessageBox>
 
 #include <sstream>
 
@@ -124,6 +125,7 @@ int Config::exec(void)
 
 void Config::setMode(ConfigMode mode)
 {
+    // Change the dialog selection based on the input value.
     switch (mode)
     {
     case ConfigMode::CONFIG_DISABLED:
@@ -139,7 +141,12 @@ void Config::setMode(ConfigMode mode)
         break;
     }
 
+    // Do whatever processing is required to make everything right.
     modeChanged();
+
+    // As this function is only ever expected to be called by something which runs external to the GUI,
+    // save the changes.
+    saveSettings();
 }
 
 void Config::setUntuned(bool untuned)
@@ -148,6 +155,7 @@ void Config::setUntuned(bool untuned)
     rbUntunedStay->setChecked(untuned);
 
     untunedChanged();
+    saveSettings();
 }   
 
 Config::Config(TS3Channels& tch)
@@ -155,7 +163,6 @@ Config::Config(TS3Channels& tch)
     bool blD;
     bool blM;
     bool blA;
-    bool blU;
 
     QCoreApplication::setOrganizationName("BFSG");
     QCoreApplication::setApplicationName("BFSGSimCom");
@@ -165,7 +172,6 @@ Config::Config(TS3Channels& tch)
 
     QSettings settings;
     
-	//CONF_OBJ(cfg);
 
     chList = &tch;
 
@@ -175,16 +181,9 @@ Config::Config(TS3Channels& tch)
     iRoot = settings.value("channel/root", TS3Channels::CHANNEL_ID_NOT_FOUND).toULongLong();
     iUntuned = settings.value("channel/untuned", TS3Channels::CHANNEL_ID_NOT_FOUND).toULongLong();
 
-    //// Populate the root channel view...
-    //// As we do this, the untuned channel view should be automatically populated!
-    //channels = tch.getChannelList();
-    //addChannelList(treeParentChannel, channels, iRoot);
-    //treeParentChannel->resizeColumnToContents(0);
-    //treeParentChannel->resizeColumnToContents(1);
-
-    blU = settings.value("untuned/move").toBool();
-    rbUntunedMove->setChecked(blU);
-    rbUntunedStay->setChecked(!blU);
+    blUntuned = settings.value("untuned/move").toBool();
+    rbUntunedMove->setChecked(blUntuned);
+    rbUntunedStay->setChecked(!blUntuned);
     untunedChanged();
 
     // Set up the mode radio buttons and define the "mode" variable.
@@ -224,7 +223,6 @@ void Config::saveSettings()
     bool blD;
     bool blM;
     bool blA;
-    bool blU;
 
     // Save the state of the operation mode buttons.
     blD = rbDisabled->isChecked();
@@ -241,8 +239,8 @@ void Config::saveSettings()
     else if (blA) mode = CONFIG_AUTO;
 
     // Save the state of the "untuned" buttons.
-    blU = rbUntunedMove->isChecked();
-    settings.setValue("untuned/move", blU);
+    blUntuned = rbUntunedMove->isChecked();
+    settings.setValue("untuned/move", blUntuned);
 
     // Save the channel IDs of each of the channel trees.
     iRoot = getSelectedChannelId(treeParentChannel);
@@ -256,8 +254,21 @@ void Config::saveSettings()
 // OK button pressed.
 void Config::accept()
 {
-    saveSettings();
-	QDialog::accept();
+    if (rbUntunedMove->isChecked() && iUntuned == 0)
+    {
+        QMessageBox qMsg;
+        qMsg.setIcon(QMessageBox::Icon::Critical);
+        qMsg.setStandardButtons(QMessageBox::StandardButton::Ok);
+        qMsg.setText("Error in configuration");
+        qMsg.setInformativeText("An 'Untuned' channel of '0' is not valid.");
+        qMsg.setDefaultButton(QMessageBox::StandardButton::Ok);
+        qMsg.exec();
+    }
+    else
+    {
+        saveSettings();
+        QDialog::accept();
+    }
 }
 
 // Cancel button pressed...
