@@ -31,7 +31,7 @@ QStringList Config::getChannelTreeViewEntry(TS3Channels::ChannelInfo ch)
 // A recursive function which adds the contents of a tree of channels to a root node which is passed in.
 QTreeWidgetItem* Config::addChannel(QTreeWidgetItem* parent, vector<TS3Channels::ChannelInfo>& ch, uint* index, int indent, uint64 selection)
 {
-    QTreeWidgetItem* tree;
+    QTreeWidgetItem* tree = NULL;
     QTreeWidgetItem* retValue = NULL;
 
     // For as long as we've got channels to add...

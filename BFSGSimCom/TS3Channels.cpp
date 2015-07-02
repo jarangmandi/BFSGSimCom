@@ -15,7 +15,7 @@ string TS3Channels::determineDbFileName(void)
     string retValue = "";
 
 #if defined(_DEBUG)
-    WCHAR* wpath;
+    WCHAR* wpath = NULL;
     char cpath[_MAX_PATH];
     char defChar = ' ';
 
@@ -23,9 +23,10 @@ string TS3Channels::determineDbFileName(void)
     {
         int rc = WideCharToMultiByte(CP_ACP, 0, wpath, -1, cpath, _MAX_PATH, &defChar, NULL);
         retValue = string(cpath) + "\\bfsgsimcom.db3";
+
+        CoTaskMemFree(static_cast<void*>(wpath));
     }
 
-    CoTaskMemFree(static_cast<void*>(wpath));
 #else
     retValue = ":memory:";
 #endif

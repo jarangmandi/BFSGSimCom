@@ -95,6 +95,8 @@ void callback(FSUIPCWrapper::SimComData data)
             case FSUIPCWrapper::Com2:
                 frequency = data.iCom2Freq;
                 break;
+            default:
+                frequency = 0;
             }
 
             // Get any new target channel
@@ -342,8 +344,8 @@ void ts3plugin_configure(void* handle, void* qParentWidget) {
 void ts3plugin_registerPluginID(const char* id) {
     const size_t sz = strlen(id) + 1;
     pluginID = (char*)malloc(sz * sizeof(char));
-    _strcpy(pluginID, sz, id);  /* The id buffer will invalidate after exiting this function */
-    printf("PLUGIN: registerPluginID: %s\n", pluginID);
+    if (pluginID != NULL)
+        _strcpy(pluginID, sz, id);  /* The id buffer will invalidate after exiting this function */
 }
 
 /* Plugin command keyword. Return NULL or "" if not used. */
@@ -478,17 +480,22 @@ int ts3plugin_requestAutoload() {
 /* Helper function to create a menu item */
 static struct PluginMenuItem* createMenuItem(enum PluginMenuType type, int id, const char* text, const char* icon) {
     struct PluginMenuItem* menuItem = (struct PluginMenuItem*)malloc(sizeof(struct PluginMenuItem));
-    menuItem->type = type;
-    menuItem->id = id;
-    _strcpy(menuItem->text, PLUGIN_MENU_BUFSZ, text);
-    _strcpy(menuItem->icon, PLUGIN_MENU_BUFSZ, icon);
+
+    if (menuItem != NULL)
+    {
+        menuItem->type = type;
+        menuItem->id = id;
+        _strcpy(menuItem->text, PLUGIN_MENU_BUFSZ, text);
+        _strcpy(menuItem->icon, PLUGIN_MENU_BUFSZ, icon);
+    }
+
     return menuItem;
 }
 
 /* Some makros to make the code to create menu items a bit more readable */
 #define BEGIN_CREATE_MENUS(x) const size_t sz = x + 1; size_t n = 0; *menuItems = (struct PluginMenuItem**)malloc(sizeof(struct PluginMenuItem*) * sz);
-#define CREATE_MENU_ITEM(a, b, c, d) (*menuItems)[n++] = createMenuItem(a, b, c, d);
-#define END_CREATE_MENUS (*menuItems)[n++] = NULL; assert(n == sz);
+#define CREATE_MENU_ITEM(a, b, c, d) if (menuItems != NULL && *menuItems != NULL) (*menuItems)[n++] = createMenuItem(a, b, c, d);
+#define END_CREATE_MENUS if (menuItems != NULL && *menuItems != NULL) (*menuItems)[n++] = NULL; assert(n == sz);
 
 /*
  * Menu IDs for this plugin. Pass these IDs when creating a menuitem to the TS3 client. When the menu item is triggered,
@@ -555,15 +562,18 @@ void ts3plugin_initMenus(struct PluginMenuItem*** menuItems, char** menuIcon) {
 /* Helper function to create a hotkey */
 static struct PluginHotkey* createHotkey(const char* keyword, const char* description) {
     struct PluginHotkey* hotkey = (struct PluginHotkey*)malloc(sizeof(struct PluginHotkey));
-    _strcpy(hotkey->keyword, PLUGIN_HOTKEY_BUFSZ, keyword);
-    _strcpy(hotkey->description, PLUGIN_HOTKEY_BUFSZ, description);
+    if (hotkey != NULL)
+    {
+        _strcpy(hotkey->keyword, PLUGIN_HOTKEY_BUFSZ, keyword);
+        _strcpy(hotkey->description, PLUGIN_HOTKEY_BUFSZ, description);
+    }
     return hotkey;
 }
 
 /* Some makros to make the code to create hotkeys a bit more readable */
 #define BEGIN_CREATE_HOTKEYS(x) const size_t sz = x + 1; size_t n = 0; *hotkeys = (struct PluginHotkey**)malloc(sizeof(struct PluginHotkey*) * sz);
-#define CREATE_HOTKEY(a, b) (*hotkeys)[n++] = createHotkey(a, b);
-#define END_CREATE_HOTKEYS (*hotkeys)[n++] = NULL; assert(n == sz);
+#define CREATE_HOTKEY(a, b) if (hotkeys != NULL && *hotkeys != NULL) (*hotkeys)[n++] = createHotkey(a, b);
+#define END_CREATE_HOTKEYS if (hotkeys != NULL && *hotkeys != NULL) (*hotkeys)[n++] = NULL; assert(n == sz);
 
 /*
  * Initialize plugin hotkeys. If your plugin does not use this feature, this function can be omitted.
