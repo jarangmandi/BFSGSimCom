@@ -45,6 +45,7 @@ struct TS3Functions ts3Functions;
 #define RETURNCODE_BUFSIZE 128
 
 static char* pluginID = NULL;
+static char* callbackReturnCode = NULL;
 
 static FSUIPCWrapper* fsuipc = NULL;
 TS3Channels ts3Channels;
@@ -76,6 +77,12 @@ void callback(FSUIPCWrapper::SimComData data)
 {
     uint64 serverConnectionHandlerID = ts3Functions.getCurrentServerConnectionHandlerID();
 
+    if (pluginID != NULL && callbackReturnCode == NULL)
+    {
+        callbackReturnCode = (char*)malloc(65 * sizeof(char));
+        ts3Functions.createReturnCode(pluginID, callbackReturnCode, 64);
+    }
+    
     simComData = data;
 
     // Assuming we're connected, and we're supposed to be moving when the channel changes
@@ -125,8 +132,8 @@ void callback(FSUIPCWrapper::SimComData data)
             // if where we are is different from where we should be, then initiate the change.
             if (currentChannel != targetChannel)
             {
-                //ts3Functions.requestClientMove(serverConnectionHandlerID, myTS3ID, targetChannel, "", "callback");
-                ts3Functions.requestClientMove(serverConnectionHandlerID, myTS3ID, targetChannel, "", NULL);
+                ts3Functions.requestClientMove(serverConnectionHandlerID, myTS3ID, targetChannel, "", callbackReturnCode);
+                //ts3Functions.requestClientMove(serverConnectionHandlerID, myTS3ID, targetChannel, "", NULL);
 
                 // remember where we were sent last time - just in case!
                 lastTargetChannel = targetChannel;
@@ -233,7 +240,7 @@ int ts3plugin_init() {
     int connectionStatus;
 
     serverConnectionHandlerID = ts3Functions.getCurrentServerConnectionHandlerID();
-
+    
     // Initialise the server connection status
     if (ts3Functions.getConnectionStatus(serverConnectionHandlerID, &connectionStatus) == ERROR_ok)
     {
@@ -643,14 +650,23 @@ void ts3plugin_onClientMoveEvent(uint64 serverConnectionHandlerID, anyID clientI
 
 int ts3plugin_onServerErrorEvent(uint64 serverConnectionHandlerID, const char* errorMessage, unsigned int error, const char* returnCode, const char* extraMessage) {
     //printf("PLUGIN: onServerErrorEvent %llu %s %d %s\n", (long long unsigned int)serverConnectionHandlerID, errorMessage, error, (returnCode ? returnCode : ""));
-    if (returnCode) {
-        /* A plugin could now check the returnCode with previously (when calling a function) remembered returnCodes and react accordingly */
-        /* In case of using a a plugin return code, the plugin can return:
-         * 0: Client will continue handling this error (print to chat tab)
-         * 1: Client will ignore this error, the plugin announces it has handled it */
+    if (error != ERROR_ok )
+    {
+        if (returnCode) {
+            /* A plugin could now check the returnCode with previously (when calling a function) remembered returnCodes and react accordingly */
+            /* In case of using a a plugin return code, the plugin can return:
+            * 0: Client will continue handling this error (print to chat tab)
+            * 1: Client will ignore this error, the plugin announces it has handled it */
+            return 0;
+        }
+    }
+    else
+    {
+        // There's no error - so just say we've handled it.
         return 1;
     }
-    return 0;  /* If no plugin return code was used, the return value of this function is ignored */
+
+    /* If no plugin return code was used, the return value of this function is ignored */
 }
 
 /*
