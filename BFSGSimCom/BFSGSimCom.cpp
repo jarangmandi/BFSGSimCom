@@ -125,7 +125,8 @@ void callback(FSUIPCWrapper::SimComData data)
             // if where we are is different from where we should be, then initiate the change.
             if (currentChannel != targetChannel)
             {
-                ts3Functions.requestClientMove(serverConnectionHandlerID, myTS3ID, targetChannel, "", "callback");
+                //ts3Functions.requestClientMove(serverConnectionHandlerID, myTS3ID, targetChannel, "", "callback");
+                ts3Functions.requestClientMove(serverConnectionHandlerID, myTS3ID, targetChannel, "", NULL);
 
                 // remember where we were sent last time - just in case!
                 lastTargetChannel = targetChannel;
@@ -356,7 +357,7 @@ const char* ts3plugin_commandKeyword() {
 
 /* Client changed current server connection handler */
 void ts3plugin_currentServerConnectionChanged(uint64 serverConnectionHandlerID) {
-    printf("PLUGIN: currentServerConnectionChanged %llu (%llu)\n", (long long unsigned int)serverConnectionHandlerID, (long long unsigned int)ts3Functions.getCurrentServerConnectionHandlerID());
+    //printf("PLUGIN: currentServerConnectionChanged %llu (%llu)\n", (long long unsigned int)serverConnectionHandlerID, (long long unsigned int)ts3Functions.getCurrentServerConnectionHandlerID());
 }
 
 /*
@@ -641,7 +642,7 @@ void ts3plugin_onClientMoveEvent(uint64 serverConnectionHandlerID, anyID clientI
 }
 
 int ts3plugin_onServerErrorEvent(uint64 serverConnectionHandlerID, const char* errorMessage, unsigned int error, const char* returnCode, const char* extraMessage) {
-    printf("PLUGIN: onServerErrorEvent %llu %s %d %s\n", (long long unsigned int)serverConnectionHandlerID, errorMessage, error, (returnCode ? returnCode : ""));
+    //printf("PLUGIN: onServerErrorEvent %llu %s %d %s\n", (long long unsigned int)serverConnectionHandlerID, errorMessage, error, (returnCode ? returnCode : ""));
     if (returnCode) {
         /* A plugin could now check the returnCode with previously (when calling a function) remembered returnCodes and react accordingly */
         /* In case of using a a plugin return code, the plugin can return:
@@ -696,7 +697,7 @@ void ts3plugin_onMenuItemEvent(uint64 serverConnectionHandlerID, enum PluginMenu
 
 /* This function is called if a plugin hotkey was pressed. Omit if hotkeys are unused. */
 void ts3plugin_onHotkeyEvent(const char* keyword) {
-    printf("PLUGIN: Hotkey event: %s\n", keyword);
+    //printf("PLUGIN: Hotkey event: %s\n", keyword);
     /* Identify the hotkey by keyword ("keyword_1", "keyword_2" or "keyword_3" in this example) and handle here... */
     string strKeyword(keyword);
 

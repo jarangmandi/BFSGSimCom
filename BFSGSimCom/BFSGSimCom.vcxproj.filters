@@ -31,6 +31,9 @@
     <ClCompile Include="..\SQLiteCpp\Transaction.cpp">
       <Filter>SQLiteCpp</Filter>
     </ClCompile>
+    <ClCompile Include="..\SQLiteCpp\Backup.cpp">
+      <Filter>SQLiteCpp</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="TS3Channels.h">
@@ -67,6 +70,9 @@
       <Filter>SQLiteCpp</Filter>
     </ClInclude>
     <ClInclude Include="..\SQLiteCpp\Transaction.h">
+      <Filter>SQLiteCpp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\SQLiteCpp\Backup.h">
       <Filter>SQLiteCpp</Filter>
     </ClInclude>
   </ItemGroup>
