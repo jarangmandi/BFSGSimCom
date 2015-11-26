@@ -650,20 +650,18 @@ void ts3plugin_onClientMoveEvent(uint64 serverConnectionHandlerID, anyID clientI
 
 int ts3plugin_onServerErrorEvent(uint64 serverConnectionHandlerID, const char* errorMessage, unsigned int error, const char* returnCode, const char* extraMessage) {
     //printf("PLUGIN: onServerErrorEvent %llu %s %d %s\n", (long long unsigned int)serverConnectionHandlerID, errorMessage, error, (returnCode ? returnCode : ""));
-    if (error != ERROR_ok )
+    if (error == ERROR_ok)
     {
-        if (returnCode) {
-            /* A plugin could now check the returnCode with previously (when calling a function) remembered returnCodes and react accordingly */
-            /* In case of using a a plugin return code, the plugin can return:
-            * 0: Client will continue handling this error (print to chat tab)
-            * 1: Client will ignore this error, the plugin announces it has handled it */
-            return 0;
-        }
+        // There's no error, so just say we handled it.
+        return 1;
     }
     else
     {
-        // There's no error - so just say we've handled it.
-        return 1;
+        /* A plugin could now check the returnCode with previously (when calling a function) remembered returnCodes and react accordingly */
+        /* In case of using a a plugin return code, the plugin can return:
+        * 0: Client will continue handling this error (print to chat tab)
+        * 1: Client will ignore this error, the plugin announces it has handled it */
+        return 0;
     }
 
     /* If no plugin return code was used, the return value of this function is ignored */
