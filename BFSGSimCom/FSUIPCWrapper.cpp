@@ -105,7 +105,13 @@ FSUIPCWrapper::SimComData FSUIPCWrapper::getSimComData() {
     simcomdata.iCom1Sby = 10000 + 1000 * ((iCom1Sby & 0xf000) >> 12) + 100 * ((iCom1Sby & 0x0f00) >> 8) + 10 * ((iCom1Sby & 0x00f0) >> 4) + (iCom1Sby & 0x000f);
     simcomdata.iCom2Freq = 10000 + 1000 * ((iCom2Freq & 0xf000) >> 12) + 100 * ((iCom2Freq & 0x0f00) >> 8) + 10 * ((iCom2Freq & 0x00f0) >> 4) + (iCom2Freq & 0x000f);
     simcomdata.iCom2Sby = 10000 + 1000 * ((iCom2Sby & 0xf000) >> 12) + 100 * ((iCom2Sby & 0x0f00) >> 8) + 10 * ((iCom2Sby & 0x00f0) >> 4) + (iCom2Sby & 0x000f);
-    simcomdata.selectedCom = ComRadio(((selectedCom & 0x80) ? Com1 : 0) + ((selectedCom & 0x40) ? Com2 : 0));
+
+    // This is a kluge because XPUIPC doesn't report the correct channel and the config file that comes with it doesn't seem to work as advertised.
+    // Look for a FSUIPC_Version of 0x50000006 - who knows what will happen when FSUIPC catches up
+    if (FSUIPC_Version == 0x50000006)
+        simcomdata.selectedCom = ComRadio(((selectedCom & 0x40) ? Com1 : None) + ((selectedCom & 0x80) ? Com2 : None));
+    else
+        simcomdata.selectedCom = ComRadio(((selectedCom & 0x80) ? Com1 : None) + ((selectedCom & 0x40) ? Com2 : None));
 
     return simcomdata;
 };

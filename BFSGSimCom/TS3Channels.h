@@ -20,6 +20,7 @@ private:
     static const string aDeleteChannels;
     static const string aDeleteClosure;
     static const string aGetChannelFromFreqCurrPrnt;
+    static const string aInitChannelList;
     static const string aGetChannelList;
 
     // Ordering of these two is important... it defines what order they're initialized in by the constructor.
@@ -49,7 +50,7 @@ public:
 
     int deleteChannel(uint64);
     void deleteAllChannels(void);
-    uint16_t addOrUpdateChannel(string, uint64, uint64 parentChannel = 0);
+    uint16_t addOrUpdateChannel(string, uint64, uint64 parentChannel = 0, uint64 order = 0);
     uint64 getChannelID(uint16_t frequency, uint64 current = 0, uint64 root = 0);
     uint64 getChannelID(double frequency, uint64 current = 0, uint64 root = 0);
 

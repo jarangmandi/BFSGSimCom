@@ -11,8 +11,10 @@ class FSUIPCWrapper
 public:
     enum ComRadio
     {
+        None = 0,
         Com1 = 1,
-        Com2 = 2
+        Com2 = 2,
+        Com12 = 3
     };
 
     struct SimComData {

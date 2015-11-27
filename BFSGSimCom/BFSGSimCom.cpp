@@ -178,7 +178,7 @@ const char* ts3plugin_name() {
 
 /* Plugin version */
 const char* ts3plugin_version() {
-    return "0.2";
+    return "0.3";
 }
 
 /* Plugin API version. Must be the same as the clients API major version, else the plugin fails to load. */
@@ -214,11 +214,13 @@ void loadChannels(uint64 serverConnectionHandlerID)
             string strName;
             char* cName;
             uint64 parent;
+            uint64 order;
 
             // For each channel in the list, get the name of the channel and its parent, and add it to the channel list.
             ts3Functions.getChannelVariableAsString(serverConnectionHandlerID, channelList[i], CHANNEL_NAME, &cName);
+            ts3Functions.getChannelVariableAsUInt64(serverConnectionHandlerID, channelList[i], CHANNEL_ORDER, &order);
             ts3Functions.getParentChannelOfChannel(serverConnectionHandlerID, channelList[i], &parent);
-            ts3Channels.addOrUpdateChannel(cName, channelList[i], parent);
+            ts3Channels.addOrUpdateChannel(cName, channelList[i], parent, order);
 
             // Not forgetting to free up the memory we've used for the channel name.
             ts3Functions.freeMemory(cName);
@@ -421,7 +423,10 @@ void ts3plugin_infoData(uint64 serverConnectionHandlerID, uint64 id, enum Plugin
                 strMode = "Enabled but not locked";
                 break;
             case Config::CONFIG_AUTO:
-                strMode = "Enabled and locked";
+                if (lastTargetChannel == 0)
+                    strMode = strMode = "Enabled and locked but to invalid channel";
+                else
+                    strMode = "Enabled and locked";
                 break;
             default:
                 strMode = "";
@@ -635,11 +640,17 @@ void ts3plugin_onConnectStatusChangeEvent(uint64 serverConnectionHandlerID, int 
 
 void ts3plugin_onClientMoveEvent(uint64 serverConnectionHandlerID, anyID clientID, uint64 oldChannelID, uint64 newChannelID, int visibility, const char* moveMessage) {
 
-    if (clientID = myTS3ID)
+    if (clientID == myTS3ID)
     {
-        if (cfg->getMode() == Config::ConfigMode::CONFIG_AUTO && newChannelID != lastTargetChannel)
+        // This code will move us back to where we're supposed to go, if and only if...
+        // 1. We're in "AUTO" mode
+        // 2. We're connected to a simulator
+        // 3. There's a valid channel to move to (>0), and
+        // 4. We're not where we're supposed to be!
+        if (cfg->getMode() == Config::ConfigMode::CONFIG_AUTO && fsuipc->isConnected() && lastTargetChannel != 0)
         {
-            ts3Functions.requestClientMove(serverConnectionHandlerID, clientID, lastTargetChannel, "", NULL);
+            if (newChannelID != lastTargetChannel)
+                ts3Functions.requestClientMove(serverConnectionHandlerID, clientID, lastTargetChannel, "", NULL);
         }
         else
         {
