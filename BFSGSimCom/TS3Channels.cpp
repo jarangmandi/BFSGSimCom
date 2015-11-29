@@ -302,17 +302,8 @@ TS3Channels::ChannelInfo::ChannelInfo(uint64 ch, int d, string str)
     description = str;
 }
 
-const string TS3Channels::aInitChannelList = \
-"drop table if exists temp_ch_list; " \
-"create temporary table if not exists temp_ch_list( " \
-"    channelId UNSIGNED BIG INT PRIMARY KEY NOT NULL, " \
-"    parentId UNSIGNED BIG INT, " \
-"    indx UNSIGNED BIG INT, " \
-"    ordering UNSIGNED BIG INT, " \
-"    description CHAR(256), " \
-"    FOREIGN KEY(parentId) REFERENCES channels(channelId) " \
-"    ); " \
-"insert into temp_ch_list " \
+
+const string TS3Channels::aGetChannelList = \
 "with recursive sort(channelId, parentId, indx, ordering, description) as " \
 "( " \
 "    select channelId, parent, 0, ordering, description from channels where channelId = 0 " \
@@ -322,33 +313,14 @@ const string TS3Channels::aInitChannelList = \
 "    inner join sort on ch.ordering = sort.channelId " \
 "    where ch.channelId <> 0 " \
 "    limit 1000000 " \
-") " \
-"select * from sort order by indx; " \
-"";
-
-//const string TS3Channels::aGetChannelList = \
-//"with recursive r(channelId, depth, path, description) as " \
-//"( " \
-//"select channelId, 0, '', description from channels where channelId = :root " \
-//"union all " \
-//"select cl.child, r.depth + 1, r.path || printf(\" % 08p\", cl.child), ch.description " \
-//"from " \
-//"closure cl " \
-//"inner join channels ch on cl.child = ch.channelId " \
-//"inner join r on cl.parent = r.channelId " \
-//"where cl.depth = 1 " \
-//") " \
-//"select channelId, depth, description from r order by path; " \
-//";";
-
-const string TS3Channels::aGetChannelList = \
-"with recursive tree(channelId, depth, path, description) as " \
+"), " \
+"tree(channelId, depth, path, description) as " \
 "( " \
-"    select channelId, 0, printf(\"%08p\", indx), description from temp_ch_list where channelId = :root " \
+"    select channelId, 0, printf(\"%08p\", indx), description from sort where channelId = :root " \
 "    union " \
 "    select ch.channelId, tree.depth + 1, tree.path || printf(\" %08p\", ch.indx), ch.description " \
 "    from " \
-"    temp_ch_list ch " \
+"    sort ch " \
 "    inner join tree on ch.parentId = tree.channelId " \
 "    where ch.channelId <> 0 " \
 "    limit 1000000 " \
@@ -362,9 +334,6 @@ vector<TS3Channels::ChannelInfo> TS3Channels::getChannelList(uint64 root)
 
     try
     {
-        // Initialise the tables we need;
-        mDb.exec(aInitChannelList);
-
         // Create the statement
         SQLite::Statement aStmt(mDb, aGetChannelList);
 
