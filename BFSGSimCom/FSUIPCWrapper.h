@@ -23,16 +23,18 @@ public:
         int iCom2Freq;
         int iCom2Sby;
         ComRadio selectedCom;
+        bool blWoW;
     };
 
 private:
-    static bool blFSUIPCConnected;
-    static bool blRun;
-    WORD iCom1Freq;
-    WORD iCom1Sby;
-    WORD iCom2Freq;
-    WORD iCom2Sby;
-    BYTE selectedCom;
+    static bool cFSUIPCConnected;
+    static bool cRun;
+    WORD cCom1Freq;
+    WORD cCom1Sby;
+    WORD cCom2Freq;
+    WORD cCom2Sby;
+    BYTE cSelectedCom;
+    WORD cWoW;
 
     void (*callback)(SimComData);
 
@@ -47,7 +49,7 @@ public:
     ~FSUIPCWrapper();
 
     bool isConnected() {
-        return blFSUIPCConnected;
+        return cFSUIPCConnected;
     };
 
     SimComData FSUIPCWrapper::getSimComData(void);
@@ -57,5 +59,7 @@ public:
     BOOL FSUIPC_Process();
     void start(void);
     void stop(void);
+
+    static std::string toString(FSUIPCWrapper::SimComData scd);
 };
 

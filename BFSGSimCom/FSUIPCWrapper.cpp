@@ -1,10 +1,11 @@
 #include <thread>
 #include <chrono>
+#include <sstream>
 
 #include "FSUIPCWrapper.h"
 
-bool FSUIPCWrapper::blFSUIPCConnected = false;
-bool FSUIPCWrapper::blRun = false;
+bool FSUIPCWrapper::cFSUIPCConnected = false;
+bool FSUIPCWrapper::cRun = false;
 
 FSUIPCWrapper::FSUIPCWrapper(void (*cb)(SimComData))
 {
@@ -16,14 +17,14 @@ FSUIPCWrapper::FSUIPCWrapper(void (*cb)(SimComData))
 
 void FSUIPCWrapper::start(void)
 {
-    blRun = true;
+    cRun = true;
 
     t1 = new std::thread(&FSUIPCWrapper::workerThread, FSUIPCWrapper(callback));
 }
 
 void FSUIPCWrapper::stop(void)
 {
-    blRun = false;
+    cRun = false;
 
     // There's no harm in calling this whether FSUIPC is open or not.
     ::FSUIPC_Close();
@@ -33,53 +34,61 @@ void FSUIPCWrapper::stop(void)
 
 void FSUIPCWrapper::workerThread(void)
 {
-    WORD com1;
-    WORD com1s;
-    WORD com2;
-    WORD com2s;
-    BYTE rSwitch;
+    WORD simCom1;
+    WORD simCom1s;
+    WORD simCom2;
+    WORD simCom2s;
+    BYTE simRadSw;
+    WORD simOnGnd;
 
-    while (blRun)
+    while (cRun)
     {
-        FSUIPC_Read(0x034E, 2, &com1);
-        FSUIPC_Read(0x3118, 2, &com2);
-        FSUIPC_Read(0x311A, 2, &com1s);
-        FSUIPC_Read(0x311C, 2, &com2s);
-        FSUIPC_Read(0x3122, 1, &rSwitch);
+        FSUIPC_Read(0x034E, 2, &simCom1);
+        FSUIPC_Read(0x3118, 2, &simCom2);
+        FSUIPC_Read(0x311A, 2, &simCom1s);
+        FSUIPC_Read(0x311C, 2, &simCom2s);
+        FSUIPC_Read(0x3122, 1, &simRadSw);
+        FSUIPC_Read(0x0366, 2, &simOnGnd);
 
         if (FSUIPC_Process())
         {
             bool blChanged = false;
 
 
-            if (com1 != iCom1Freq)
+            if (simCom1 != cCom1Freq)
             {
                 blChanged = true;
-                iCom1Freq = com1;
+                cCom1Freq = simCom1;
             }
 
-            if (com1s != iCom1Sby)
+            if (simCom1s != cCom1Sby)
             {
                 blChanged = true;
-                iCom1Sby = com1s;
+                cCom1Sby = simCom1s;
             }
 
-            if (com2 != iCom2Freq)
+            if (simCom2 != cCom2Freq)
             {
                 blChanged = true;
-                iCom2Freq = com2;
+                cCom2Freq = simCom2;
             }
 
-            if (com2s != iCom2Sby)
+            if (simCom2s != cCom2Sby)
             {
                 blChanged = true;
-                iCom2Sby = com2s;
+                cCom2Sby = simCom2s;
             }
 
-            if (rSwitch != selectedCom)
+            if (simRadSw != cSelectedCom)
             {
                 blChanged = true;
-                selectedCom = rSwitch;
+                cSelectedCom = simRadSw;
+            }
+
+            if (simOnGnd != cWoW)
+            {
+                blChanged = true;
+                cWoW = simOnGnd;
             }
 
             if (blChanged)
@@ -101,17 +110,19 @@ FSUIPCWrapper::SimComData FSUIPCWrapper::getSimComData() {
     
     SimComData simcomdata;
 
-    simcomdata.iCom1Freq = 10000 + 1000 * ((iCom1Freq & 0xf000) >> 12) + 100 * ((iCom1Freq & 0x0f00) >> 8) + 10 * ((iCom1Freq & 0x00f0) >> 4) + (iCom1Freq & 0x000f);
-    simcomdata.iCom1Sby = 10000 + 1000 * ((iCom1Sby & 0xf000) >> 12) + 100 * ((iCom1Sby & 0x0f00) >> 8) + 10 * ((iCom1Sby & 0x00f0) >> 4) + (iCom1Sby & 0x000f);
-    simcomdata.iCom2Freq = 10000 + 1000 * ((iCom2Freq & 0xf000) >> 12) + 100 * ((iCom2Freq & 0x0f00) >> 8) + 10 * ((iCom2Freq & 0x00f0) >> 4) + (iCom2Freq & 0x000f);
-    simcomdata.iCom2Sby = 10000 + 1000 * ((iCom2Sby & 0xf000) >> 12) + 100 * ((iCom2Sby & 0x0f00) >> 8) + 10 * ((iCom2Sby & 0x00f0) >> 4) + (iCom2Sby & 0x000f);
+    simcomdata.iCom1Freq = 10000 + 1000 * ((cCom1Freq & 0xf000) >> 12) + 100 * ((cCom1Freq & 0x0f00) >> 8) + 10 * ((cCom1Freq & 0x00f0) >> 4) + (cCom1Freq & 0x000f);
+    simcomdata.iCom1Sby = 10000 + 1000 * ((cCom1Sby & 0xf000) >> 12) + 100 * ((cCom1Sby & 0x0f00) >> 8) + 10 * ((cCom1Sby & 0x00f0) >> 4) + (cCom1Sby & 0x000f);
+    simcomdata.iCom2Freq = 10000 + 1000 * ((cCom2Freq & 0xf000) >> 12) + 100 * ((cCom2Freq & 0x0f00) >> 8) + 10 * ((cCom2Freq & 0x00f0) >> 4) + (cCom2Freq & 0x000f);
+    simcomdata.iCom2Sby = 10000 + 1000 * ((cCom2Sby & 0xf000) >> 12) + 100 * ((cCom2Sby & 0x0f00) >> 8) + 10 * ((cCom2Sby & 0x00f0) >> 4) + (cCom2Sby & 0x000f);
 
     // This is a kluge because XPUIPC doesn't report the correct channel and the config file that comes with it doesn't seem to work as advertised.
     // Look for a FSUIPC_Version of 0x50000006 - who knows what will happen when FSUIPC catches up
     if (FSUIPC_Version == 0x50000006)
-        simcomdata.selectedCom = ComRadio(((selectedCom & 0x40) ? Com1 : None) + ((selectedCom & 0x80) ? Com2 : None));
+        simcomdata.selectedCom = ComRadio(((cSelectedCom & 0x40) ? Com1 : None) + ((cSelectedCom & 0x80) ? Com2 : None));
     else
-        simcomdata.selectedCom = ComRadio(((selectedCom & 0x80) ? Com1 : None) + ((selectedCom & 0x40) ? Com2 : None));
+        simcomdata.selectedCom = ComRadio(((cSelectedCom & 0x80) ? Com1 : None) + ((cSelectedCom & 0x40) ? Com2 : None));
+
+    simcomdata.blWoW = (cWoW != 0);
 
     return simcomdata;
 };
@@ -123,17 +134,17 @@ BOOL FSUIPCWrapper::checkConnection(DWORD* pdwResult)
 {
     BOOL retValue = 0;
 
-    if (!blFSUIPCConnected)
+    if (!cFSUIPCConnected)
     {
         try
         {
             retValue = ::FSUIPC_Open(SIM_ANY, pdwResult);
-            blFSUIPCConnected = (retValue != FALSE) || (*pdwResult == FSUIPC_ERR_OPEN);
+            cFSUIPCConnected = (retValue != FALSE) || (*pdwResult == FSUIPC_ERR_OPEN);
         }
         catch (...)
         {
             retValue = FALSE;
-            blFSUIPCConnected = false;
+            cFSUIPCConnected = false;
         }
     }
     else
@@ -162,7 +173,7 @@ BOOL FSUIPCWrapper::FSUIPC_Read(DWORD dwOffset, DWORD dwSize, void* pDest)
         }
     }
 
-    blFSUIPCConnected = (dwResult == FSUIPC_ERR_OK);
+    cFSUIPCConnected = (dwResult == FSUIPC_ERR_OK);
 
     return retValue;
 }
@@ -184,7 +195,7 @@ BOOL FSUIPCWrapper::FSUIPC_Write(DWORD dwOffset, DWORD dwSize, void* pSrc)
         }
     }
 
-    blFSUIPCConnected = (dwResult != FSUIPC_ERR_NOTOPEN);
+    cFSUIPCConnected = (dwResult != FSUIPC_ERR_NOTOPEN);
 
     return retValue;
 }
@@ -206,10 +217,23 @@ BOOL FSUIPCWrapper::FSUIPC_Process()
         }
     }
 
-    blFSUIPCConnected = (dwResult == FSUIPC_ERR_OK);
+    cFSUIPCConnected = (dwResult == FSUIPC_ERR_OK);
 
     return retValue;
 }
+
+std::string FSUIPCWrapper::toString(FSUIPCWrapper::SimComData simComData)
+{
+    std::ostringstream ostr;
+
+    ostr << "WoW: " << simComData.blWoW << " - ";
+    ostr << "Switches: " << simComData.selectedCom << " - ";
+    ostr << "Com1: " << simComData.iCom1Freq << " / " << simComData.iCom1Sby << " - ";
+    ostr << "Com2: " << simComData.iCom2Freq << " / " << simComData.iCom2Sby;
+
+    return ostr.str();
+}
+
 
 
 FSUIPCWrapper::~FSUIPCWrapper()

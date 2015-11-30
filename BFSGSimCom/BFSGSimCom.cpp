@@ -84,6 +84,8 @@ void callback(FSUIPCWrapper::SimComData data)
     }
     
     simComData = data;
+    string strMessage = "BFSGSimCom >> " + FSUIPCWrapper::toString(simComData);
+    ts3Functions.logMessage(strMessage.c_str(), LogLevel::LogLevel_DEBUG, "BFSGSimCom", serverConnectionHandlerID);
 
     // Assuming we're connected, and we're supposed to be moving when the channel changes
     if (blConnected)
@@ -178,7 +180,7 @@ const char* ts3plugin_name() {
 
 /* Plugin version */
 const char* ts3plugin_version() {
-    return "0.3.1";
+    return "0.4";
 }
 
 /* Plugin API version. Must be the same as the clients API major version, else the plugin fails to load. */
@@ -241,6 +243,7 @@ int ts3plugin_init() {
     uint64 serverConnectionHandlerID;
     int connectionStatus;
 
+    
     serverConnectionHandlerID = ts3Functions.getCurrentServerConnectionHandlerID();
     
     // Initialise the server connection status
