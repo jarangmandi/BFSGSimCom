@@ -8,7 +8,7 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="config.cpp">
-      <Filter>Header Files\GUI Files</Filter>
+      <Filter>GUI Files</Filter>
     </ClCompile>
     <ClCompile Include="GeneratedFiles\x64\moc_config.cpp">
       <Filter>Generated Files\x64</Filter>
@@ -78,10 +78,10 @@
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="config.h">
-      <Filter>Header Files\GUI Files</Filter>
+      <Filter>GUI Files</Filter>
     </CustomBuild>
     <CustomBuild Include="config.ui">
-      <Filter>Header Files\GUI Files</Filter>
+      <Filter>GUI Files</Filter>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
@@ -103,30 +103,8 @@
     <Filter Include="SQLiteCpp">
       <UniqueIdentifier>{b5009649-274c-4523-973e-757f94985372}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\GUI Files">
+    <Filter Include="GUI Files">
       <UniqueIdentifier>{05e24857-819a-4138-8d97-1ab39febaaa5}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Installer">
-      <UniqueIdentifier>{2bea67d9-c042-4203-8dba-17466bc5d458}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Installer\Win32">
-      <UniqueIdentifier>{a1115a09-21b8-4a1b-aa29-fb22f108744a}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Installer\x64">
-      <UniqueIdentifier>{003b2842-e4e5-46bc-abc7-2428e6c701f3}</UniqueIdentifier>
-    </Filter>
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="package32.ini">
-      <Filter>Installer\Win32</Filter>
-    </Text>
-    <Text Include="package64.ini">
-      <Filter>Installer\x64</Filter>
-    </Text>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="make_plugin.bat">
-      <Filter>Installer</Filter>
-    </None>
   </ItemGroup>
 </Project>

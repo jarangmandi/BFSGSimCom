@@ -71,17 +71,21 @@
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\</IntDir>
+    <PostBuildEventUseInBuild>true</PostBuildEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <PostBuildEventUseInBuild>true</PostBuildEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\</IntDir>
+    <PostBuildEventUseInBuild>true</PostBuildEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <PostBuildEventUseInBuild>true</PostBuildEventUseInBuild>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -100,7 +104,8 @@
       <AdditionalLibraryDirectories>$(SQLITE_DIR)\$(Platform)\$(Configuration);$(SolutionDir)$(Platform)\$(Configuration)\;$(QTDIR32)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>copy /y "$(ProjectDir)package32.ini" "$(SolutionDir)$(Platform)\$(Configuration)\package.ini" &amp; copy /y "$(ProjectDir)make_plugin.bat" "$(SolutionDir)$(Platform)\$(Configuration)" &amp; "$(SolutionDir)$(Platform)\$(Configuration)\make_plugin.bat" "$(OutDir)" $(ProjectName)</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -119,7 +124,8 @@
       <AdditionalDependencies>FSUIPCLibrary.lib;SQLite3.lib;qtmain.lib;Qt5Core.lib;Qt5Gui.lib;Qt5Widgets.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>copy /y "$(ProjectDir)package64.ini" "$(SolutionDir)$(Platform)\$(Configuration)\package.ini" &amp; copy /y "$(ProjectDir)make_plugin.bat" "$(SolutionDir)$(Platform)\$(Configuration)" &amp; "$(SolutionDir)$(Platform)\$(Configuration)\make_plugin.bat" "$(OutDir)" $(ProjectName)</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -141,7 +147,8 @@
       <ProgramDatabaseFile />
     </Link>
     <PostBuildEvent>
-      <Command>copy /y "$(ProjectDir)package32.ini" "$(SolutionDir)$(Platform)\$(Configuration)\package.ini" &amp; copy /y "$(ProjectDir)make_plugin.bat" "$(SolutionDir)$(Platform)\$(Configuration)" &amp; "$(SolutionDir)$(Platform)\$(Configuration)\make_plugin.bat" "$(OutDir)" $(ProjectName)</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -162,7 +169,8 @@
       <ProgramDatabaseFile />
     </Link>
     <PostBuildEvent>
-      <Command>copy /y "$(ProjectDir)package64.ini" "$(SolutionDir)$(Platform)\$(Configuration)\package.ini" &amp; copy /y "$(ProjectDir)make_plugin.bat" "$(SolutionDir)$(Platform)\$(Configuration)" &amp; "$(SolutionDir)$(Platform)\$(Configuration)\make_plugin.bat" "$(OutDir)" $(ProjectName)</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -245,34 +253,6 @@
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">UIC'ing %(Filename)%(Extension) into ui_%(Filename).h</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(DefiningProjectDirectory)\GeneratedFiles\$(Platform)\ui_%(Filename).h;%(Outputs)</Outputs>
     </CustomBuild>
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="package32.ini">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
-      <FileType>Text</FileType>
-      <DeploymentContent>true</DeploymentContent>
-    </Text>
-    <Text Include="package64.ini">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </ExcludedFromBuild>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </DeploymentContent>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </ExcludedFromBuild>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </DeploymentContent>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
-      <FileType>Text</FileType>
-    </Text>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="make_plugin.bat" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
