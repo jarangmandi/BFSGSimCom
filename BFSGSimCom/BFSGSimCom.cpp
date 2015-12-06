@@ -215,17 +215,23 @@ void loadChannels(uint64 serverConnectionHandlerID)
         {
             string strName;
             char* cName;
+            char* cTopic;
+            char* cDesc;
             uint64 parent;
             uint64 order;
 
             // For each channel in the list, get the name of the channel and its parent, and add it to the channel list.
             ts3Functions.getChannelVariableAsString(serverConnectionHandlerID, channelList[i], CHANNEL_NAME, &cName);
+            ts3Functions.getChannelVariableAsString(serverConnectionHandlerID, channelList[i], CHANNEL_TOPIC, &cTopic);
+            ts3Functions.getChannelVariableAsString(serverConnectionHandlerID, channelList[i], CHANNEL_DESCRIPTION, &cDesc);
             ts3Functions.getChannelVariableAsUInt64(serverConnectionHandlerID, channelList[i], CHANNEL_ORDER, &order);
             ts3Functions.getParentChannelOfChannel(serverConnectionHandlerID, channelList[i], &parent);
-            ts3Channels.addOrUpdateChannel(cName, channelList[i], parent, order);
+            ts3Channels.addOrUpdateChannel(cName, cTopic, cDesc, channelList[i], parent, order);
 
             // Not forgetting to free up the memory we've used for the channel name.
             ts3Functions.freeMemory(cName);
+            ts3Functions.freeMemory(cTopic);
+            ts3Functions.freeMemory(cDesc);
         }
 
         // And not forgetting to free up the memory we've used for the channel list.

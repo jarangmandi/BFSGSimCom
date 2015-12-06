@@ -79,6 +79,10 @@
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Copying Plugin Build Script</Message>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)$(Platform)\$(Configuration)\BFSGSimCom.dll;$(SolutionDir)$(Platform)\$(Configuration)\SQLite.sql;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)$(Platform)\$(Configuration)\BFSGSimCom.dll;$(SolutionDir)$(Platform)\$(Configuration)\SQLite.sql;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)$(Platform)\$(Configuration)\BFSGSimCom.dll;$(SolutionDir)$(Platform)\$(Configuration)\SQLite.sql;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)$(Platform)\$(Configuration)\BFSGSimCom.dll;$(SolutionDir)$(Platform)\$(Configuration)\SQLite.sql;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include="package32.ini">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
@@ -132,6 +136,12 @@
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">copy /y "%(FullPath)" "$(SolutionDir)$(Platform)\$(Configuration)"</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Copying SQLite Script</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)$(Platform)\$(Configuration)\%(Identity)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">copy /y "%(FullPath)" "$(SolutionDir)$(Platform)\$(Configuration)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">copy /y "%(FullPath)" "$(SolutionDir)$(Platform)\$(Configuration)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Copying SQLite Script</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Copying SQLite Script</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)$(Platform)\$(Configuration)\%(Identity)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)$(Platform)\$(Configuration)\%(Identity)</Outputs>
     </CustomBuild>
   </ItemGroup>
   <PropertyGroup Label="Globals">
@@ -141,16 +151,16 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>Utility</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>Utility</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <WholeProgramOptimization>false</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -160,10 +170,10 @@
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>Utility</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <WholeProgramOptimization>false</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
@@ -187,22 +197,26 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <TargetExt>.ts3_plugin</TargetExt>
     <TargetName>BFSGSimCom64</TargetName>
+    <ExtensionsToDeleteOnClean>*.db;*.sql;*.csv;$(ExtensionsToDeleteOnClean)</ExtensionsToDeleteOnClean>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <TargetName>BFSGSimCom32</TargetName>
     <TargetExt>.ts3_plugin</TargetExt>
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\</IntDir>
+    <ExtensionsToDeleteOnClean>*.db;*.sql;*.csv;$(ExtensionsToDeleteOnClean)</ExtensionsToDeleteOnClean>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <TargetName>BFSGSimCom32</TargetName>
     <TargetExt>.ts3_plugin</TargetExt>
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\</IntDir>
+    <ExtensionsToDeleteOnClean>*.db;*.sql;*.csv;$(ExtensionsToDeleteOnClean)</ExtensionsToDeleteOnClean>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <TargetName>BFSGSimCom64</TargetName>
     <TargetExt>.ts3_plugin</TargetExt>
+    <ExtensionsToDeleteOnClean>*.db;*.sql;*.csv;$(ExtensionsToDeleteOnClean)</ExtensionsToDeleteOnClean>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -215,6 +229,7 @@
     </Link>
     <PostBuildEvent>
       <Command>"$(SolutionDir)$(Platform)\$(Configuration)\make_plugin.bat" "$(OutDir)" "$(OutDir)BFSGSimCom.db" BFSGSimCom32</Command>
+      <Message>Building Install Package</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -228,6 +243,7 @@
     </Link>
     <PostBuildEvent>
       <Command>"$(SolutionDir)$(Platform)\$(Configuration)\make_plugin.bat" "$(OutDir)" "$(OutDir)BFSGSimCom.db" BFSGSimCom64</Command>
+      <Message>Building Install Package</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -245,6 +261,7 @@
     </Link>
     <PostBuildEvent>
       <Command>"$(SolutionDir)$(Platform)\$(Configuration)\make_plugin.bat" "$(OutDir)" "$(OutDir)BFSGSimCom.db" BFSGSimCom32</Command>
+      <Message>Building Install Package</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -262,6 +279,7 @@
     </Link>
     <PostBuildEvent>
       <Command>"$(SolutionDir)$(Platform)\$(Configuration)\make_plugin.bat" "$(OutDir)" "$(OutDir)BFSGSimCom.db" BFSGSimCom64</Command>
+      <Message>Building Install Package</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

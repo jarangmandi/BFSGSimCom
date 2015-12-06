@@ -7,10 +7,13 @@
 #include <SQLiteCpp\Transaction.h>
 
 #include "TS3Channels.h"
+#include "ICAOData.h"
 
 using namespace std;
 
-string TS3Channels::determineDbFileName(void)
+ICAOData icaoData;
+
+string TS3Channels::determineChanDbFileName(void)
 {
     string retValue = "";
 
@@ -34,9 +37,10 @@ string TS3Channels::determineDbFileName(void)
     return retValue;
 }
 
-
 // Constructor for the TS3 channel class
-TS3Channels::TS3Channels() : mDbFileName(determineDbFileName()), mDb(TS3Channels::mDbFileName, SQLITE_OPEN_CREATE | SQLITE_OPEN_READWRITE)
+TS3Channels::TS3Channels() :
+    mChanDbFileName(determineChanDbFileName()),
+    mChanDb(TS3Channels::mChanDbFileName, SQLITE_OPEN_CREATE | SQLITE_OPEN_READWRITE)
 {
     initDatabase();
 }
@@ -57,7 +61,9 @@ int TS3Channels::initDatabase()
         "   frequency INT, "    \
         "   parent UNSIGNED BIG INT, "  \
         "   ordering UNSIGNED BIG INT, "  \
-        "   description CHAR(256)," \
+        "   name CHAR(256)," \
+        "   topic CHAR(256)," \
+        "   description TEXT," \
         "   FOREIGN KEY (parent) REFERENCES channels (channelId)" \
         "); " \
         "create table if not exists closure(" \
@@ -69,24 +75,39 @@ int TS3Channels::initDatabase()
         "create unique index if not exists closureprntchld on closure(parent, child, depth);" \
         "create unique index if not exists closurechldprnt on closure(child, parent, depth);"
         "create index parent_idx on channels(parent);" \
-        "insert into channels(channelId, frequency, parent, ordering, description) values (0, null, 0, 0, 'Root');"
+        "insert into channels(channelId, frequency, parent, ordering, name, topic, description) values (0, null, 0, 0, 'Root', 'Root Channel', 'Root Channel');"
         "insert into closure(parent, child, depth) values (0, 0, 0);" \
         "";
 
     try
     {
-        mDb.exec(aInitDatabase);
+        mChanDb.exec(aInitDatabase);
     }
     catch (SQLite::Exception& e)
     {
         e;
-        retValue = mDb.getErrorCode();
+        retValue = mChanDb.getErrorCode();
     }
 
     return retValue;
 }
 
-uint16_t TS3Channels::getFrequencyFromString(string str)
+
+uint16_t TS3Channels::getFrequencyFromString(string str1)
+{
+    const vector<string> strs = { str1 };
+    return getFrequencyFromStrings(strs);
+}
+
+
+uint16_t TS3Channels::getFrequencyFromStrings(string str1, string str2, string str3)
+{
+    const vector<string> strs = { str1, str2, str3 };
+    return getFrequencyFromStrings(strs);
+}
+
+
+uint16_t TS3Channels::getFrequencyFromStrings(const vector<string> &strs)
 {
     // A valid frequency is three digits (of which the first is a "1", and the second is a "1", a "2" or a "3"), a decimal point,
     // and then two more digits, the last of which is a "0", a "2", a "5" or a "7".
@@ -95,20 +116,92 @@ uint16_t TS3Channels::getFrequencyFromString(string str)
     smatch matchedFrequency;
     uint16_t frequency = 0;
 
-    // Look for a frequency in the string we were passed.
-    if (std::regex_search(str, matchedFrequency, r)) {
-        string str = matchedFrequency.str();
-        frequency = uint16_t(100 * std::stod(matchedFrequency.str()) + 0.5);
+    for (string str : strs)
+    {
+        // Look for a frequency in the string we were passed.
+        if (std::regex_search(str, matchedFrequency, r)) {
+            string str = matchedFrequency.str();
+            frequency = uint16_t(100 * std::stod(matchedFrequency.str()) + 0.5);
+            break;
+        }
     }
 
     return frequency;
 }
 
+string TS3Channels::getAirportIdentFromString(string str1)
+{
+    const vector<string> strs = { str1 };
+    return getAirportIdentFromStrings(strs);
+}
+
+
+string TS3Channels::getAirportIdentFromStrings(string str1, string str2, string str3)
+{
+    const vector<string> strs = { str1, str2, str3 };
+    return getAirportIdentFromStrings(strs);
+}
+
+string TS3Channels::getAirportIdentFromStrings(const vector<string> &strs)
+{
+    static regex r("[0-9A-Z]{3,7}_(TWR|GND|APP|DEP|CNTR|ATIS|INFO|CLD)");
+
+    smatch matchedIdent;
+    string ident = "";
+
+    for (string str : strs)
+    {
+        if (std::regex_search(str, matchedIdent, r)) {
+            ident = matchedIdent.str();
+            break;
+        }
+    }
+
+    return ident;
+}
+
+tuple<double, double> TS3Channels::getLatLonFromString(string str1)
+{
+    const vector<string> strs = { str1 };
+    return getLatLonFromStrings(strs);
+}
+
+tuple<double, double> TS3Channels::getLatLonFromStrings(string str1, string str2, string str3)
+{
+    const vector<string> strs = { str1, str2, str3 };
+    return getLatLonFromStrings(strs);
+}
+
+tuple<double, double> TS3Channels::getLatLonFromStrings(const vector<string>& strs)
+{
+    static regex r("([+-]?(?:\\d+\\.?\\d*|\\d*\\.?\\d+))\\s+([+-]?(?:\\d+\\.?\\d*|\\d*\\.?\\d+))");
+
+    tuple<double, double> retVal(0.0, 0.0);
+    double tLat;
+    double tLon;
+
+    ::tie(tLat, tLon) = retVal;
+
+    smatch matchedLatLon;
+
+    for (string str : strs)
+    {
+        if (std::regex_search(str, matchedLatLon, r)) {
+            tLat = ::stod(matchedLatLon[0].str(), NULL);
+            tLon = ::stod(matchedLatLon[1].str(), NULL);
+        }
+    }
+
+    return retVal;
+}
+
+
+
 // Define queries here - they get resolved at compile time...
 const string TS3Channels::aAddInsertChannel = \
-"insert into channels (channelId, frequency, parent, ordering, description)" \
+"insert into channels (channelId, frequency, parent, ordering, name, topic, description)" \
 "values" \
-"(:channelId, :frequency, :parent, :order, :description)" \
+"(:channelId, :frequency, :parent, :order, :name, :topic, :desc)" \
 ";" \
 "";
 
@@ -124,31 +217,37 @@ const string TS3Channels::aAddInsertClosure2 = \
 ";" \
 "";
 
-uint16_t TS3Channels::addOrUpdateChannel(string channelName, uint64 channelID, uint64 parentChannel, uint64 order)
+uint16_t TS3Channels::addOrUpdateChannel(string cName, string cTopic, string cDesc, uint64 channelID, uint64 parentChannel, uint64 order)
 {
+    string ident;
     uint16_t frequency;
+    tuple<double, double> latlon;
 
     // First, delete the channel from the list
     deleteChannel(channelID);
 
-    // Look for a frequency in the channel name we were passed
-    frequency = getFrequencyFromString(channelName);
+    // Look for an ident, a frequency and a location, in the data we were passed
+    ident = getAirportIdentFromStrings(cName, cTopic, cDesc);
+    frequency = getFrequencyFromStrings(cName, cTopic, cDesc);
+    latlon = getLatLonFromStrings(cName, cTopic, cDesc);
 
     int retValue = SQLITE_OK;
 
     try
     {
-        SQLite::Transaction aTrans(mDb);
+        SQLite::Transaction aTrans(mChanDb);
 
-        SQLite::Statement aChannelStmt(mDb, aAddInsertChannel);
-        SQLite::Statement aClosureStmt1(mDb, aAddInsertClosure1);
-        SQLite::Statement aClosureStmt2(mDb, aAddInsertClosure2);
+        SQLite::Statement aChannelStmt(mChanDb, aAddInsertChannel);
+        SQLite::Statement aClosureStmt1(mChanDb, aAddInsertClosure1);
+        SQLite::Statement aClosureStmt2(mChanDb, aAddInsertClosure2);
 
         aChannelStmt.bind(":channelId", sqlite3_int64(channelID));
         (frequency) ? aChannelStmt.bind(":frequency", frequency) : aChannelStmt.bind(":frequency");
         aChannelStmt.bind(":parent", sqlite3_int64(parentChannel));
         aChannelStmt.bind(":order", sqlite3_int64(order));
-        aChannelStmt.bind(":description", channelName);
+        aChannelStmt.bind(":name", cName);
+        aChannelStmt.bind(":topic", cTopic);
+        aChannelStmt.bind(":desc", cDesc);
         aChannelStmt.exec();
 
         aClosureStmt1.bind(":child", sqlite3_int64(channelID));
@@ -166,7 +265,7 @@ uint16_t TS3Channels::addOrUpdateChannel(string channelName, uint64 channelID, u
     catch (SQLite::Exception& e)
     {
         e;
-        retValue = mDb.getErrorCode();
+        retValue = mChanDb.getErrorCode();
     }
     catch (exception& e)
     {
@@ -209,13 +308,13 @@ int TS3Channels::deleteChannel(uint64 channelID)
 
     try
     {
-        SQLite::Transaction aTrans(mDb);
+        SQLite::Transaction aTrans(mChanDb);
 
-        SQLite::Statement aChannelStmt(mDb, aDeleteChannels);
+        SQLite::Statement aChannelStmt(mChanDb, aDeleteChannels);
         aChannelStmt.bind(":delete", sqlite3_int64(channelID));
         aChannelStmt.exec();
 
-        SQLite::Statement aClosureStmt(mDb, aDeleteClosure);
+        SQLite::Statement aClosureStmt(mChanDb, aDeleteClosure);
         aClosureStmt.bind(":delete", sqlite3_int64(channelID));
         aClosureStmt.exec();
 
@@ -224,7 +323,7 @@ int TS3Channels::deleteChannel(uint64 channelID)
     catch (SQLite::Exception& e)
     {
         e;
-        retValue = mDb.getErrorCode();
+        retValue = mChanDb.getErrorCode();
     }
 
     return retValue;
@@ -257,7 +356,7 @@ uint64 TS3Channels::getChannelID(uint16_t frequency, uint64 current, uint64 root
     try
     {
         // Create the statement
-        SQLite::Statement aStmt(mDb, aGetChannelFromFreqCurrPrnt);
+        SQLite::Statement aStmt(mChanDb, aGetChannelFromFreqCurrPrnt);
 
         // Bind the variables
         aStmt.bind(":frequency", frequency);
@@ -299,33 +398,33 @@ TS3Channels::ChannelInfo::ChannelInfo(uint64 ch, int d, string str)
 {
     channelID = ch;
     depth = d;
-    description = str;
+    name = str;
 }
 
 
 const string TS3Channels::aGetChannelList = \
-"with recursive sort(channelId, parentId, indx, ordering, description) as " \
+"with recursive sort(channelId, parentId, indx, ordering, name) as " \
 "( " \
-"    select channelId, parent, 0, ordering, description from channels where channelId = 0 " \
+"    select channelId, parent, 0, ordering, name from channels where channelId = 0 " \
 "    union " \
-"    select ch.channelId, ch.parent, sort.indx + 1, ch.ordering, ch.description " \
+"    select ch.channelId, ch.parent, sort.indx + 1, ch.ordering, ch.name " \
 "    from channels ch " \
 "    inner join sort on ch.ordering = sort.channelId " \
 "    where ch.channelId <> 0 " \
 "    limit 1000000 " \
 "), " \
-"tree(channelId, depth, path, description) as " \
+"tree(channelId, depth, path, name) as " \
 "( " \
-"    select channelId, 0, printf(\"%08p\", indx), description from sort where channelId = :root " \
+"    select channelId, 0, printf(\"%08p\", indx), name from sort where channelId = :root " \
 "    union " \
-"    select ch.channelId, tree.depth + 1, tree.path || printf(\" %08p\", ch.indx), ch.description " \
+"    select ch.channelId, tree.depth + 1, tree.path || printf(\" %08p\", ch.indx), ch.name " \
 "    from " \
 "    sort ch " \
 "    inner join tree on ch.parentId = tree.channelId " \
 "    where ch.channelId <> 0 " \
 "    limit 1000000 " \
 ") " \
-"select channelId, depth, description from tree order by path; " \
+"select channelId, depth, name from tree order by path; " \
 "";
 
 vector<TS3Channels::ChannelInfo> TS3Channels::getChannelList(uint64 root)
@@ -335,7 +434,7 @@ vector<TS3Channels::ChannelInfo> TS3Channels::getChannelList(uint64 root)
     try
     {
         // Create the statement
-        SQLite::Statement aStmt(mDb, aGetChannelList);
+        SQLite::Statement aStmt(mChanDb, aGetChannelList);
 
         // Bind the variables
         aStmt.bind(":root", sqlite3_int64(root));
@@ -345,14 +444,14 @@ vector<TS3Channels::ChannelInfo> TS3Channels::getChannelList(uint64 root)
         {
             uint64 channelID;
             int depth;
-            string description;
+            string name;
 
             // The query is written to return a single value in a single row...
             channelID = aStmt.getColumn(0).getInt64();
             depth = aStmt.getColumn(1).getInt();
-            description = aStmt.getColumn(2).getText();
+            name = aStmt.getColumn(2).getText();
 
-            ChannelInfo ch(channelID, depth, description);
+            ChannelInfo ch(channelID, depth, name);
 
             retValue.push_back(ch);
         }

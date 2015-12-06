@@ -21,7 +21,7 @@ QStringList Config::getChannelTreeViewEntry(TS3Channels::ChannelInfo ch)
     QStringList strings;
     std::ostringstream convert;
 
-    strings.append(QString(ch.description.c_str()));
+    strings.append(QString(ch.name.c_str()));
     convert << ch.channelID;
     strings.append(QString(convert.str().c_str()));
 

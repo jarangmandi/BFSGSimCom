@@ -24,20 +24,30 @@ private:
     static const string aGetChannelList;
 
     // Ordering of these two is important... it defines what order they're initialized in by the constructor.
-    string mDbFileName;
-    SQLite::Database mDb;
+    string mChanDbFileName;
+    SQLite::Database mChanDb;
 
-    string determineDbFileName(void);
+
+    string determineChanDbFileName(void);
+
     int initDatabase(void);
 
     uint16_t getFrequencyFromString(string);
+    uint16_t getFrequencyFromStrings(string, string, string);
+    uint16_t getFrequencyFromStrings(const vector<string>&);
+    string TS3Channels::getAirportIdentFromString(string);
+    string TS3Channels::getAirportIdentFromStrings(string, string, string);
+    string TS3Channels::getAirportIdentFromStrings(const vector<string>&);
+    tuple<double, double> TS3Channels::getLatLonFromString(string);
+    tuple<double, double> TS3Channels::getLatLonFromStrings(string, string, string);
+    tuple<double, double> TS3Channels::getLatLonFromStrings(const vector<string>&);
 
 public:
     struct ChannelInfo
     {
         uint64 channelID;
         int depth;
-        string description;
+        string name;
 
     public:
         ChannelInfo(uint64, int, string);
@@ -50,7 +60,7 @@ public:
 
     int deleteChannel(uint64);
     void deleteAllChannels(void);
-    uint16_t addOrUpdateChannel(string, uint64, uint64 parentChannel = 0, uint64 order = 0);
+    uint16_t addOrUpdateChannel(string, string, string, uint64, uint64 parentChannel = 0, uint64 order = 0);
     uint64 getChannelID(uint16_t frequency, uint64 current = 0, uint64 root = 0);
     uint64 getChannelID(double frequency, uint64 current = 0, uint64 root = 0);
 

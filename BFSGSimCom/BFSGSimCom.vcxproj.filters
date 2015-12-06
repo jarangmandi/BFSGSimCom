@@ -34,6 +34,9 @@
     <ClCompile Include="..\SQLiteCpp\Backup.cpp">
       <Filter>SQLiteCpp</Filter>
     </ClCompile>
+    <ClCompile Include="ICAOData.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="TS3Channels.h">
@@ -74,6 +77,9 @@
     </ClInclude>
     <ClInclude Include="..\SQLiteCpp\Backup.h">
       <Filter>SQLiteCpp</Filter>
+    </ClInclude>
+    <ClInclude Include="ICAOData.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

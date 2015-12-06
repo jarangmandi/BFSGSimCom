@@ -35,6 +35,8 @@ private:
     WORD cCom2Sby;
     BYTE cSelectedCom;
     WORD cWoW;
+    double cLat;
+    double cLon;
 
     void (*callback)(SimComData);
 

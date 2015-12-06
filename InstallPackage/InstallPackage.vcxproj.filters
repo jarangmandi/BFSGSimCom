@@ -21,14 +21,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="package64.ini">
-      <Filter>x64</Filter>
-    </None>
-    <None Include="SQLite.sql">
-      <Filter>Source Files</Filter>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
     <CustomBuild Include="package32.ini">
       <Filter>Win32</Filter>
     </CustomBuild>
@@ -37,5 +29,11 @@
     </CustomBuild>
     <CustomBuild Include="airport-frequencies.csv" />
     <CustomBuild Include="airports.csv" />
+    <CustomBuild Include="package64.ini">
+      <Filter>x64</Filter>
+    </CustomBuild>
+    <CustomBuild Include="SQLite.sql">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
   </ItemGroup>
 </Project>

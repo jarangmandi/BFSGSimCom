@@ -40,6 +40,9 @@ void FSUIPCWrapper::workerThread(void)
     WORD simCom2s;
     BYTE simRadSw;
     WORD simOnGnd;
+    int64_t simLatitude;
+    int64_t simLongitude;
+
 
     while (cRun)
     {
@@ -49,11 +52,17 @@ void FSUIPCWrapper::workerThread(void)
         FSUIPC_Read(0x311C, 2, &simCom2s);
         FSUIPC_Read(0x3122, 1, &simRadSw);
         FSUIPC_Read(0x0366, 2, &simOnGnd);
+        FSUIPC_Read(0x0560, 8, &simLatitude);
+        FSUIPC_Read(0x0568, 8, &simLongitude);
 
         if (FSUIPC_Process())
         {
             bool blChanged = false;
 
+            cLat = double(simLatitude);
+            cLat *= 90.0 / (10001750.0 * 65536.0 * 65536.0);
+            cLon = double(simLongitude);
+            cLon *= 360.0 / (65536.0 * 65536.0 * 65536.0 * 65536.0);
 
             if (simCom1 != cCom1Freq)
             {
