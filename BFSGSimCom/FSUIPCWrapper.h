@@ -24,6 +24,8 @@ public:
         int iCom2Sby;
         ComRadio selectedCom;
         bool blWoW;
+        double dLat;
+        double dLon;
     };
 
 private:

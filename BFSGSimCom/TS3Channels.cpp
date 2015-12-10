@@ -455,7 +455,7 @@ const string TS3Channels::aGetChannelFromFreqCurrPrnt = \
 "";
 
 
-uint64 TS3Channels::getChannelID(uint16_t frequency, uint64 current, uint64 root)
+uint64 TS3Channels::getChannelID(uint16_t frequency, uint64 current, uint64 root, double aLat, double aLon)
 {
     // Define this here - it gets resolved at compile time...
     // Default scenario is that we don't find a result
@@ -494,11 +494,11 @@ uint64 TS3Channels::getChannelID(uint16_t frequency, uint64 current, uint64 root
 }
 
 // Returns the ID of the channel corresponding to a frequency provided as a double.
-uint64 TS3Channels::getChannelID(double frequency, uint64 current, uint64 root)
+uint64 TS3Channels::getChannelID(double frequency, uint64 current, uint64 root, double aLat, double aLon)
 {
     // Need to get the rounding right
     // Try 128.300 to see why this is needed!
-    return getChannelID(uint16_t(0.1 * round(1000 * frequency)), current, root);
+    return getChannelID(uint16_t(0.1 * round(1000 * frequency)), current, root, aLat, aLon);
 }
 
 

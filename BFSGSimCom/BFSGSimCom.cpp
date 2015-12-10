@@ -95,6 +95,8 @@ void callback(FSUIPCWrapper::SimComData data)
             uint16_t frequency;
             uint64 targetChannel;
 
+
+
             // Work out which radio is active, and therefore the current tuned frequency.
             switch (data.selectedCom)
             {
@@ -112,7 +114,9 @@ void callback(FSUIPCWrapper::SimComData data)
             targetChannel = ts3Channels.getChannelID(
                 frequency,
                 currentChannel,
-                cfg->getRootChannel()
+                cfg->getRootChannel(),
+                data.dLat,
+                data.dLon
                 );
 
             // If there's no defined channel found

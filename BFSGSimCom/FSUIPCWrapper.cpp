@@ -43,7 +43,8 @@ void FSUIPCWrapper::workerThread(void)
     int64_t simLatitude;
     int64_t simLongitude;
 
-
+    int counter = 0;
+    
     while (cRun)
     {
         FSUIPC_Read(0x034E, 2, &simCom1);
@@ -100,6 +101,12 @@ void FSUIPCWrapper::workerThread(void)
                 cWoW = simOnGnd;
             }
 
+            if (!(++counter % 50))
+            {
+                counter = 0;
+                blChanged = true;
+            }
+
             if (blChanged)
             {
                 if (callback != NULL)
@@ -131,7 +138,12 @@ FSUIPCWrapper::SimComData FSUIPCWrapper::getSimComData() {
     else
         simcomdata.selectedCom = ComRadio(((cSelectedCom & 0x80) ? Com1 : None) + ((cSelectedCom & 0x40) ? Com2 : None));
 
+    // Required for reporting...
     simcomdata.blWoW = (cWoW != 0);
+
+    // And finally, report the aircraft position.
+    simcomdata.dLat = cLat;
+    simcomdata.dLon = cLon;
 
     return simcomdata;
 };
