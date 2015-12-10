@@ -430,15 +430,30 @@ void TS3Channels::deleteAllChannels(void)
 }
 
 const string TS3Channels::aGetChannelFromFreqCurrPrnt = \
-"select down.child from " \
-"(select * from closure where child = :current and parent in (select child from closure where parent = :root)) as up," \
-"(select * from closure where frequency = :frequency) as down "
+//"select down.child from " \
+//"(select * from closure where child = :current and parent in (select child from closure where parent = :root)) as up," \
+//"(select * from closure where frequency = :frequency) as down "
+//"where " \
+//"up.parent = down.parent " \
+//"order by up.depth + down.depth, down.depth desc " \
+//"limit 1" \
+//";"\
+//"";
+"with stations as( " \
+"select down.child as channel, up.depth + down.depth as distance, down.depth as removed from " \
+"(select * from closure where child = :current and parent in(select child from closure where parent = :root)) as up, " \
+"(select * from closure where frequency = :frequency) as down " \
 "where " \
 "up.parent = down.parent " \
 "order by up.depth + down.depth, down.depth desc " \
-"limit 1" \
-";"\
+") " \
+"select s.channel, s.distance, s.removed, c.latitude, c.longitude " \
+"from stations as s " \
+"left join channels as c " \
+"on s.channel = c.channelId " \
+";" \
 "";
+
 
 uint64 TS3Channels::getChannelID(uint16_t frequency, uint64 current, uint64 root)
 {
