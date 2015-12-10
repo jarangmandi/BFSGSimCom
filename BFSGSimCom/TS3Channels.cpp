@@ -58,6 +58,9 @@ int TS3Channels::initDatabase()
         "DROP TABLE IF EXISTS closure;" \
         "CREATE TABLE IF NOT EXISTS channels(" \
         "   channelId UNSIGNED BIG INT PRIMARY KEY NOT NULL, "  \
+        "   latitude DOUBLE, " \
+        "   longitude DOUBLE, " \
+        "   range DOUBLE, " \
         "   frequency INT, "    \
         "   parent UNSIGNED BIG INT, "  \
         "   ordering UNSIGNED BIG INT, "  \
@@ -75,7 +78,7 @@ int TS3Channels::initDatabase()
         "create unique index if not exists closureprntchld on closure(parent, child, depth);" \
         "create unique index if not exists closurechldprnt on closure(child, parent, depth);"
         "create index parent_idx on channels(parent);" \
-        "insert into channels(channelId, frequency, parent, ordering, name, topic, description) values (0, null, 0, 0, 'Root', 'Root Channel', 'Root Channel');"
+        "insert into channels(channelId, latitude, longitude, range, frequency, parent, ordering, name, topic, description) values (0, null, null, null, null, 0, 0, 'Root', 'Root Channel', 'Root Channel');"
         "insert into closure(parent, child, depth) values (0, 0, 0);" \
         "";
 
@@ -88,6 +91,8 @@ int TS3Channels::initDatabase()
         e;
         retValue = mChanDb.getErrorCode();
     }
+
+    sqlite3_create_function(mChanDb.getHandle(), "distance", 4, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &distanceFunc, NULL, NULL);
 
     return retValue;
 }
@@ -176,19 +181,23 @@ tuple<double, double> TS3Channels::getLatLonFromStrings(const vector<string>& st
 {
     static regex r("([+-]?(?:\\d+\\.?\\d*|\\d*\\.?\\d+))\\s+([+-]?(?:\\d+\\.?\\d*|\\d*\\.?\\d+))");
 
-    tuple<double, double> retVal(0.0, 0.0);
+    tuple<double, double> retVal(999.9, 999.9);
     double tLat;
     double tLon;
-
-    ::tie(tLat, tLon) = retVal;
 
     smatch matchedLatLon;
 
     for (string str : strs)
     {
         if (std::regex_search(str, matchedLatLon, r)) {
-            tLat = ::stod(matchedLatLon[0].str(), NULL);
-            tLon = ::stod(matchedLatLon[1].str(), NULL);
+            string strLat = matchedLatLon[1]; // .str().substr(0, matchedLatLon[1]);
+            string strLon = matchedLatLon[2]; // .str().substr(0, matchedLatLon[2]);
+            tLat = ::stod(strLat, NULL);
+            tLon = ::stod(strLon, NULL);
+
+            retVal = ::make_tuple(tLat, tLon);
+
+            break;
         }
     }
 
@@ -199,9 +208,9 @@ tuple<double, double> TS3Channels::getLatLonFromStrings(const vector<string>& st
 
 // Define queries here - they get resolved at compile time...
 const string TS3Channels::aAddInsertChannel = \
-"insert into channels (channelId, frequency, parent, ordering, name, topic, description)" \
+"insert into channels (channelId, latitude, longitude, range, frequency, parent, ordering, name, topic, description)" \
 "values" \
-"(:channelId, :frequency, :parent, :order, :name, :topic, :desc)" \
+"(:channelId, :latitude, :longitude, :range, :frequency, :parent, :order, :name, :topic, :desc)" \
 ";" \
 "";
 
@@ -217,10 +226,21 @@ const string TS3Channels::aAddInsertClosure2 = \
 ";" \
 "";
 
-uint16_t TS3Channels::addOrUpdateChannel(string cName, string cTopic, string cDesc, uint64 channelID, uint64 parentChannel, uint64 order)
+uint16_t TS3Channels::addOrUpdateChannel(string& strC, string cName, string cTopic, string cDesc, uint64 channelID, uint64 parentChannel, uint64 order)
 {
-    string ident;
-    uint16_t frequency;
+    double lat;
+    double lon;
+    double range;
+    string type;
+
+    bool blIdentFromTS = false;
+    bool blFreqFromTS = false;
+    bool blLatLonFromTS = false;
+    bool blFreqFromDb = false;
+    bool blLatLonFromDb = false;
+
+    string ident = "";
+    uint16_t frequency = 0;
     tuple<double, double> latlon;
 
     // First, delete the channel from the list
@@ -228,8 +248,58 @@ uint16_t TS3Channels::addOrUpdateChannel(string cName, string cTopic, string cDe
 
     // Look for an ident, a frequency and a location, in the data we were passed
     ident = getAirportIdentFromStrings(cName, cTopic, cDesc);
+    blIdentFromTS = (ident != "");
+
     frequency = getFrequencyFromStrings(cName, cTopic, cDesc);
+    blFreqFromTS = (frequency != 0);
+
     latlon = getLatLonFromStrings(cName, cTopic, cDesc);
+    ::tie(lat, lon) = latlon;
+    blLatLonFromTS = (lat != 999.9) && (lon != 999.9);
+    
+    vector<ICAOData::Station> station = icaoData.getStationData(ident);
+
+    if (station.size() > 0)
+    {
+        if (station[0].type == "TWR")
+            range = 50.0;
+        else if (station[0].type == "GND")
+            range = 10.0;
+        else if (station[0].type == "APP")
+            range = 400.0;
+        else if (station[0].type == "DEP")
+            range = 400.0;
+        else if (station[0].type == "CNTR")
+            range = 1000.0;
+        else if (station[0].type == "ATIS")
+            range = 400.0;
+        else if (station[0].type == "INFO")
+            range = 50.0;
+        else if (station[0].type == "CLD")
+            range = 10.0;
+        else
+            range = 10800.0;
+
+        if (!blFreqFromTS)
+        {
+            frequency = station[0].frequency;
+            blFreqFromDb = true;
+        }
+            
+        if (!blLatLonFromTS)
+        {
+            if (station[0].lat != 999.9 && station[0].lon != 999.9)
+            {
+                lat = station[0].lat;
+                lon = station[0].lon;
+                blLatLonFromDb = true;
+            }
+        }
+    }
+    else
+    {
+        range = 10800.0;
+    }
 
     int retValue = SQLITE_OK;
 
@@ -242,6 +312,9 @@ uint16_t TS3Channels::addOrUpdateChannel(string cName, string cTopic, string cDe
         SQLite::Statement aClosureStmt2(mChanDb, aAddInsertClosure2);
 
         aChannelStmt.bind(":channelId", sqlite3_int64(channelID));
+        (lon != 999.9) ? aChannelStmt.bind(":latitude", lat) : aChannelStmt.bind(":latitude");
+        (lat != 999.9) ? aChannelStmt.bind(":longitude", lon) : aChannelStmt.bind(":longitude");
+        aChannelStmt.bind(":range", range);
         (frequency) ? aChannelStmt.bind(":frequency", frequency) : aChannelStmt.bind(":frequency");
         aChannelStmt.bind(":parent", sqlite3_int64(parentChannel));
         aChannelStmt.bind(":order", sqlite3_int64(order));
@@ -261,6 +334,26 @@ uint16_t TS3Channels::addOrUpdateChannel(string cName, string cTopic, string cDe
 
         aTrans.commit();
 
+        string strCommentary = "";
+        strCommentary = strCommentary + "ChannelID: " + to_string(channelID);
+        strCommentary = strCommentary + " | Name: " + cName;
+        strCommentary = strCommentary + " | Topic: " + cTopic;
+        strCommentary = strCommentary + " | Desc: " + cDesc;
+
+        if (blFreqFromDb || blLatLonFromDb)
+            strCommentary = strCommentary + " | Ident: " + ident;
+
+        if (blFreqFromDb)
+            strCommentary = strCommentary + " | DBFreq: " + to_string(frequency);
+        else if (blFreqFromTS)
+            strCommentary = strCommentary + " | TSFreq: " + to_string(frequency);
+
+        if (blLatLonFromDb)
+            strCommentary = strCommentary + " | DBLatLon: " + to_string(lat) + "/" + to_string(lon);
+        else if (blLatLonFromTS)
+            strCommentary = strCommentary + " | TSLatLon: " + to_string(lat) + "/" + to_string(lon);
+
+        strC = strCommentary;
     }
     catch (SQLite::Exception& e)
     {
@@ -465,5 +558,28 @@ vector<TS3Channels::ChannelInfo> TS3Channels::getChannelList(uint64 root)
         e;
     }
     return retValue;
+}
 
+#define DEG2RAD(degrees) (degrees * 0.01745327) // degrees * pi over 180
+
+void TS3Channels::distanceFunc(sqlite3_context *context, int argc, sqlite3_value **argv)
+{
+    // check that we have four arguments (lat1, lon1, lat2, lon2)
+//    assert(argc == 4);
+    // check that all four arguments are non-null
+    if (sqlite3_value_type(argv[0]) == SQLITE_NULL || sqlite3_value_type(argv[1]) == SQLITE_NULL || sqlite3_value_type(argv[2]) == SQLITE_NULL || sqlite3_value_type(argv[3]) == SQLITE_NULL) {
+        sqlite3_result_null(context);
+        return;
+    }
+    // get the four argument values
+    double lat1 = sqlite3_value_double(argv[0]);
+    double lon1 = sqlite3_value_double(argv[1]);
+    double lat2 = sqlite3_value_double(argv[2]);
+    double lon2 = sqlite3_value_double(argv[3]);
+    // convert lat1 and lat2 into radians now, to avoid doing it twice below
+    double lat1rad = DEG2RAD(lat1);
+    double lat2rad = DEG2RAD(lat2);
+    // apply the spherical law of cosines to our latitudes and longitudes, and set the result appropriately
+    // 6378.1 is the approximate radius of the earth in kilometres
+    sqlite3_result_double(context, acos(sin(lat1rad) * sin(lat2rad) + cos(lat1rad) * cos(lat2rad) * cos(DEG2RAD(lon2) - DEG2RAD(lon1))) * 6378.1);
 }

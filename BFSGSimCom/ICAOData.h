@@ -15,8 +15,9 @@ private:
 
     string determineIcaoDbFileName(void);
 
-    static const string aGetChannelList;
-    static const string aGetChannel;
+    static const string aGetStationList;
+    static const string aGetStation1;
+    static const string aGetStation2;
 
 public:
     struct Station
@@ -34,7 +35,8 @@ public:
 
     };
 
-    vector<struct ICAOData::Station> ICAOData::getStationData(string strICAO);
+    vector<struct ICAOData::Station> ICAOData::getAirportData(string strICAO);
+    vector<struct ICAOData::Station> ICAOData::getStationData(string strICAOType);
     vector<struct ICAOData::Station> ICAOData::getStationData(string strICAO, string strType);
 
     ICAOData();
