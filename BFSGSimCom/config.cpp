@@ -182,8 +182,11 @@ Config::Config(TS3Channels& tch)
     iUntuned = settings.value("channel/untuned", TS3Channels::CHANNEL_ID_NOT_FOUND).toULongLong();
 
     blUntuned = settings.value("untuned/move").toBool();
+    blRange = settings.value("untuned/range").toBool();
     rbUntunedMove->setChecked(blUntuned);
     rbUntunedStay->setChecked(!blUntuned);
+    cbUntunedRange->setChecked(blRange);
+    
     untunedChanged();
 
     // Set up the mode radio buttons and define the "mode" variable.
@@ -241,6 +244,9 @@ void Config::saveSettings()
     // Save the state of the "untuned" buttons.
     blUntuned = rbUntunedMove->isChecked();
     settings.setValue("untuned/move", blUntuned);
+
+    blRange = cbUntunedRange->isCheckable();
+    settings.setValue("untuned/range", blRange);
 
     // Save the channel IDs of each of the channel trees.
     iRoot = getSelectedChannelId(treeParentChannel);
@@ -347,5 +353,6 @@ void Config::untunedChanged()
     bool bl = !(rbUntunedStay->isChecked());
 
     treeUntunedChannel->setEnabled(bl && gbUntuned->isEnabled());
+    cbUntunedRange->setEnabled(bl && gbUntuned->isEnabled());
 
 }

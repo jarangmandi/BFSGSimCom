@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>393</width>
-    <height>531</height>
+    <height>551</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -20,7 +20,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>490</y>
+     <y>510</y>
      <width>371</width>
      <height>31</height>
     </rect>
@@ -166,9 +166,9 @@
    <property name="geometry">
     <rect>
      <x>20</x>
-     <y>330</y>
+     <y>350</y>
      <width>351</width>
-     <height>16</height>
+     <height>21</height>
     </rect>
    </property>
    <property name="font">
@@ -181,42 +181,13 @@
     <string>Use the selected channel when none matches the tuned frequency.</string>
    </property>
   </widget>
-  <widget class="QTreeWidget" name="treeUntunedChannel">
-   <property name="geometry">
-    <rect>
-     <x>20</x>
-     <y>350</y>
-     <width>351</width>
-     <height>121</height>
-    </rect>
-   </property>
-   <property name="allColumnsShowFocus">
-    <bool>true</bool>
-   </property>
-   <property name="columnCount">
-    <number>2</number>
-   </property>
-   <attribute name="headerVisible">
-    <bool>false</bool>
-   </attribute>
-   <column>
-    <property name="text">
-     <string notr="true">Room</string>
-    </property>
-   </column>
-   <column>
-    <property name="text">
-     <string notr="true">Channel</string>
-    </property>
-   </column>
-  </widget>
   <widget class="QGroupBox" name="gbUntuned">
    <property name="geometry">
     <rect>
      <x>10</x>
      <y>260</y>
      <width>371</width>
-     <height>221</height>
+     <height>251</height>
     </rect>
    </property>
    <property name="font">
@@ -266,12 +237,59 @@
      <string>Move to 'untuned' channel if COM tuning doesn't match TS channels</string>
     </property>
    </widget>
+   <widget class="QTreeWidget" name="treeUntunedChannel">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>110</y>
+      <width>351</width>
+      <height>131</height>
+     </rect>
+    </property>
+    <property name="allColumnsShowFocus">
+     <bool>true</bool>
+    </property>
+    <property name="columnCount">
+     <number>2</number>
+    </property>
+    <attribute name="headerVisible">
+     <bool>false</bool>
+    </attribute>
+    <column>
+     <property name="text">
+      <string notr="true">Room</string>
+     </property>
+    </column>
+    <column>
+     <property name="text">
+      <string notr="true">Channel</string>
+     </property>
+    </column>
+   </widget>
+   <widget class="QCheckBox" name="cbUntunedRange">
+    <property name="geometry">
+     <rect>
+      <x>29</x>
+      <y>61</y>
+      <width>331</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <weight>50</weight>
+      <bold>false</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>'Untuned' also means 'out of range'</string>
+    </property>
+   </widget>
   </widget>
   <zorder>gbUntuned</zorder>
   <zorder>buttonBox</zorder>
   <zorder>groupBox</zorder>
   <zorder>label_2</zorder>
-  <zorder>treeUntunedChannel</zorder>
  </widget>
  <resources/>
  <connections>
