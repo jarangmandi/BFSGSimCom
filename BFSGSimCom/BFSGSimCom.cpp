@@ -115,6 +115,7 @@ void callback(FSUIPCWrapper::SimComData data)
                 frequency,
                 currentChannel,
                 cfg->getRootChannel(),
+                cfg->getRange(),
                 data.dLat,
                 data.dLon
                 );

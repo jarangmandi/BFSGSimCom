@@ -92,7 +92,7 @@ int TS3Channels::initDatabase()
         retValue = mChanDb.getErrorCode();
     }
 
-    sqlite3_create_function(mChanDb.getHandle(), "distance", 4, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &distanceFunc, NULL, NULL);
+    sqlite3_create_function(mChanDb.getHandle(), "range", 4, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &distanceFunc, NULL, NULL);
 
     return retValue;
 }
@@ -447,15 +447,14 @@ const string TS3Channels::aGetChannelFromFreqCurrPrnt = \
 "up.parent = down.parent " \
 "order by up.depth + down.depth, down.depth desc " \
 ") " \
-"select s.channel, s.distance, s.removed, c.latitude, c.longitude " \
+"select s.channel, s.distance, s.removed, c.range as max_range, range(c.latitude, c.longitude, :lat, :lon) as range " \
 "from stations as s " \
 "left join channels as c " \
 "on s.channel = c.channelId " \
-";" \
 "";
 
 
-uint64 TS3Channels::getChannelID(uint16_t frequency, uint64 current, uint64 root, double aLat, double aLon)
+uint64 TS3Channels::getChannelID(uint16_t frequency, uint64 current, uint64 root, bool blRange, double aLat, double aLon)
 {
     // Define this here - it gets resolved at compile time...
     // Default scenario is that we don't find a result
@@ -463,19 +462,25 @@ uint64 TS3Channels::getChannelID(uint16_t frequency, uint64 current, uint64 root
 
     try
     {
+        string strQuery = aGetChannelFromFreqCurrPrnt + \
+            string ((blRange) ? " order by range; " : " order by distance, removed;");
+
         // Create the statement
-        SQLite::Statement aStmt(mChanDb, aGetChannelFromFreqCurrPrnt);
+        SQLite::Statement aStmt(mChanDb, strQuery);
 
         // Bind the variables
         aStmt.bind(":frequency", frequency);
         aStmt.bind(":current", sqlite3_int64(current));
         aStmt.bind(":root", sqlite3_int64(root));
+        aStmt.bind(":lat", aLat);
+        aStmt.bind(":lon", aLon);
 
         // Execute the query, and if we get a result.
         if (aStmt.executeStep())
         {
             // The query is written to return a single value in a single row...
             retValue = aStmt.getColumn(0).getInt64();
+            double rng = aStmt.getColumn(0).getDouble();
         }
         else
         {
@@ -494,11 +499,11 @@ uint64 TS3Channels::getChannelID(uint16_t frequency, uint64 current, uint64 root
 }
 
 // Returns the ID of the channel corresponding to a frequency provided as a double.
-uint64 TS3Channels::getChannelID(double frequency, uint64 current, uint64 root, double aLat, double aLon)
+uint64 TS3Channels::getChannelID(double frequency, uint64 current, uint64 root, bool blRange, double aLat, double aLon)
 {
     // Need to get the rounding right
     // Try 128.300 to see why this is needed!
-    return getChannelID(uint16_t(0.1 * round(1000 * frequency)), current, root, aLat, aLon);
+    return getChannelID(uint16_t(0.1 * round(1000 * frequency)), current, root, blRange, aLat, aLon);
 }
 
 
