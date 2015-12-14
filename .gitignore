@@ -1,0 +1,17 @@
+BFSGSimCom.sdf
+BFSGSimCom.opensdf
+BFSGSimCom/GeneratedFiles/
+BFSGSimCom/Win32/
+BFSGSimCom/x64/
+FSUIPCLibrary/Win32/
+FSUIPCLibrary/x64/
+InstallPackage/Win32/
+InstallPackage/x64/
+SQLite3/Win32/
+SQLite3/x64/
+SQLiteShell/Win32/
+SQLiteShell/x64/
+Win32/
+x64/
+.vs
+
