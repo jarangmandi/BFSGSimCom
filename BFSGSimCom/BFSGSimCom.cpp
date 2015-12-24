@@ -85,7 +85,6 @@ void callback(FSUIPCWrapper::SimComData data)
     
     simComData = data;
     string strMessage = "BFSGSimCom >> " + FSUIPCWrapper::toString(simComData);
-    ts3Functions.logMessage(strMessage.c_str(), LogLevel::LogLevel_DEBUG, "BFSGSimCom", serverConnectionHandlerID);
 
     // Assuming we're connected, and we're supposed to be moving when the channel changes
     if (blConnected)
@@ -94,8 +93,6 @@ void callback(FSUIPCWrapper::SimComData data)
         {
             uint16_t frequency;
             uint64 targetChannel;
-
-
 
             // Work out which radio is active, and therefore the current tuned frequency.
             switch (data.selectedCom)
@@ -120,31 +117,35 @@ void callback(FSUIPCWrapper::SimComData data)
                 data.dLon
                 );
 
-            // If there's no defined channel found
-            if (targetChannel == TS3Channels::CHANNEL_ID_NOT_FOUND)
+            // We want to move if the target channel has changed since the last iteration, or if the mode is "automatic"
+            bool blToMove = (targetChannel != lastTargetChannel) || cfg->getMode() == Config::CONFIG_AUTO;
+            bool blTuned = (targetChannel != TS3Channels::CHANNEL_ID_NOT_FOUND);
+            bool blManMoved = (currentChannel != lastTargetChannel);
+
+            // We only really care if we've got a different channel to move to.
+            if (blToMove)
             {
-                // Then if we're going somewhere special in the event that we tune an unknown channel, find out
-                // what that is.
-                if (cfg->getUntuned())
+                // ...but only move if there is a tuned channel or we didn't move ourselves or we've said we always want
+                // to be in the channel the radios say we should be in.
+                if (blTuned || !blManMoved || cfg->getMode() == Config::CONFIG_AUTO)
                 {
-                    targetChannel = cfg->getUntunedChannel();
-                }
-                else
-                {
-                    // Otherwise the target this time around is the same as the target last time around.
-                    targetChannel = lastTargetChannel;
+                    // If we're not tuned, then get the "untuned" channel instead.
+                    if (!blTuned)
+                    {
+                        targetChannel = cfg->getUntunedChannel();
+                    }
+
+                    // Request the move, but only if there is one and there's a valid "untuned" channel!
+                    if (targetChannel != currentChannel && targetChannel != TS3Channels::CHANNEL_ID_NOT_FOUND && targetChannel != 0)
+                    {
+                        ts3Functions.requestClientMove(serverConnectionHandlerID, myTS3ID, targetChannel, "", callbackReturnCode);
+                    }
                 }
             }
 
-            // if where we are is different from where we should be, then initiate the change.
-            if (currentChannel != targetChannel)
-            {
-                ts3Functions.requestClientMove(serverConnectionHandlerID, myTS3ID, targetChannel, "", callbackReturnCode);
-                //ts3Functions.requestClientMove(serverConnectionHandlerID, myTS3ID, targetChannel, "", NULL);
+            // Remember where we should have gone last time for when the target changes this time!
+            lastTargetChannel = targetChannel;
 
-                // remember where we were sent last time - just in case!
-                lastTargetChannel = targetChannel;
-            }
         }
         else
         {
@@ -153,8 +154,6 @@ void callback(FSUIPCWrapper::SimComData data)
         }
     }
 
-    //if (infoDataType > 0 && infoDataId > 0 ) ts3Functions.requestInfoUpdate(serverConnectionHandlerID, infoDataType, infoDataId);
-    
     // This is a frig to avoid trying to update client data from an unrelated thread. What we're waiting for is
     // for the onServerUpdatedEvent to fire so we can safely request the info update.
     if (infoDataType > 0 && infoDataId > 0) ts3Functions.requestServerVariables(serverConnectionHandlerID);
@@ -669,6 +668,8 @@ void ts3plugin_onClientMoveEvent(uint64 serverConnectionHandlerID, anyID clientI
         {
             if (newChannelID != lastTargetChannel)
                 ts3Functions.requestClientMove(serverConnectionHandlerID, clientID, lastTargetChannel, "", NULL);
+
+            currentChannel = lastTargetChannel;
         }
         else
         {
