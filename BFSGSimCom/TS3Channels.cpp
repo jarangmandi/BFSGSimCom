@@ -430,15 +430,6 @@ void TS3Channels::deleteAllChannels(void)
 }
 
 const string TS3Channels::aGetChannelFromFreqCurrPrnt = \
-//"select down.child from " \
-//"(select * from closure where child = :current and parent in (select child from closure where parent = :root)) as up," \
-//"(select * from closure where frequency = :frequency) as down "
-//"where " \
-//"up.parent = down.parent " \
-//"order by up.depth + down.depth, down.depth desc " \
-//"limit 1" \
-//";"\
-//"";
 "with stations as( " \
 "select down.child as channel, up.depth + down.depth as distance, down.depth as removed from " \
 "(select * from closure where child = :current and parent in(select child from closure where parent = :root)) as up, " \
@@ -446,11 +437,15 @@ const string TS3Channels::aGetChannelFromFreqCurrPrnt = \
 "where " \
 "up.parent = down.parent " \
 "order by up.depth + down.depth, down.depth desc " \
-") " \
+"), " \
+"ranges as( " \
 "select s.channel, s.distance, s.removed, c.range as max_range, range(c.latitude, c.longitude, :lat, :lon) as range " \
 "from stations as s " \
 "left join channels as c " \
 "on s.channel = c.channelId " \
+") " \
+"select r.channel, r.distance, r.removed, r.max_range, r.range, (r.range < r.max_range) as in_range "
+"from ranges r" \
 "";
 
 
@@ -463,7 +458,10 @@ uint64 TS3Channels::getChannelID(uint16_t frequency, uint64 current, uint64 root
     try
     {
         string strQuery = aGetChannelFromFreqCurrPrnt + \
-            string ((blRange) ? " order by range; " : " order by distance, removed;");
+            string ((blRange) ?
+                " where in_range = 1 order by range, distance, removed; "
+                :
+                " order by distance, removed;");
 
         // Create the statement
         SQLite::Statement aStmt(mChanDb, strQuery);
@@ -585,7 +583,7 @@ vector<TS3Channels::ChannelInfo> TS3Channels::getChannelList(uint64 root)
 void TS3Channels::distanceFunc(sqlite3_context *context, int argc, sqlite3_value **argv)
 {
     // check that we have four arguments (lat1, lon1, lat2, lon2)
-//    assert(argc == 4);
+
     // check that all four arguments are non-null
     if (sqlite3_value_type(argv[0]) == SQLITE_NULL || sqlite3_value_type(argv[1]) == SQLITE_NULL || sqlite3_value_type(argv[2]) == SQLITE_NULL || sqlite3_value_type(argv[3]) == SQLITE_NULL) {
         sqlite3_result_null(context);
@@ -600,6 +598,6 @@ void TS3Channels::distanceFunc(sqlite3_context *context, int argc, sqlite3_value
     double lat1rad = DEG2RAD(lat1);
     double lat2rad = DEG2RAD(lat2);
     // apply the spherical law of cosines to our latitudes and longitudes, and set the result appropriately
-    // 6378.1 is the approximate radius of the earth in kilometres
-    sqlite3_result_double(context, acos(sin(lat1rad) * sin(lat2rad) + cos(lat1rad) * cos(lat2rad) * cos(DEG2RAD(lon2) - DEG2RAD(lon1))) * 6378.1);
+    // 3437.746 is the approximate radius of the earth in nautical miles
+    sqlite3_result_double(context, acos(sin(lat1rad) * sin(lat2rad) + cos(lat1rad) * cos(lat2rad) * cos(DEG2RAD(lon2) - DEG2RAD(lon1))) * 3437.746);
 }
