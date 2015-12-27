@@ -156,7 +156,7 @@ void callback(FSUIPCWrapper::SimComData data)
 
     // This is a frig to avoid trying to update client data from an unrelated thread. What we're waiting for is
     // for the onServerUpdatedEvent to fire so we can safely request the info update.
-    if (infoDataType > 0 && infoDataId > 0) ts3Functions.requestServerVariables(serverConnectionHandlerID);
+    ts3Functions.requestServerVariables(serverConnectionHandlerID);
 }
 
 
@@ -255,6 +255,8 @@ void loadChannels(uint64 serverConnectionHandlerID)
         // And not forgetting to free up the memory we've used for the channel list.
         ts3Functions.freeMemory(channelList);
     }
+
+//    ts3Functions.requestServerVariables(serverConnectionHandlerID);
 }
 
 
@@ -521,6 +523,7 @@ static struct PluginMenuItem* createMenuItem(enum PluginMenuType type, int id, c
  */
 enum {
     MENU_ID_SIMCOM_CONFIGURE = 1,
+    MENU_ID_DUMMY,
     MENU_ID_SIMCOM_MODE_DISABLE,
     MENU_ID_SIMCOM_MODE_MANUAL,
     MENU_ID_SIMCOM_MODE_AUTO
@@ -550,12 +553,18 @@ void ts3plugin_initMenus(struct PluginMenuItem*** menuItems, char** menuIcon) {
      * e.g. for "test_plugin.dll", icon "1.png" is loaded from <TeamSpeak 3 Client install dir>\plugins\test_plugin\1.png
      */
 
-    BEGIN_CREATE_MENUS(4);  /* IMPORTANT: Number of menu items must be correct! */
+    BEGIN_CREATE_MENUS(5);  /* IMPORTANT: Number of menu items must be correct! */
     CREATE_MENU_ITEM(PLUGIN_MENU_TYPE_GLOBAL, MENU_ID_SIMCOM_CONFIGURE, "Configure", "");
+    CREATE_MENU_ITEM(PLUGIN_MENU_TYPE_GLOBAL, MENU_ID_DUMMY, "------------------", "");
     CREATE_MENU_ITEM(PLUGIN_MENU_TYPE_GLOBAL, MENU_ID_SIMCOM_MODE_DISABLE, "Mode - Disable", "");
     CREATE_MENU_ITEM(PLUGIN_MENU_TYPE_GLOBAL, MENU_ID_SIMCOM_MODE_MANUAL, "Mode - Manual", "");
     CREATE_MENU_ITEM(PLUGIN_MENU_TYPE_GLOBAL, MENU_ID_SIMCOM_MODE_AUTO, "Mode - Auto", "");
     END_CREATE_MENUS;  /* Includes an assert checking if the number of menu items matched */
+
+    // Setup initial state of menu items
+    ts3Functions.setPluginMenuEnabled(pluginID, MENU_ID_SIMCOM_MODE_DISABLE, (cfg->getMode() == Config::ConfigMode::CONFIG_DISABLED) ? 0 : 1);
+    ts3Functions.setPluginMenuEnabled(pluginID, MENU_ID_SIMCOM_MODE_MANUAL, (cfg->getMode() == Config::ConfigMode::CONFIG_MANUAL) ? 0 : 1);
+    ts3Functions.setPluginMenuEnabled(pluginID, MENU_ID_SIMCOM_MODE_AUTO, (cfg->getMode() == Config::ConfigMode::CONFIG_AUTO) ? 0 : 1);
 
     /*
      * Specify an optional icon for the plugin. This icon is used for the plugins submenu within context and main menus
@@ -742,7 +751,11 @@ void ts3plugin_onMenuItemEvent(uint64 serverConnectionHandlerID, enum PluginMenu
             break;
         }
 
-        ts3Functions.requestInfoUpdate(serverConnectionHandlerID, infoDataType, infoDataId);
+        ts3Functions.setPluginMenuEnabled(pluginID, MENU_ID_SIMCOM_MODE_DISABLE, (cfg->getMode() == Config::ConfigMode::CONFIG_DISABLED)? 0 : 1);
+        ts3Functions.setPluginMenuEnabled(pluginID, MENU_ID_SIMCOM_MODE_MANUAL, (cfg->getMode() == Config::ConfigMode::CONFIG_MANUAL) ? 0 : 1);
+        ts3Functions.setPluginMenuEnabled(pluginID, MENU_ID_SIMCOM_MODE_AUTO, (cfg->getMode() == Config::ConfigMode::CONFIG_AUTO) ? 0 : 1);
+
+        ts3Functions.requestServerVariables(ts3Functions.getCurrentServerConnectionHandlerID());
         break;
     default:
         break;
@@ -767,6 +780,12 @@ void ts3plugin_onHotkeyEvent(const char* keyword) {
     {
         cfg->setMode(Config::ConfigMode::CONFIG_AUTO);
     }
+
+    ts3Functions.setPluginMenuEnabled(pluginID, MENU_ID_SIMCOM_MODE_DISABLE, (cfg->getMode() == Config::ConfigMode::CONFIG_DISABLED) ? 0 : 1);
+    ts3Functions.setPluginMenuEnabled(pluginID, MENU_ID_SIMCOM_MODE_MANUAL, (cfg->getMode() == Config::ConfigMode::CONFIG_MANUAL) ? 0 : 1);
+    ts3Functions.setPluginMenuEnabled(pluginID, MENU_ID_SIMCOM_MODE_AUTO, (cfg->getMode() == Config::ConfigMode::CONFIG_AUTO) ? 0 : 1);
+
+    ts3Functions.requestServerVariables(ts3Functions.getCurrentServerConnectionHandlerID());
 }
 
 void ts3plugin_onServerUpdatedEvent(uint64 serverConnectionHandlerID)
