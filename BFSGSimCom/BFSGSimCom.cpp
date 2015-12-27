@@ -660,17 +660,23 @@ void ts3plugin_onConnectStatusChangeEvent(uint64 serverConnectionHandlerID, int 
         blConnected = false;
         myTS3ID = 0;
         break;
+
+        // Force the information window to update on disconnect
+        ts3Functions.requestServerVariables(serverConnectionHandlerID);
+
         // When we connect...
     case STATUS_CONNECTION_ESTABLISHED:
         // Get a list of all of the channels on the server, and iterate through it.
         loadChannels(serverConnectionHandlerID);
         blConnected = true;
         ts3Functions.getClientID(serverConnectionHandlerID, &myTS3ID);
+
+        // Force the information window to update on connect
+        ts3Functions.requestServerVariables(serverConnectionHandlerID);
         break;
     default:
         break;
     }
-
 
 }
 
