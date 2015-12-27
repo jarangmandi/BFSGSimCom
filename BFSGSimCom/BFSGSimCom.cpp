@@ -209,6 +209,38 @@ void ts3plugin_setFunctionPointers(const struct TS3Functions funcs) {
     ts3Functions = funcs;
 }
 
+// Load a single channel on a given server connection, looking up the parent information if it wasn't supplied.
+void loadChannel(uint64 serverConnectionHandlerID, uint64 channel, uint64 parent = UINT64_MAX)
+{
+    string strName;
+    char* cName;
+    char* cTopic;
+    char* cDesc;
+    uint64 order;
+
+    string strComment;
+
+    if (parent == UINT64_MAX)
+    {
+        ts3Functions.getParentChannelOfChannel(serverConnectionHandlerID, channel, &parent);
+    }
+
+    // For each channel in the list, get the name of the channel and its parent, and add it to the channel list.
+    ts3Functions.getChannelVariableAsString(serverConnectionHandlerID, channel, CHANNEL_NAME, &cName);
+    ts3Functions.getChannelVariableAsString(serverConnectionHandlerID, channel, CHANNEL_TOPIC, &cTopic);
+    ts3Functions.getChannelVariableAsString(serverConnectionHandlerID, channel, CHANNEL_DESCRIPTION, &cDesc);
+    ts3Functions.getChannelVariableAsUInt64(serverConnectionHandlerID, channel, CHANNEL_ORDER, &order);
+    ts3Channels.addOrUpdateChannel(strComment, cName, cTopic, cDesc, channel, parent, order);
+
+    // Not forgetting to free up the memory we've used for the channel name.
+    ts3Functions.freeMemory(cName);
+    ts3Functions.freeMemory(cTopic);
+    ts3Functions.freeMemory(cDesc);
+
+    ts3Functions.logMessage(strComment.c_str(), LogLevel::LogLevel_INFO, "BFSGSimCom", serverConnectionHandlerID);
+}
+
+// Load ALL channels on a given server connection.
 void loadChannels(uint64 serverConnectionHandlerID)
 {
     uint64* channelList;
@@ -217,36 +249,14 @@ void loadChannels(uint64 serverConnectionHandlerID)
     {
         for (int i = 0; channelList[i] != NULL; i++)
         {
-            string strName;
-            char* cName;
-            char* cTopic;
-            char* cDesc;
-            uint64 parent;
-            uint64 order;
-
-            string strComment;
-
-            // For each channel in the list, get the name of the channel and its parent, and add it to the channel list.
-            ts3Functions.getChannelVariableAsString(serverConnectionHandlerID, channelList[i], CHANNEL_NAME, &cName);
-            ts3Functions.getChannelVariableAsString(serverConnectionHandlerID, channelList[i], CHANNEL_TOPIC, &cTopic);
-            ts3Functions.getChannelVariableAsString(serverConnectionHandlerID, channelList[i], CHANNEL_DESCRIPTION, &cDesc);
-            ts3Functions.getChannelVariableAsUInt64(serverConnectionHandlerID, channelList[i], CHANNEL_ORDER, &order);
-            ts3Functions.getParentChannelOfChannel(serverConnectionHandlerID, channelList[i], &parent);
-            ts3Channels.addOrUpdateChannel(strComment, cName, cTopic, cDesc, channelList[i], parent, order);
-
-            // Not forgetting to free up the memory we've used for the channel name.
-            ts3Functions.freeMemory(cName);
-            ts3Functions.freeMemory(cTopic);
-            ts3Functions.freeMemory(cDesc);
-
-            ts3Functions.logMessage(strComment.c_str(), LogLevel::LogLevel_INFO, "BFSGSimCom", serverConnectionHandlerID);
+            loadChannel(serverConnectionHandlerID, channelList[i]);
         }
 
         // And not forgetting to free up the memory we've used for the channel list.
         ts3Functions.freeMemory(channelList);
     }
-
 }
+
 
 /*
  * Custom code called right after loading the plugin. Returns 0 on success, 1 on failure.
@@ -257,7 +267,6 @@ int ts3plugin_init() {
     uint64 serverConnectionHandlerID;
     int connectionStatus;
 
-    
     serverConnectionHandlerID = ts3Functions.getCurrentServerConnectionHandlerID();
     
     // Initialise the server connection status
@@ -290,28 +299,6 @@ int ts3plugin_init() {
     {
         fsuipc->start();
     }
-
-//#if defined(_DEBUG)
-//    ts3Channels.addOrUpdateChannel("Lobby", 1, 0);
-//    ts3Channels.addOrUpdateChannel("Fly-in 1", 2, 0);
-//    ts3Channels.addOrUpdateChannel("F1 Dep - 118.300", 3, 2);
-//    ts3Channels.addOrUpdateChannel("F1 Unicom - 122.800", 4, 2);
-//    ts3Channels.addOrUpdateChannel("F1 Dep - 119.125", 5, 2);
-//    ts3Channels.addOrUpdateChannel("Fly-in 2", 6, 0);
-//    ts3Channels.addOrUpdateChannel("F2 Departure", 7, 6);
-//    ts3Channels.addOrUpdateChannel("F2D Ground - 118.300", 8, 7);
-//    ts3Channels.addOrUpdateChannel("F2D Tower - 125.100", 9, 7);
-//    ts3Channels.addOrUpdateChannel("F2D Departure - 119.125", 10, 7);
-//    ts3Channels.addOrUpdateChannel("F2 EnRoute", 11, 6);
-//    ts3Channels.addOrUpdateChannel("F2 Unicom - 122.800", 12, 11);
-//    ts3Channels.addOrUpdateChannel("F2 Arrival", 13, 6);
-//    ts3Channels.addOrUpdateChannel("F2D Departure - 118.300", 14, 13);
-//    ts3Channels.addOrUpdateChannel("F2D Tower - 125.100", 15, 13);
-//    ts3Channels.addOrUpdateChannel("F2D Ground - 119.125", 16, 13);
-//    ts3Channels.addOrUpdateChannel("F2 Other - 118.300", 17, 6);
-//    ts3Channels.addOrUpdateChannel("F2 Other - 122.800", 18, 17);
-//    ts3Channels.addOrUpdateChannel("F2 Other - 118.300", 19, 18);
-//#endif
 
     loadChannels(serverConnectionHandlerID);
 
@@ -630,6 +617,29 @@ void ts3plugin_initHotkeys(struct PluginHotkey*** hotkeys) {
  */
 
 /* Clientlib */
+
+
+// The following four functions manage the changing of channel data whilst connected to the server through updating of information.
+void ts3plugin_onNewChannelCreatedEvent(uint64 serverConnectionHandlerID, uint64 channelID, uint64 channelParentID, anyID invokerID, const char* invokerName, const char* invokerUniqueIdentifier)
+{
+    loadChannel(serverConnectionHandlerID, channelID, channelParentID);
+}
+
+void ts3plugin_onDelChannelEvent(uint64 serverConnectionHandlerID, uint64 channelID, anyID invokerID, const char* invokerName, const char* invokerUniqueIdentifier)
+{
+    ts3Channels.deleteChannel(channelID);
+}
+
+void ts3plugin_onChannelMoveEvent(uint64 serverConnectionHandlerID, uint64 channelID, uint64 newChannelParentID, anyID invokerID, const char* invokerName, const char* invokerUniqueIdentifier)
+{
+    loadChannel(serverConnectionHandlerID, channelID, newChannelParentID);
+}
+
+void ts3plugin_onUpdateChannelEditedEvent(uint64 serverConnectionHandlerID, uint64 channelID, anyID invokerID, const char* invokerName, const char* invokerUniqueIdentifier)
+{
+    loadChannel(serverConnectionHandlerID, channelID);
+}
+
 
 void ts3plugin_onConnectStatusChangeEvent(uint64 serverConnectionHandlerID, int newStatus, unsigned int errorNumber) {
 
