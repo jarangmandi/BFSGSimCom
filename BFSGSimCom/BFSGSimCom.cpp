@@ -156,7 +156,7 @@ void callback(FSUIPCWrapper::SimComData data)
 
     // This is a frig to avoid trying to update client data from an unrelated thread. What we're waiting for is
     // for the onServerUpdatedEvent to fire so we can safely request the info update.
-    if (infoDataType > 0 && infoDataId > 0) ts3Functions.requestServerVariables(serverConnectionHandlerID);
+    ts3Functions.requestServerVariables(serverConnectionHandlerID);
 }
 
 
@@ -255,6 +255,8 @@ void loadChannels(uint64 serverConnectionHandlerID)
         // And not forgetting to free up the memory we've used for the channel list.
         ts3Functions.freeMemory(channelList);
     }
+
+//    ts3Functions.requestServerVariables(serverConnectionHandlerID);
 }
 
 
