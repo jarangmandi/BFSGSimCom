@@ -439,12 +439,12 @@ const string TS3Channels::aGetChannelFromFreqCurrPrnt = \
 "order by up.depth + down.depth, down.depth desc " \
 "), " \
 "ranges as( " \
-"select s.channel, s.distance, s.removed, c.range as max_range, range(c.latitude, c.longitude, :lat, :lon) as range " \
+"select s.channel, s.distance, s.removed, c.range as max_range, ifnull(range(c.latitude, c.longitude, :lat, :lon), c.range) as range " \
 "from stations as s " \
 "left join channels as c " \
 "on s.channel = c.channelId " \
 ") " \
-"select r.channel, r.distance, r.removed, r.max_range, r.range, (r.range < r.max_range) as in_range "
+"select r.channel, r.distance, r.removed, r.max_range, r.range, (r.range <= r.max_range) as in_range "
 "from ranges r" \
 "";
 
@@ -476,9 +476,8 @@ uint64 TS3Channels::getChannelID(uint16_t frequency, uint64 current, uint64 root
         // Execute the query, and if we get a result.
         if (aStmt.executeStep())
         {
-            // The query is written to return a single value in a single row...
+            // The query is written to return the station to be tuned in the first row.
             retValue = aStmt.getColumn(0).getInt64();
-            double rng = aStmt.getColumn(0).getDouble();
         }
         else
         {

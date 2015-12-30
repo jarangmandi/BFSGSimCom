@@ -245,7 +245,7 @@ void Config::saveSettings()
     blUntuned = rbUntunedMove->isChecked();
     settings.setValue("untuned/move", blUntuned);
 
-    blRange = cbUntunedRange->isCheckable();
+    blRange = cbUntunedRange->isChecked();
     settings.setValue("untuned/range", blRange);
 
     // Save the channel IDs of each of the channel trees.
