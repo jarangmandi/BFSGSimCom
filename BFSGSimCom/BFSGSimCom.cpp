@@ -54,7 +54,7 @@ Config* cfg;
 
 bool blConnected;
 anyID myTS3ID;
-uint64 lastTargetChannel;
+uint64 lastTargetChannel = TS3Channels::CHANNEL_ID_NOT_FOUND;
 uint64 currentChannel;
 
 PluginItemType infoDataType = PluginItemType(0);
@@ -152,6 +152,10 @@ void callback(FSUIPCWrapper::SimComData data)
             // if we're connected, but disabled, keep an eye on where we are, and make it the last target.
             lastTargetChannel = currentChannel;
         }
+    }
+    else
+    {
+        lastTargetChannel = TS3Channels::CHANNEL_ID_NOT_FOUND;
     }
 
     // This is a frig to avoid trying to update client data from an unrelated thread. What we're waiting for is
