@@ -61,8 +61,8 @@ public:
     int deleteChannel(uint64);
     void deleteAllChannels(void);
     uint16_t addOrUpdateChannel(string& str, string, string, string, uint64, uint64 parentChannel = 0, uint64 order = 0);
-    uint64 getChannelID(uint16_t frequency, uint64 current = 0, uint64 root = 0, bool blRange = false, double lat = -999.9, double lon = -999.0);
-    uint64 getChannelID(double frequency, uint64 current = 0, uint64 root = 0, bool blRange = false, double lat = -999.9, double lon = -999.0);
+    uint64 getChannelID(uint16_t frequency, uint64 current = 0, uint64 root = 0, bool blOutOfRangeUntuned = false, double lat = -999.9, double lon = -999.0);
+    uint64 getChannelID(double frequency, uint64 current = 0, uint64 root = 0, bool blOutOfRangeUntuned = false, double lat = -999.9, double lon = -999.0);
 
     vector<ChannelInfo> getChannelList(uint64 root = 0);
 

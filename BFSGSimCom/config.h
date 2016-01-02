@@ -29,7 +29,7 @@ public:
     ConfigMode getMode(void) { return mode; };
     void setMode(ConfigMode m);
     bool getUntuned(void) { return blUntuned; };
-    bool getRange(void) { return blRange; };
+    bool getRange(void) { return blOutOfRangeUntuned; };
     void setUntuned(bool bl);
     uint64 getRootChannel(void) { return iRoot; };
     uint64 getUntunedChannel(void) { return iUntuned; };
@@ -46,7 +46,8 @@ protected slots:
 private:
     ConfigMode mode;
     bool blUntuned;
-    bool blRange;
+    bool blConsiderRange;
+    bool blOutOfRangeUntuned;
     uint64 iRoot;
     uint64 iUntuned;
     bool initialising = true;
