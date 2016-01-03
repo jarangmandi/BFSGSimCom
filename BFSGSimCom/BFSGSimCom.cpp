@@ -112,7 +112,8 @@ void callback(FSUIPCWrapper::SimComData data)
                 frequency,
                 currentChannel,
                 cfg->getRootChannel(),
-                cfg->getRange(),
+                cfg->getConsiderRange(),
+                cfg->getOutOfRangeUntuned(),
                 data.dLat,
                 data.dLon
                 );
@@ -188,7 +189,7 @@ const char* ts3plugin_name() {
 
 /* Plugin version */
 const char* ts3plugin_version() {
-    return "0.7";
+    return "0.8alpha";
 }
 
 /* Plugin API version. Must be the same as the clients API major version, else the plugin fails to load. */

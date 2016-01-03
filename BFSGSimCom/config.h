@@ -29,7 +29,8 @@ public:
     ConfigMode getMode(void) { return mode; };
     void setMode(ConfigMode m);
     bool getUntuned(void) { return blUntuned; };
-    bool getRange(void) { return blOutOfRangeUntuned; };
+    bool getOutOfRangeUntuned(void) { return blOutOfRangeUntuned; };
+    bool getConsiderRange(void) { return blConsiderRange; };
     void setUntuned(bool bl);
     uint64 getRootChannel(void) { return iRoot; };
     uint64 getUntunedChannel(void) { return iUntuned; };
