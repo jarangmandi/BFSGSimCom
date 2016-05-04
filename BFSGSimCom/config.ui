@@ -54,7 +54,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>110</y>
+      <y>80</y>
       <width>351</width>
       <height>16</height>
      </rect>
@@ -73,7 +73,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>130</y>
+      <y>100</y>
       <width>351</width>
       <height>121</height>
      </rect>
@@ -164,8 +164,8 @@
    <widget class="QCheckBox" name="cbConsiderRange">
     <property name="geometry">
      <rect>
-      <x>30</x>
-      <y>80</y>
+      <x>10</x>
+      <y>230</y>
       <width>331</width>
       <height>20</height>
      </rect>
@@ -177,7 +177,7 @@
      </font>
     </property>
     <property name="text">
-     <string>Use station range as factor in selection of tuned station</string>
+     <string>Use station range as factor in selection of auto-tuned station</string>
     </property>
    </widget>
   </widget>
