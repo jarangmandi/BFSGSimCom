@@ -15,4 +15,6 @@ SQLiteShell/x64/
 Win32/
 x64/
 .vs
+*.VC.db
+*.VC.opendb
 
