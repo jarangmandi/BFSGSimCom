@@ -201,6 +201,7 @@ Config::Config(TS3Channels& tch)
 
     blConsiderRange = settings.value("mode/considerRange").toBool();
     cbConsiderRange->setChecked(blConsiderRange);
+
     if (!(rbDisabled->isChecked() || rbEasyMode->isChecked() || rbExpertMode->isChecked()))
     {
         rbDisabled->setChecked(true);
@@ -239,14 +240,15 @@ void Config::saveSettings()
     blA = rbExpertMode->isChecked();
     settings.setValue("mode/auto", blA);
 
-    blConsiderRange = cbConsiderRange->isChecked();
-    settings.setValue("mode/considerRange", blConsiderRange);
-
     mode = CONFIG_DISABLED;
     if (blM) mode = CONFIG_MANUAL;
     else if (blA) mode = CONFIG_AUTO;
 
-    // Save the state of the "untuned" buttons.
+	// Save the state of the "Consider Range" checkbox
+	blConsiderRange = cbConsiderRange->isChecked();
+	settings.setValue("mode/considerRange", blConsiderRange);
+
+	// Save the state of the "untuned" buttons.
     blUntuned = rbUntunedMove->isChecked();
     settings.setValue("untuned/move", blUntuned);
 
