@@ -182,10 +182,10 @@ Config::Config(TS3Channels& tch)
     iUntuned = settings.value("channel/untuned", TS3Channels::CHANNEL_ID_NOT_FOUND).toULongLong();
 
     blUntuned = settings.value("untuned/move").toBool();
-    blRange = settings.value("untuned/range").toBool();
+    blOutOfRangeUntuned = settings.value("untuned/range").toBool();
     rbUntunedMove->setChecked(blUntuned);
     rbUntunedStay->setChecked(!blUntuned);
-    cbUntunedRange->setChecked(blRange);
+    cbUntunedRange->setChecked(blOutOfRangeUntuned);
     
     untunedChanged();
 
@@ -199,6 +199,8 @@ Config::Config(TS3Channels& tch)
     blA = settings.value("mode/auto").toBool();
     rbExpertMode->setChecked(blA);
 
+    blConsiderRange = settings.value("mode/considerRange").toBool();
+    cbConsiderRange->setChecked(blConsiderRange);
     if (!(rbDisabled->isChecked() || rbEasyMode->isChecked() || rbExpertMode->isChecked()))
     {
         rbDisabled->setChecked(true);
@@ -237,6 +239,9 @@ void Config::saveSettings()
     blA = rbExpertMode->isChecked();
     settings.setValue("mode/auto", blA);
 
+    blConsiderRange = cbConsiderRange->isChecked();
+    settings.setValue("mode/considerRange", blConsiderRange);
+
     mode = CONFIG_DISABLED;
     if (blM) mode = CONFIG_MANUAL;
     else if (blA) mode = CONFIG_AUTO;
@@ -245,8 +250,8 @@ void Config::saveSettings()
     blUntuned = rbUntunedMove->isChecked();
     settings.setValue("untuned/move", blUntuned);
 
-    blRange = cbUntunedRange->isChecked();
-    settings.setValue("untuned/range", blRange);
+    blOutOfRangeUntuned = cbUntunedRange->isChecked();
+    settings.setValue("untuned/range", blOutOfRangeUntuned);
 
     // Save the channel IDs of each of the channel trees.
     iRoot = getSelectedChannelId(treeParentChannel);
@@ -342,6 +347,7 @@ void Config::modeChanged()
     bool bl = !(rbDisabled->isChecked());
 
     treeParentChannel->setEnabled(bl);
+    cbConsiderRange->setEnabled(bl);
     gbUntuned->setEnabled(bl);
     
     untunedChanged();
@@ -353,6 +359,5 @@ void Config::untunedChanged()
     bool bl = !(rbUntunedStay->isChecked());
 
     treeUntunedChannel->setEnabled(bl && gbUntuned->isEnabled());
-    cbUntunedRange->setEnabled(bl && gbUntuned->isEnabled());
-
+    cbUntunedRange->setEnabled(bl && cbConsiderRange->isChecked() && gbUntuned->isEnabled());
 }
