@@ -84,7 +84,7 @@ void callback(FSUIPCWrapper::SimComData data)
     }
     
     simComData = data;
-    string strMessage = "BFSGSimCom >> " + FSUIPCWrapper::toString(simComData);
+    //string strMessage = "BFSGSimCom >> " + FSUIPCWrapper::toString(simComData);
 
     // Assuming we're connected, and we're supposed to be moving when the channel changes
     if (blConnected)
@@ -92,7 +92,9 @@ void callback(FSUIPCWrapper::SimComData data)
         if (cfg->getMode() != Config::CONFIG_DISABLED)
         {
             uint16_t frequency;
+            uint64 rootChannel;
             uint64 targetChannel;
+            Config::ConfigMode operationMode;
 
             // Work out which radio is active, and therefore the current tuned frequency.
             switch (data.selectedCom)
@@ -107,11 +109,14 @@ void callback(FSUIPCWrapper::SimComData data)
                 frequency = 0;
             }
 
+            operationMode = cfg->getMode();
+            rootChannel = cfg->getRootChannel();
+
             // Get any new target channel
             targetChannel = ts3Channels.getChannelID(
                 frequency,
                 currentChannel,
-                cfg->getRootChannel(),
+                rootChannel,
                 cfg->getConsiderRange(),
                 cfg->getOutOfRangeUntuned(),
                 data.dLat,
@@ -119,7 +124,7 @@ void callback(FSUIPCWrapper::SimComData data)
                 );
 
             // We want to move if the target channel has changed since the last iteration, or if the mode is "automatic"
-            bool blToMove = (targetChannel != lastTargetChannel) || cfg->getMode() == Config::CONFIG_AUTO;
+            bool blToMove = (targetChannel != lastTargetChannel) || operationMode == Config::CONFIG_AUTO;
             bool blTuned = (targetChannel != TS3Channels::CHANNEL_ID_NOT_FOUND);
             bool blManMoved = (currentChannel != lastTargetChannel);
 
@@ -128,7 +133,7 @@ void callback(FSUIPCWrapper::SimComData data)
             {
                 // ...but only move if there is a tuned channel or we didn't move ourselves or we've said we always want
                 // to be in the channel the radios say we should be in.
-                if (blTuned || !blManMoved || cfg->getMode() == Config::CONFIG_AUTO)
+                if (blTuned || !blManMoved || operationMode == Config::CONFIG_AUTO)
                 {
                     // If we're not tuned, then get the "untuned" channel instead.
                     if (!blTuned)
@@ -137,7 +142,10 @@ void callback(FSUIPCWrapper::SimComData data)
                     }
 
                     // Request the move, but only if there is one and there's a valid "untuned" channel!
-                    if (targetChannel != currentChannel && targetChannel != TS3Channels::CHANNEL_ID_NOT_FOUND && targetChannel != 0)
+                    if (
+                        targetChannel != currentChannel &&
+                        targetChannel != TS3Channels::CHANNEL_ID_NOT_FOUND && targetChannel != TS3Channels::CHANNEL_ROOT
+                        )
                     {
                         ts3Functions.requestClientMove(serverConnectionHandlerID, myTS3ID, targetChannel, "", callbackReturnCode);
                     }
@@ -189,7 +197,7 @@ const char* ts3plugin_name() {
 
 /* Plugin version */
 const char* ts3plugin_version() {
-    return "0.8alpha";
+    return "0.8";
 }
 
 /* Plugin API version. Must be the same as the clients API major version, else the plugin fails to load. */
@@ -271,12 +279,14 @@ void loadChannels(uint64 serverConnectionHandlerID)
  */
 int ts3plugin_init() {
 
+	int retValue = 0;
+
     uint64 serverConnectionHandlerID;
     int connectionStatus;
 
     serverConnectionHandlerID = ts3Functions.getCurrentServerConnectionHandlerID();
     
-    // Initialise the server connection status
+    // Initialise the TS3 server connection status
     if (ts3Functions.getConnectionStatus(serverConnectionHandlerID, &connectionStatus) == ERROR_ok)
     {
         blConnected = (connectionStatus != 0);
@@ -295,21 +305,28 @@ int ts3plugin_init() {
         blConnected = false;
     }
 
-    if (fsuipc == NULL)
-    {
-        fsuipc = new FSUIPCWrapper(&callback);
-    }
-
+	// Initialise the plugin configuration dialog
     cfg = new Config(ts3Channels);
 
-    if (fsuipc)
-    {
-        fsuipc->start();
-    }
-
+	// Load channel data from the server connection. This needs to be done before
+	// we start looking at tuned channels once the simulator connection is started.
     loadChannels(serverConnectionHandlerID);
 
-    return 0;  /* 0 = success, 1 = failure, -2 = failure but client will not show a "failed to load" warning */
+	// Establish what's required to connect to a simulator
+    if (fsuipc == NULL)
+    {
+		if (fsuipc = new FSUIPCWrapper(&callback))
+		{
+			fsuipc->start();
+		}
+		else
+		{
+			retValue = 1;
+		}
+    }
+
+    return retValue;  /* 0 = success, 1 = failure, -2 = failure but client will not show a "failed to load" warning */
+
     /* -2 is a very special case and should only be used if a plugin displays a dialog (e.g. overlay) asking the user to disable
      * the plugin again, avoiding the show another dialog by the client telling the user the plugin failed to load.
      * For normal case, if a plugin really failed to load because of an error, the correct return value is 1. */
@@ -694,7 +711,9 @@ void ts3plugin_onClientMoveEvent(uint64 serverConnectionHandlerID, anyID clientI
         // 2. We're connected to a simulator
         // 3. There's a valid channel to move to (>0), and
         // 4. We're not where we're supposed to be!
-        if (cfg->getMode() == Config::ConfigMode::CONFIG_AUTO && fsuipc->isConnected() && lastTargetChannel != 0)
+        if (
+            cfg->getMode() == Config::ConfigMode::CONFIG_AUTO && fsuipc->isConnected() &&
+            lastTargetChannel != TS3Channels::CHANNEL_ROOT && lastTargetChannel != TS3Channels::CHANNEL_ID_NOT_FOUND)
         {
             if (newChannelID != lastTargetChannel)
                 ts3Functions.requestClientMove(serverConnectionHandlerID, clientID, lastTargetChannel, "", NULL);

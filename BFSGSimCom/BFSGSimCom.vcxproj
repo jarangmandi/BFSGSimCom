@@ -102,6 +102,8 @@
       <SubSystem>Windows</SubSystem>
       <AdditionalDependencies>FSUIPCLibrary.lib;SQLite3.lib;qtmain.lib;Qt5Core.lib;Qt5Gui.lib;Qt5Widgets.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SQLITE_DIR)\$(Platform)\$(Configuration);$(SolutionDir)$(Platform)\$(Configuration)\;$(QTDIR32)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <LinkTimeCodeGeneration>
+      </LinkTimeCodeGeneration>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -122,6 +124,8 @@
       <SubSystem>Windows</SubSystem>
       <AdditionalLibraryDirectories>$(SQLITE_DIR)\$(Platform)\$(Configuration);$(SolutionDir)$(Platform)\$(Configuration)\;$(QTDIR64)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>FSUIPCLibrary.lib;SQLite3.lib;qtmain.lib;Qt5Core.lib;Qt5Gui.lib;Qt5Widgets.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <LinkTimeCodeGeneration>
+      </LinkTimeCodeGeneration>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -145,6 +149,7 @@
       <AdditionalDependencies>FSUIPCLibrary.lib;SQLite3.lib;qtmain.lib;Qt5Core.lib;Qt5Gui.lib;Qt5Widgets.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SQLITE_DIR)\$(Platform)\$(Configuration);$(SolutionDir)$(Platform)\$(Configuration)\;$(QTDIR32)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ProgramDatabaseFile />
+      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -167,6 +172,7 @@
       <AdditionalDependencies>FSUIPCLibrary.lib;SQLite3.lib;qtmain.lib;Qt5Core.lib;Qt5Gui.lib;Qt5Widgets.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SQLITE_DIR)\$(Platform)\$(Configuration);$(SolutionDir)$(Platform)\$(Configuration)\;$(QTDIR64)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ProgramDatabaseFile />
+      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
     <PostBuildEvent>
       <Command>
