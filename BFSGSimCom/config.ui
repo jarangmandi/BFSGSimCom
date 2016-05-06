@@ -177,7 +177,7 @@
      </font>
     </property>
     <property name="text">
-     <string>Use station range limits as a factor in selection of auto-tuned station</string>
+     <string>Do not move to a station that is "out of range"</string>
     </property>
    </widget>
    <widget class="QCheckBox" name="cbManualModeOnStart">
