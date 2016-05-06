@@ -26,6 +26,8 @@ public:
         bool blWoW;
         double dLat;
         double dLon;
+        bool blComChanged;
+        bool blPosChanged;
     };
 
 private:
@@ -45,6 +47,8 @@ private:
     BOOL checkConnection(DWORD*);
     void workerThread(void);
     
+    SimComData FSUIPCWrapper::getSimComData(bool blComChanged, bool blPosChange, bool blOtherChanged);
+
     std::thread* t1 = NULL;
 
 public:
@@ -55,8 +59,6 @@ public:
     bool isConnected() {
         return cFSUIPCConnected;
     };
-
-    SimComData FSUIPCWrapper::getSimComData(void);
 
     BOOL FSUIPC_Read(DWORD dwOffset, DWORD dwSize, void* pDest);
     BOOL FSUIPC_Write(DWORD dwOffset, DWORD dwSize, void* pSrc);

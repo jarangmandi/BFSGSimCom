@@ -96,37 +96,45 @@ void callback(FSUIPCWrapper::SimComData data)
             uint64 targetChannel;
             Config::ConfigMode operationMode;
 
-            // Work out which radio is active, and therefore the current tuned frequency.
-            switch (data.selectedCom)
+            bool blToMove = false;
+            bool blTuned = false;
+            bool blManMoved = false;
+
+            if (data.blComChanged || data.blPosChanged)
             {
-            case FSUIPCWrapper::Com1:
-                frequency = data.iCom1Freq;
-                break;
-            case FSUIPCWrapper::Com2:
-                frequency = data.iCom2Freq;
-                break;
-            default:
-                frequency = 0;
-            }
 
-            operationMode = cfg->getMode();
-            rootChannel = cfg->getRootChannel();
+                // Work out which radio is active, and therefore the current tuned frequency.
+                switch (data.selectedCom)
+                {
+                case FSUIPCWrapper::Com1:
+                    frequency = data.iCom1Freq;
+                    break;
+                case FSUIPCWrapper::Com2:
+                    frequency = data.iCom2Freq;
+                    break;
+                default:
+                    frequency = 0;
+                }
 
-            // Get any new target channel
-            targetChannel = ts3Channels.getChannelID(
-                frequency,
-                currentChannel,
-                rootChannel,
-                cfg->getConsiderRange(),
-                cfg->getOutOfRangeUntuned(),
-                data.dLat,
-                data.dLon
+                operationMode = cfg->getMode();
+                rootChannel = cfg->getRootChannel();
+
+                // Get any new target channel
+                targetChannel = ts3Channels.getChannelID(
+                    frequency,
+                    currentChannel,
+                    rootChannel,
+                    cfg->getConsiderRange(),
+                    cfg->getOutOfRangeUntuned(),
+                    data.dLat,
+                    data.dLon
                 );
 
-            // We want to move if the target channel has changed since the last iteration, or if the mode is "automatic"
-            bool blToMove = (targetChannel != lastTargetChannel) || operationMode == Config::CONFIG_AUTO;
-            bool blTuned = (targetChannel != TS3Channels::CHANNEL_ID_NOT_FOUND);
-            bool blManMoved = (currentChannel != lastTargetChannel);
+                // We want to move if the target channel has changed since the last iteration, or if the mode is "automatic"
+                blToMove = (targetChannel != lastTargetChannel) || operationMode == Config::CONFIG_AUTO;
+                blTuned = (targetChannel != TS3Channels::CHANNEL_ID_NOT_FOUND && targetChannel != TS3Channels::CHANNEL_NOT_CHILD_OF_ROOT);
+                blManMoved = (currentChannel != lastTargetChannel);
+            }
 
             // We only really care if we've got a different channel to move to.
             if (blToMove)
