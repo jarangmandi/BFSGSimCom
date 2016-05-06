@@ -448,6 +448,9 @@ const string TS3Channels::aGetChannelFromFreqCurrPrnt = \
 "from ranges r" \
 "";
 
+const string TS3Channels::aChannelIsParentOfChild = \
+"select parent from closure where parent = :root and child = :current;";
+
 
 uint64 TS3Channels::getChannelID(uint16_t frequency, uint64 current, uint64 root, bool blConsiderRange, bool blOutOfRangeUntuned, double aLat, double aLon)
 {
@@ -481,14 +484,27 @@ uint64 TS3Channels::getChannelID(uint16_t frequency, uint64 current, uint64 root
         }
         else
         {
-            // With no results, reiterate the return value.
-            retValue = CHANNEL_ID_NOT_FOUND;
+            SQLite::Statement aStmt2(mChanDb, aChannelIsParentOfChild);
+
+            aStmt2.bind(":current", sqlite3_int64(current));
+            aStmt2.bind(":root", sqlite3_int64(root));
+
+            if (aStmt2.executeStep())
+            {
+                // If the current channel is not a child of the root, we're untuned
+                retValue = CHANNEL_ID_NOT_FOUND;
+            }
+            else
+            {
+                retValue = CHANNEL_NOT_CHILD_OF_ROOT;
+            }
+
         }
     }
     catch (SQLite::Exception&)
     {
         // If anything goes wrong (it shouldn't) then we've not found a frequency.
-        uint64 retValue = CHANNEL_ID_NOT_FOUND;
+        retValue = CHANNEL_ID_NOT_FOUND;
     }
 
     return retValue;

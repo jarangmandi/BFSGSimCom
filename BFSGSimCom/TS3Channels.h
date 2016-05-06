@@ -20,6 +20,7 @@ private:
     static const string aDeleteChannels;
     static const string aDeleteClosure;
     static const string aGetChannelFromFreqCurrPrnt;
+    static const string aChannelIsParentOfChild;
     static const string aInitChannelList;
     static const string aGetChannelList;
 
@@ -56,6 +57,8 @@ public:
     TS3Channels();
     ~TS3Channels();
 
+    static const uint64 CHANNEL_ROOT = 0;
+    static const uint64 CHANNEL_NOT_CHILD_OF_ROOT = UINT64_MAX - 1;
     static const uint64 CHANNEL_ID_NOT_FOUND = UINT64_MAX;
 
     int deleteChannel(uint64);
