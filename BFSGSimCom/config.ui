@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>391</width>
-    <height>566</height>
+    <height>592</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -20,7 +20,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>530</y>
+     <y>550</y>
      <width>371</width>
      <height>31</height>
     </rect>
@@ -32,13 +32,13 @@
     <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
    </property>
   </widget>
-  <widget class="QGroupBox" name="groupBox">
+  <widget class="QGroupBox" name="gbChannelControl">
    <property name="geometry">
     <rect>
      <x>10</x>
      <y>10</y>
      <width>371</width>
-     <height>261</height>
+     <height>281</height>
     </rect>
    </property>
    <property name="font">
@@ -54,7 +54,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>80</y>
+      <y>100</y>
       <width>351</width>
       <height>16</height>
      </rect>
@@ -73,7 +73,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>100</y>
+      <y>120</y>
       <width>351</width>
       <height>121</height>
      </rect>
@@ -165,8 +165,8 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>230</y>
-      <width>331</width>
+      <y>250</y>
+      <width>351</width>
       <height>20</height>
      </rect>
     </property>
@@ -177,7 +177,26 @@
      </font>
     </property>
     <property name="text">
-     <string>Use station range as factor in selection of auto-tuned station</string>
+     <string>Use station range limits as a factor in selection of auto-tuned station</string>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="cbManualModeOnStart">
+    <property name="geometry">
+     <rect>
+      <x>30</x>
+      <y>80</y>
+      <width>321</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <weight>50</weight>
+      <bold>false</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>Revert to allowing manual channel changes on initial load</string>
     </property>
    </widget>
   </widget>
@@ -185,7 +204,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>280</y>
+     <y>300</y>
      <width>371</width>
      <height>251</height>
     </rect>
@@ -307,7 +326,7 @@
   </widget>
   <zorder>gbUntuned</zorder>
   <zorder>buttonBox</zorder>
-  <zorder>groupBox</zorder>
+  <zorder>gbChannelControl</zorder>
  </widget>
  <tabstops>
   <tabstop>rbDisabled</tabstop>

@@ -189,14 +189,17 @@ Config::Config(TS3Channels& tch)
     
     untunedChanged();
 
+	blRestartInManualMode = settings.value("mode/manualRestart").toBool();
+	cbManualModeOnStart->setChecked(blRestartInManualMode);
+
     // Set up the mode radio buttons and define the "mode" variable.
     blD = settings.value("mode/disabled").toBool();
     rbDisabled->setChecked(blD);
 
-    blM = settings.value("mode/manual").toBool();
+    blM = settings.value("mode/manual").toBool() || blRestartInManualMode;
     rbEasyMode->setChecked(blM);
 
-    blA = settings.value("mode/auto").toBool();
+	blA = settings.value("mode/auto").toBool() && !blRestartInManualMode;
     rbExpertMode->setChecked(blA);
 
     blConsiderRange = settings.value("mode/considerRange").toBool();
@@ -239,6 +242,9 @@ void Config::saveSettings()
 
     blA = rbExpertMode->isChecked();
     settings.setValue("mode/auto", blA);
+
+	blRestartInManualMode = cbManualModeOnStart->isChecked();
+	settings.setValue("mode/manualRestart", blRestartInManualMode);
 
     mode = CONFIG_DISABLED;
     if (blM) mode = CONFIG_MANUAL;
@@ -346,12 +352,15 @@ void Config::columnResize(QTreeWidgetItem* item)
 // Invoked when the radio buttons that manage the operating mode.
 void Config::modeChanged()
 {
-    bool bl = !(rbDisabled->isChecked());
+    bool blNotDisabled = !(rbDisabled->isChecked());
+	bool blAuto = rbExpertMode->isChecked();
 
-    treeParentChannel->setEnabled(bl);
-    cbConsiderRange->setEnabled(bl);
-    gbUntuned->setEnabled(bl);
-    
+    treeParentChannel->setEnabled(blNotDisabled);
+    cbConsiderRange->setEnabled(blNotDisabled);
+    gbUntuned->setEnabled(blNotDisabled);
+
+	cbManualModeOnStart->setEnabled(blAuto);
+
     untunedChanged();
 }
 

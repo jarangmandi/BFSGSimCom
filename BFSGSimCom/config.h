@@ -49,6 +49,7 @@ private:
     bool blUntuned;
     bool blConsiderRange;
     bool blOutOfRangeUntuned;
+	bool blRestartInManualMode;
     uint64 iRoot;
     uint64 iUntuned;
     bool initialising = true;
