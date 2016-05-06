@@ -182,22 +182,28 @@ Config::Config(TS3Channels& tch)
     iUntuned = settings.value("channel/untuned", TS3Channels::CHANNEL_ID_NOT_FOUND).toULongLong();
 
     blUntuned = settings.value("untuned/move").toBool();
-    blRange = settings.value("untuned/range").toBool();
+    blOutOfRangeUntuned = settings.value("untuned/range").toBool();
     rbUntunedMove->setChecked(blUntuned);
     rbUntunedStay->setChecked(!blUntuned);
-    cbUntunedRange->setChecked(blRange);
+    cbUntunedRange->setChecked(blOutOfRangeUntuned);
     
     untunedChanged();
+
+	blRestartInManualMode = settings.value("mode/manualRestart").toBool();
+	cbManualModeOnStart->setChecked(blRestartInManualMode);
 
     // Set up the mode radio buttons and define the "mode" variable.
     blD = settings.value("mode/disabled").toBool();
     rbDisabled->setChecked(blD);
 
-    blM = settings.value("mode/manual").toBool();
+    blM = settings.value("mode/manual").toBool() || blRestartInManualMode;
     rbEasyMode->setChecked(blM);
 
-    blA = settings.value("mode/auto").toBool();
+	blA = settings.value("mode/auto").toBool() && !blRestartInManualMode;
     rbExpertMode->setChecked(blA);
+
+    blConsiderRange = settings.value("mode/considerRange").toBool();
+    cbConsiderRange->setChecked(blConsiderRange);
 
     if (!(rbDisabled->isChecked() || rbEasyMode->isChecked() || rbExpertMode->isChecked()))
     {
@@ -237,16 +243,23 @@ void Config::saveSettings()
     blA = rbExpertMode->isChecked();
     settings.setValue("mode/auto", blA);
 
+	blRestartInManualMode = cbManualModeOnStart->isChecked();
+	settings.setValue("mode/manualRestart", blRestartInManualMode);
+
     mode = CONFIG_DISABLED;
     if (blM) mode = CONFIG_MANUAL;
     else if (blA) mode = CONFIG_AUTO;
 
-    // Save the state of the "untuned" buttons.
+	// Save the state of the "Consider Range" checkbox
+	blConsiderRange = cbConsiderRange->isChecked();
+	settings.setValue("mode/considerRange", blConsiderRange);
+
+	// Save the state of the "untuned" buttons.
     blUntuned = rbUntunedMove->isChecked();
     settings.setValue("untuned/move", blUntuned);
 
-    blRange = cbUntunedRange->isChecked();
-    settings.setValue("untuned/range", blRange);
+    blOutOfRangeUntuned = cbUntunedRange->isChecked();
+    settings.setValue("untuned/range", blOutOfRangeUntuned);
 
     // Save the channel IDs of each of the channel trees.
     iRoot = getSelectedChannelId(treeParentChannel);
@@ -339,11 +352,15 @@ void Config::columnResize(QTreeWidgetItem* item)
 // Invoked when the radio buttons that manage the operating mode.
 void Config::modeChanged()
 {
-    bool bl = !(rbDisabled->isChecked());
+    bool blNotDisabled = !(rbDisabled->isChecked());
+	bool blAuto = rbExpertMode->isChecked();
 
-    treeParentChannel->setEnabled(bl);
-    gbUntuned->setEnabled(bl);
-    
+    treeParentChannel->setEnabled(blNotDisabled);
+    cbConsiderRange->setEnabled(blNotDisabled);
+    gbUntuned->setEnabled(blNotDisabled);
+
+	cbManualModeOnStart->setEnabled(blAuto);
+
     untunedChanged();
 }
 
@@ -353,6 +370,5 @@ void Config::untunedChanged()
     bool bl = !(rbUntunedStay->isChecked());
 
     treeUntunedChannel->setEnabled(bl && gbUntuned->isEnabled());
-    cbUntunedRange->setEnabled(bl && gbUntuned->isEnabled());
-
+    cbUntunedRange->setEnabled(bl && cbConsiderRange->isChecked() && gbUntuned->isEnabled());
 }

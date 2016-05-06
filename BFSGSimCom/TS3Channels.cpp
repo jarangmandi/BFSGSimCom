@@ -448,8 +448,11 @@ const string TS3Channels::aGetChannelFromFreqCurrPrnt = \
 "from ranges r" \
 "";
 
+const string TS3Channels::aChannelIsParentOfChild = \
+"select parent from closure where parent = :root and child = :current;";
 
-uint64 TS3Channels::getChannelID(uint16_t frequency, uint64 current, uint64 root, bool blRange, double aLat, double aLon)
+
+uint64 TS3Channels::getChannelID(uint16_t frequency, uint64 current, uint64 root, bool blConsiderRange, bool blOutOfRangeUntuned, double aLat, double aLon)
 {
     // Define this here - it gets resolved at compile time...
     // Default scenario is that we don't find a result
@@ -457,11 +460,11 @@ uint64 TS3Channels::getChannelID(uint16_t frequency, uint64 current, uint64 root
 
     try
     {
-        string strQuery = aGetChannelFromFreqCurrPrnt + \
-            string ((blRange) ?
-                " where in_range = 1 order by range, distance, removed; "
-                :
-                " order by distance, removed;");
+        string strQuery = aGetChannelFromFreqCurrPrnt +
+            string ((blConsiderRange && blOutOfRangeUntuned) ? " where in_range = 1" : "") +
+            " order by " +
+            string ((blConsiderRange) ? "range, " : "") +
+            "distance, removed;";
 
         // Create the statement
         SQLite::Statement aStmt(mChanDb, strQuery);
@@ -481,14 +484,27 @@ uint64 TS3Channels::getChannelID(uint16_t frequency, uint64 current, uint64 root
         }
         else
         {
-            // With no results, reiterate the return value.
-            retValue = CHANNEL_ID_NOT_FOUND;
+            SQLite::Statement aStmt2(mChanDb, aChannelIsParentOfChild);
+
+            aStmt2.bind(":current", sqlite3_int64(current));
+            aStmt2.bind(":root", sqlite3_int64(root));
+
+            if (aStmt2.executeStep())
+            {
+                // If the current channel is not a child of the root, we're untuned
+                retValue = CHANNEL_ID_NOT_FOUND;
+            }
+            else
+            {
+                retValue = CHANNEL_NOT_CHILD_OF_ROOT;
+            }
+
         }
     }
     catch (SQLite::Exception&)
     {
         // If anything goes wrong (it shouldn't) then we've not found a frequency.
-        uint64 retValue = CHANNEL_ID_NOT_FOUND;
+        retValue = CHANNEL_ID_NOT_FOUND;
     }
 
     return retValue;
@@ -496,11 +512,11 @@ uint64 TS3Channels::getChannelID(uint16_t frequency, uint64 current, uint64 root
 }
 
 // Returns the ID of the channel corresponding to a frequency provided as a double.
-uint64 TS3Channels::getChannelID(double frequency, uint64 current, uint64 root, bool blRange, double aLat, double aLon)
+uint64 TS3Channels::getChannelID(double frequency, uint64 current, uint64 root, bool blConsiderRange, bool blOutOfRangeUntuned, double aLat, double aLon)
 {
     // Need to get the rounding right
     // Try 128.300 to see why this is needed!
-    return getChannelID(uint16_t(0.1 * round(1000 * frequency)), current, root, blRange, aLat, aLon);
+    return getChannelID(uint16_t(0.1 * round(1000 * frequency)), current, root, blConsiderRange, blOutOfRangeUntuned, aLat, aLon);
 }
 
 

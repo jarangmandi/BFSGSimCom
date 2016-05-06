@@ -58,7 +58,9 @@ void FSUIPCWrapper::workerThread(void)
 
         if (FSUIPC_Process())
         {
-            bool blChanged = false;
+            bool blComChanged = false;
+            bool blPosChange = false;
+            bool blOtherChanged = false;
 
             cLat = double(simLatitude);
             cLat *= 90.0 / (10001750.0 * 65536.0 * 65536.0);
@@ -67,51 +69,51 @@ void FSUIPCWrapper::workerThread(void)
 
             if (simCom1 != cCom1Freq)
             {
-                blChanged = true;
+                blComChanged = true;
                 cCom1Freq = simCom1;
             }
 
             if (simCom1s != cCom1Sby)
             {
-                blChanged = true;
+                blComChanged = true;
                 cCom1Sby = simCom1s;
             }
 
             if (simCom2 != cCom2Freq)
             {
-                blChanged = true;
+                blComChanged = true;
                 cCom2Freq = simCom2;
             }
 
             if (simCom2s != cCom2Sby)
             {
-                blChanged = true;
+                blComChanged = true;
                 cCom2Sby = simCom2s;
             }
 
             if (simRadSw != cSelectedCom)
             {
-                blChanged = true;
+                blComChanged = true;
                 cSelectedCom = simRadSw;
             }
 
             if (simOnGnd != cWoW)
             {
-                blChanged = true;
+                blOtherChanged = true;
                 cWoW = simOnGnd;
             }
 
             if (!(++counter % 50))
             {
+                blPosChange = true;
                 counter = 0;
-                blChanged = true;
             }
 
-            if (blChanged)
+            if (blComChanged || blPosChange || blOtherChanged)
             {
                 if (callback != NULL)
                 {
-                    (*callback)(getSimComData());
+                    (*callback)(getSimComData(blComChanged, blPosChange, blOtherChanged));
                 }
             }
         }
@@ -122,7 +124,7 @@ void FSUIPCWrapper::workerThread(void)
 };
 
 
-FSUIPCWrapper::SimComData FSUIPCWrapper::getSimComData() {
+FSUIPCWrapper::SimComData FSUIPCWrapper::getSimComData(bool blComChanged, bool blPosChange, bool blOtherChanged) {
     
     SimComData simcomdata;
 
@@ -132,11 +134,13 @@ FSUIPCWrapper::SimComData FSUIPCWrapper::getSimComData() {
     simcomdata.iCom2Sby = 10000 + 1000 * ((cCom2Sby & 0xf000) >> 12) + 100 * ((cCom2Sby & 0x0f00) >> 8) + 10 * ((cCom2Sby & 0x00f0) >> 4) + (cCom2Sby & 0x000f);
 
     // This is a kluge because XPUIPC doesn't report the correct channel and the config file that comes with it doesn't seem to work as advertised.
-    // Look for a FSUIPC_Version of 0x50000006 - who knows what will happen when FSUIPC catches up
-    if (FSUIPC_Version == 0x50000006)
+    // Look for a FSUIPC_Version with an most significant half word of 0x50000000 - who knows what will happen when FSUIPC catches up
+    if ((FSUIPC_Version & 0xffff0000) == 0x50000000)
         simcomdata.selectedCom = ComRadio(((cSelectedCom & 0x40) ? Com1 : None) + ((cSelectedCom & 0x80) ? Com2 : None));
     else
         simcomdata.selectedCom = ComRadio(((cSelectedCom & 0x80) ? Com1 : None) + ((cSelectedCom & 0x40) ? Com2 : None));
+
+    simcomdata.blComChanged = blComChanged;
 
     // Required for reporting...
     simcomdata.blWoW = (cWoW != 0);
@@ -144,6 +148,8 @@ FSUIPCWrapper::SimComData FSUIPCWrapper::getSimComData() {
     // And finally, report the aircraft position.
     simcomdata.dLat = cLat;
     simcomdata.dLon = cLon;
+
+    simcomdata.blPosChanged = blPosChange;
 
     return simcomdata;
 };

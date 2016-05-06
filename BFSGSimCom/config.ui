@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>393</width>
-    <height>551</height>
+    <width>391</width>
+    <height>592</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -20,7 +20,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>510</y>
+     <y>550</y>
      <width>371</width>
      <height>31</height>
     </rect>
@@ -32,13 +32,13 @@
     <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
    </property>
   </widget>
-  <widget class="QGroupBox" name="groupBox">
+  <widget class="QGroupBox" name="gbChannelControl">
    <property name="geometry">
     <rect>
      <x>10</x>
      <y>10</y>
      <width>371</width>
-     <height>241</height>
+     <height>281</height>
     </rect>
    </property>
    <property name="font">
@@ -54,7 +54,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>90</y>
+      <y>100</y>
       <width>351</width>
       <height>16</height>
      </rect>
@@ -73,7 +73,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>110</y>
+      <y>120</y>
       <width>351</width>
       <height>121</height>
      </rect>
@@ -161,31 +161,50 @@
      <string>Automove on COM retune - allow manual channel change too</string>
     </property>
    </widget>
-  </widget>
-  <widget class="QLabel" name="label_2">
-   <property name="geometry">
-    <rect>
-     <x>20</x>
-     <y>350</y>
-     <width>351</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <weight>50</weight>
-     <bold>false</bold>
-    </font>
-   </property>
-   <property name="text">
-    <string>Use the selected channel when none matches the tuned frequency.</string>
-   </property>
+   <widget class="QCheckBox" name="cbConsiderRange">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>250</y>
+      <width>351</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <weight>50</weight>
+      <bold>false</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>Do not move to a station that is "out of range"</string>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="cbManualModeOnStart">
+    <property name="geometry">
+     <rect>
+      <x>30</x>
+      <y>80</y>
+      <width>321</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <weight>50</weight>
+      <bold>false</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>Revert to allowing manual channel changes on initial load</string>
+    </property>
+   </widget>
   </widget>
   <widget class="QGroupBox" name="gbUntuned">
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>260</y>
+     <y>300</y>
      <width>371</width>
      <height>251</height>
     </rect>
@@ -282,15 +301,44 @@
      </font>
     </property>
     <property name="text">
-     <string>'Untuned' also means 'out of range'</string>
+     <string>'Out of Range' treated as 'Untuned'</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_2">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>90</y>
+      <width>351</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <weight>50</weight>
+      <bold>false</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>Use the selected channel when none matches the tuned frequency.</string>
     </property>
    </widget>
   </widget>
   <zorder>gbUntuned</zorder>
   <zorder>buttonBox</zorder>
-  <zorder>groupBox</zorder>
-  <zorder>label_2</zorder>
+  <zorder>gbChannelControl</zorder>
  </widget>
+ <tabstops>
+  <tabstop>rbDisabled</tabstop>
+  <tabstop>rbEasyMode</tabstop>
+  <tabstop>rbExpertMode</tabstop>
+  <tabstop>cbConsiderRange</tabstop>
+  <tabstop>treeParentChannel</tabstop>
+  <tabstop>rbUntunedStay</tabstop>
+  <tabstop>rbUntunedMove</tabstop>
+  <tabstop>cbUntunedRange</tabstop>
+  <tabstop>treeUntunedChannel</tabstop>
+ </tabstops>
  <resources/>
  <connections>
   <connection>
@@ -304,7 +352,7 @@
      <y>490</y>
     </hint>
     <hint type="destinationlabel">
-     <x>394</x>
+     <x>362</x>
      <y>497</y>
     </hint>
    </hints>
@@ -320,7 +368,7 @@
      <y>509</y>
     </hint>
     <hint type="destinationlabel">
-     <x>394</x>
+     <x>362</x>
      <y>514</y>
     </hint>
    </hints>
@@ -336,7 +384,7 @@
      <y>125</y>
     </hint>
     <hint type="destinationlabel">
-     <x>389</x>
+     <x>362</x>
      <y>130</y>
     </hint>
    </hints>
@@ -352,7 +400,7 @@
      <y>397</y>
     </hint>
     <hint type="destinationlabel">
-     <x>390</x>
+     <x>362</x>
      <y>362</y>
     </hint>
    </hints>
@@ -368,7 +416,7 @@
      <y>434</y>
     </hint>
     <hint type="destinationlabel">
-     <x>390</x>
+     <x>362</x>
      <y>416</y>
     </hint>
    </hints>
@@ -384,7 +432,7 @@
      <y>418</y>
     </hint>
     <hint type="destinationlabel">
-     <x>390</x>
+     <x>362</x>
      <y>400</y>
     </hint>
    </hints>
@@ -400,7 +448,7 @@
      <y>177</y>
     </hint>
     <hint type="destinationlabel">
-     <x>394</x>
+     <x>362</x>
      <y>180</y>
     </hint>
    </hints>
@@ -416,7 +464,7 @@
      <y>165</y>
     </hint>
     <hint type="destinationlabel">
-     <x>394</x>
+     <x>362</x>
      <y>203</y>
     </hint>
    </hints>
@@ -432,7 +480,7 @@
      <y>39</y>
     </hint>
     <hint type="destinationlabel">
-     <x>392</x>
+     <x>362</x>
      <y>38</y>
     </hint>
    </hints>
@@ -448,7 +496,7 @@
      <y>55</y>
     </hint>
     <hint type="destinationlabel">
-     <x>398</x>
+     <x>362</x>
      <y>59</y>
     </hint>
    </hints>
@@ -464,7 +512,7 @@
      <y>79</y>
     </hint>
     <hint type="destinationlabel">
-     <x>412</x>
+     <x>362</x>
      <y>82</y>
     </hint>
    </hints>
@@ -480,7 +528,7 @@
      <y>287</y>
     </hint>
     <hint type="destinationlabel">
-     <x>403</x>
+     <x>362</x>
      <y>287</y>
     </hint>
    </hints>
@@ -496,8 +544,24 @@
      <y>307</y>
     </hint>
     <hint type="destinationlabel">
-     <x>420</x>
+     <x>362</x>
      <y>309</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>cbConsiderRange</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>Config</receiver>
+   <slot>untunedChanged()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>329</x>
+     <y>98</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>362</x>
+     <y>100</y>
     </hint>
    </hints>
   </connection>

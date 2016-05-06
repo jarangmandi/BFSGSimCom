@@ -20,6 +20,7 @@ private:
     static const string aDeleteChannels;
     static const string aDeleteClosure;
     static const string aGetChannelFromFreqCurrPrnt;
+    static const string aChannelIsParentOfChild;
     static const string aInitChannelList;
     static const string aGetChannelList;
 
@@ -56,13 +57,15 @@ public:
     TS3Channels();
     ~TS3Channels();
 
+    static const uint64 CHANNEL_ROOT = 0;
+    static const uint64 CHANNEL_NOT_CHILD_OF_ROOT = UINT64_MAX - 1;
     static const uint64 CHANNEL_ID_NOT_FOUND = UINT64_MAX;
 
     int deleteChannel(uint64);
     void deleteAllChannels(void);
     uint16_t addOrUpdateChannel(string& str, string, string, string, uint64, uint64 parentChannel = 0, uint64 order = 0);
-    uint64 getChannelID(uint16_t frequency, uint64 current = 0, uint64 root = 0, bool blRange = false, double lat = -999.9, double lon = -999.0);
-    uint64 getChannelID(double frequency, uint64 current = 0, uint64 root = 0, bool blRange = false, double lat = -999.9, double lon = -999.0);
+    uint64 getChannelID(uint16_t frequency, uint64 current = 0, uint64 root = 0, bool blConsiderRange = false, bool blOutOfRangeUntuned = false, double lat = -999.9, double lon = -999.0);
+    uint64 getChannelID(double frequency, uint64 current = 0, uint64 root = 0, bool blConsiderRange = false, bool blOutOfRangeUntuned = false, double lat = -999.9, double lon = -999.0);
 
     vector<ChannelInfo> getChannelList(uint64 root = 0);
 
