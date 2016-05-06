@@ -306,8 +306,6 @@ int ts3plugin_init() {
     }
 
 	// Initialise the plugin configuration dialog
-    cfg = new Config(ts3Channels);
-
 	// Load channel data from the server connection. This needs to be done before
 	// we start looking at tuned channels once the simulator connection is started.
     loadChannels(serverConnectionHandlerID);
