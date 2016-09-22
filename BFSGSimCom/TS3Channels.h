@@ -6,6 +6,7 @@
 #include <string>
 
 #include <SQLiteCpp\Database.h>
+#include "sqlite3.h"
 
 #include "public_definitions.h"
 
