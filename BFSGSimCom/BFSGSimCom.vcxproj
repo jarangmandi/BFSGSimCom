@@ -187,6 +187,7 @@
     <ClCompile Include="..\SQLiteCpp\Backup.cpp" />
     <ClCompile Include="..\SQLiteCpp\Column.cpp" />
     <ClCompile Include="..\SQLiteCpp\Database.cpp" />
+    <ClCompile Include="..\SQLiteCpp\Exception.cpp" />
     <ClCompile Include="..\SQLiteCpp\Statement.cpp" />
     <ClCompile Include="..\SQLiteCpp\Transaction.cpp" />
     <ClCompile Include="BFSGSimCom.cpp" />
@@ -214,6 +215,7 @@
     <ClInclude Include="..\SQLiteCpp\SQLiteCpp.h" />
     <ClInclude Include="..\SQLiteCpp\Statement.h" />
     <ClInclude Include="..\SQLiteCpp\Transaction.h" />
+    <ClInclude Include="..\SQLiteCpp\VariadicBind.h" />
     <ClInclude Include="BFSGSimCom.h" />
     <CustomBuild Include="config.h">
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(QTDIR32)\bin\moc.exe" -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_THREAD_SUPPORT -DQT_CORE_LIB -DQT_GUI_LIB -D_UNICODE -DUNICODE  -I".\GeneratedFiles\." -I"$(QTDIR32)\include\." -I".\$(Configuration)\." -I"$(QTDIR32)\include\QtCore\." -I"$(QTDIR32)\include\QtGui\." -I".\." ".\config.h" -o ".\GeneratedFiles\$(Platform)\moc_%(Filename).cpp" "-f.\config.h"</Command>
