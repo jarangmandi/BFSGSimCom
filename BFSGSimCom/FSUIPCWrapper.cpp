@@ -253,10 +253,14 @@ std::string FSUIPCWrapper::toString(FSUIPCWrapper::SimComData simComData)
 {
     std::ostringstream ostr;
 
-    ostr << "WoW: " << simComData.blWoW << " - ";
-    ostr << "Switches: " << simComData.selectedCom << " - ";
-    ostr << "Com1: " << simComData.iCom1Freq << " / " << simComData.iCom1Sby << " - ";
-    ostr << "Com2: " << simComData.iCom2Freq << " / " << simComData.iCom2Sby;
+	ostr << "ComChanged : " << simComData.blComChanged;
+	ostr << " | Switches: " << simComData.selectedCom;
+	ostr << " | Com1: " << simComData.iCom1Freq << " / " << simComData.iCom1Sby;
+    ostr << " | Com2: " << simComData.iCom2Freq << " / " << simComData.iCom2Sby;
+	ostr << " | PosChanged : " << simComData.blPosChanged;
+	ostr << " | Lat: " << simComData.dLat;
+	ostr << " | Lon: " << simComData.dLon;
+	ostr << " | WoW: " << simComData.blWoW;
 
     return ostr.str();
 }

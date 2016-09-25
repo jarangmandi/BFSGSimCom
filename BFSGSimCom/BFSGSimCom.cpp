@@ -14,6 +14,8 @@
 #include <string.h>
 #include <assert.h>
 
+#include <sstream>
+
 #include "public_errors.h"
 #include "public_errors_rare.h"
 #include "public_definitions.h"
@@ -52,7 +54,8 @@ TS3Channels ts3Channels;
 FSUIPCWrapper::SimComData simComData;
 Config* cfg;
 
-bool blConnected;
+bool blConnected = false;
+bool blDebugOn = false;
 anyID myTS3ID;
 uint64 lastTargetChannel = TS3Channels::CHANNEL_ID_NOT_FOUND;
 uint64 currentChannel;
@@ -73,6 +76,25 @@ static int wcharToUtf8(const wchar_t* str, char** result) {
 }
 #endif
 
+void decodeChannel(std::ostringstream& ostr, string label, uint64 channel)
+{
+	ostr << label << ": ";
+
+	switch (channel)
+	{
+	case TS3Channels::CHANNEL_ID_NOT_FOUND:
+		ostr << "Not Found";
+		break;
+	case TS3Channels::CHANNEL_NOT_CHILD_OF_ROOT:
+		ostr << "Not under root";
+		break;
+	default:
+		ostr << channel;
+		break;
+	}
+}
+
+
 void callback(FSUIPCWrapper::SimComData data)
 {
     uint64 serverConnectionHandlerID = ts3Functions.getCurrentServerConnectionHandlerID();
@@ -86,9 +108,26 @@ void callback(FSUIPCWrapper::SimComData data)
     simComData = data;
     //string strMessage = "BFSGSimCom >> " + FSUIPCWrapper::toString(simComData);
 
+	if (blDebugOn)
+	{
+		std::ostringstream ostr;
+
+		ostr << "Callback: ";
+		ostr << ((blConnected) ? "Connected" : "Disconnected") << " | ";
+
+		if (blConnected)
+		{
+			ostr << "Mode: " << cfg->getMode() << " | ";
+			ostr << FSUIPCWrapper::toString(simComData);
+		}
+
+		ts3Functions.logMessage(ostr.str().c_str(), LogLevel::LogLevel_DEBUG, "BFSGSimCom", serverConnectionHandlerID);
+	}
+
     // Assuming we're connected, and we're supposed to be moving when the channel changes
     if (blConnected)
     {
+
         if (cfg->getMode() != Config::CONFIG_DISABLED)
         {
             uint16_t frequency;
@@ -134,6 +173,24 @@ void callback(FSUIPCWrapper::SimComData data)
                 blToMove = (targetChannel != lastTargetChannel) || operationMode == Config::CONFIG_AUTO;
                 blTuned = (targetChannel != TS3Channels::CHANNEL_ID_NOT_FOUND && targetChannel != TS3Channels::CHANNEL_NOT_CHILD_OF_ROOT);
                 blManMoved = (currentChannel != lastTargetChannel);
+
+				if (blDebugOn)
+				{
+					std::ostringstream ostr;
+
+					decodeChannel(ostr, "Current", currentChannel);
+					ostr << " | ";
+					decodeChannel(ostr, "Target Channel", targetChannel);
+					ostr << " | ";
+					decodeChannel(ostr, "Last Target", targetChannel);
+					ostr << " | ";
+					ostr << "ToMove: " << blToMove << " | ";
+					ostr << "Tuned: " << blTuned << " | ";
+					ostr << "ManMoved: " << blManMoved;
+
+					ts3Functions.logMessage(ostr.str().c_str(), LogLevel::LogLevel_DEBUG, "BFSGSimCom", serverConnectionHandlerID);
+				}
+
             }
 
             // We only really care if we've got a different channel to move to.
@@ -156,7 +213,16 @@ void callback(FSUIPCWrapper::SimComData data)
                         )
                     {
                         ts3Functions.requestClientMove(serverConnectionHandlerID, myTS3ID, targetChannel, "", callbackReturnCode);
-                    }
+
+						if (blDebugOn)
+						{
+							std::ostringstream ostr;
+
+							ostr << "Requested Move To: " << targetChannel;
+
+							ts3Functions.logMessage(ostr.str().c_str(), LogLevel::LogLevel_DEBUG, "BFSGSimCom", serverConnectionHandlerID);
+						}
+					}
                 }
             }
 
@@ -205,7 +271,7 @@ const char* ts3plugin_name() {
 
 /* Plugin version */
 const char* ts3plugin_version() {
-    return "0.8";
+    return "0.8.1";
 }
 
 /* Plugin API version. Must be the same as the clients API major version, else the plugin fails to load. */
@@ -556,7 +622,9 @@ enum {
     MENU_ID_DUMMY,
     MENU_ID_SIMCOM_MODE_DISABLE,
     MENU_ID_SIMCOM_MODE_MANUAL,
-    MENU_ID_SIMCOM_MODE_AUTO
+    MENU_ID_SIMCOM_MODE_AUTO,
+	MENU_ID_SIMCOM_DEBUG_ON,
+	MENU_ID_SIMCOM_DEBUG_OFF
 };
 
 /*
@@ -583,18 +651,24 @@ void ts3plugin_initMenus(struct PluginMenuItem*** menuItems, char** menuIcon) {
      * e.g. for "test_plugin.dll", icon "1.png" is loaded from <TeamSpeak 3 Client install dir>\plugins\test_plugin\1.png
      */
 
-    BEGIN_CREATE_MENUS(5);  /* IMPORTANT: Number of menu items must be correct! */
+    BEGIN_CREATE_MENUS(8);  /* IMPORTANT: Number of menu items must be correct! */
     CREATE_MENU_ITEM(PLUGIN_MENU_TYPE_GLOBAL, MENU_ID_SIMCOM_CONFIGURE, "Configure", "");
     CREATE_MENU_ITEM(PLUGIN_MENU_TYPE_GLOBAL, MENU_ID_DUMMY, "------------------", "");
     CREATE_MENU_ITEM(PLUGIN_MENU_TYPE_GLOBAL, MENU_ID_SIMCOM_MODE_DISABLE, "Mode - Disable", "");
     CREATE_MENU_ITEM(PLUGIN_MENU_TYPE_GLOBAL, MENU_ID_SIMCOM_MODE_MANUAL, "Mode - Manual", "");
     CREATE_MENU_ITEM(PLUGIN_MENU_TYPE_GLOBAL, MENU_ID_SIMCOM_MODE_AUTO, "Mode - Auto", "");
-    END_CREATE_MENUS;  /* Includes an assert checking if the number of menu items matched */
+	CREATE_MENU_ITEM(PLUGIN_MENU_TYPE_GLOBAL, MENU_ID_DUMMY, "------------------", "");
+	CREATE_MENU_ITEM(PLUGIN_MENU_TYPE_GLOBAL, MENU_ID_SIMCOM_DEBUG_ON, "Enable Detailed Logging", "");
+	CREATE_MENU_ITEM(PLUGIN_MENU_TYPE_GLOBAL, MENU_ID_SIMCOM_DEBUG_OFF, "Disable Detailed Logging", "");
+	END_CREATE_MENUS;  /* Includes an assert checking if the number of menu items matched */
 
     // Setup initial state of menu items
     ts3Functions.setPluginMenuEnabled(pluginID, MENU_ID_SIMCOM_MODE_DISABLE, (cfg->getMode() == Config::ConfigMode::CONFIG_DISABLED) ? 0 : 1);
     ts3Functions.setPluginMenuEnabled(pluginID, MENU_ID_SIMCOM_MODE_MANUAL, (cfg->getMode() == Config::ConfigMode::CONFIG_MANUAL) ? 0 : 1);
     ts3Functions.setPluginMenuEnabled(pluginID, MENU_ID_SIMCOM_MODE_AUTO, (cfg->getMode() == Config::ConfigMode::CONFIG_AUTO) ? 0 : 1);
+
+	ts3Functions.setPluginMenuEnabled(pluginID, MENU_ID_SIMCOM_DEBUG_ON, blDebugOn ? 0 : 1);
+	ts3Functions.setPluginMenuEnabled(pluginID, MENU_ID_SIMCOM_DEBUG_OFF, blDebugOn ? 1 : 0);
 
     /*
      * Specify an optional icon for the plugin. This icon is used for the plugins submenu within context and main menus
@@ -714,7 +788,7 @@ void ts3plugin_onClientMoveEvent(uint64 serverConnectionHandlerID, anyID clientI
 
     if (clientID == myTS3ID)
     {
-        // This code will move us back to where we're supposed to go, if and only if...
+		// This code will move us back to where we're supposed to go, if and only if...
         // 1. We're in "AUTO" mode
         // 2. We're connected to a simulator
         // 3. There's a valid channel to move to (>0), and
@@ -723,16 +797,39 @@ void ts3plugin_onClientMoveEvent(uint64 serverConnectionHandlerID, anyID clientI
             cfg->getMode() == Config::ConfigMode::CONFIG_AUTO && fsuipc->isConnected() &&
             lastTargetChannel != TS3Channels::CHANNEL_ROOT && lastTargetChannel != TS3Channels::CHANNEL_ID_NOT_FOUND)
         {
-            if (newChannelID != lastTargetChannel)
-                ts3Functions.requestClientMove(serverConnectionHandlerID, clientID, lastTargetChannel, "", NULL);
+			string debugMessage;
+			if (newChannelID != lastTargetChannel)
+			{
+				debugMessage = "Requesting reutrn to";
+				ts3Functions.requestClientMove(serverConnectionHandlerID, clientID, lastTargetChannel, "", NULL);
+			}
+			else
+			{
+				debugMessage = "Already in";
+			}
 
-            currentChannel = lastTargetChannel;
+			if (blDebugOn)
+			{
+				std::ostringstream ostr;
+				ostr << "Move Event: Client has been moved to " << newChannelID << " | " << debugMessage << " channel " << lastTargetChannel;
+				ts3Functions.logMessage(ostr.str().c_str(), LogLevel::LogLevel_DEBUG, "BFSGSimCom", serverConnectionHandlerID);
+			}
+			
+			currentChannel = lastTargetChannel;
         }
         else
         {
-            currentChannel = newChannelID;
+			if (blDebugOn)
+			{
+				std::ostringstream ostr;
+				ostr << "Move Event: Client has been moved to " << newChannelID;
+				ts3Functions.logMessage(ostr.str().c_str(), LogLevel::LogLevel_DEBUG, "BFSGSimCom", serverConnectionHandlerID);
+			}
+			
+			currentChannel = newChannelID;
         }
-    }
+
+	}
 }
 
 int ts3plugin_onServerErrorEvent(uint64 serverConnectionHandlerID, const char* errorMessage, unsigned int error, const char* returnCode, const char* extraMessage) {
@@ -785,13 +882,22 @@ void ts3plugin_onMenuItemEvent(uint64 serverConnectionHandlerID, enum PluginMenu
             /* Menu global 1 was triggered */
             cfg->setMode(Config::ConfigMode::CONFIG_AUTO);
             break;
-        default:
+		case MENU_ID_SIMCOM_DEBUG_ON:
+			blDebugOn = true;
+			break;
+		case MENU_ID_SIMCOM_DEBUG_OFF:
+			blDebugOn = false;
+			break;
+		default:
             break;
         }
 
         ts3Functions.setPluginMenuEnabled(pluginID, MENU_ID_SIMCOM_MODE_DISABLE, (cfg->getMode() == Config::ConfigMode::CONFIG_DISABLED)? 0 : 1);
         ts3Functions.setPluginMenuEnabled(pluginID, MENU_ID_SIMCOM_MODE_MANUAL, (cfg->getMode() == Config::ConfigMode::CONFIG_MANUAL) ? 0 : 1);
         ts3Functions.setPluginMenuEnabled(pluginID, MENU_ID_SIMCOM_MODE_AUTO, (cfg->getMode() == Config::ConfigMode::CONFIG_AUTO) ? 0 : 1);
+
+		ts3Functions.setPluginMenuEnabled(pluginID, MENU_ID_SIMCOM_DEBUG_ON, blDebugOn ? 0 : 1);
+		ts3Functions.setPluginMenuEnabled(pluginID, MENU_ID_SIMCOM_DEBUG_OFF, blDebugOn ? 1 : 0);
 
         ts3Functions.requestServerVariables(ts3Functions.getCurrentServerConnectionHandlerID());
         break;
