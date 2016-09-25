@@ -178,7 +178,7 @@ void callback(FSUIPCWrapper::SimComData data)
 				{
 					std::ostringstream ostr;
 
-					decodeChannel(ostr, "Current", currentChannel);
+					decodeChannel(ostr, "    Current", currentChannel);
 					ostr << " | ";
 					decodeChannel(ostr, "Target Channel", targetChannel);
 					ostr << " | ";
@@ -218,7 +218,7 @@ void callback(FSUIPCWrapper::SimComData data)
 						{
 							std::ostringstream ostr;
 
-							ostr << "Requested Move To: " << targetChannel;
+							ostr << "    Requested Move To: " << targetChannel;
 
 							ts3Functions.logMessage(ostr.str().c_str(), LogLevel::LogLevel_DEBUG, "BFSGSimCom", serverConnectionHandlerID);
 						}
