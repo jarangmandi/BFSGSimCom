@@ -359,6 +359,14 @@ int ts3plugin_init() {
     int connectionStatus;
 
     serverConnectionHandlerID = ts3Functions.getCurrentServerConnectionHandlerID();
+
+#ifdef _DEBUG
+	blDebugOn = true;
+#else
+	blDebugOn = false;
+#endif // DEBUG
+
+
     
     // Initialise the TS3 server connection status
     if (ts3Functions.getConnectionStatus(serverConnectionHandlerID, &connectionStatus) == ERROR_ok)
