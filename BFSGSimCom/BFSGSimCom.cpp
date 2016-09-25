@@ -774,6 +774,7 @@ void ts3plugin_onConnectStatusChangeEvent(uint64 serverConnectionHandlerID, int 
         loadChannels(serverConnectionHandlerID);
         blConnected = true;
         ts3Functions.getClientID(serverConnectionHandlerID, &myTS3ID);
+		ts3Functions.getChannelOfClient(serverConnectionHandlerID, myTS3ID, &currentChannel);
 
         // Force the information window to update on connect
         ts3Functions.requestServerVariables(serverConnectionHandlerID);
