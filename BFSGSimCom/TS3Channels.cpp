@@ -491,12 +491,16 @@ uint64 TS3Channels::getChannelID(uint16_t frequency, uint64 current, uint64 root
 
             if (aStmt2.executeStep())
             {
-                // If the current channel is not a child of the root, we're untuned
+                // If the current channel is a child of the selected root, and we
+				// got nothing back from the first query, we're untuned.
                 retValue = CHANNEL_ID_NOT_FOUND;
             }
             else
             {
-                retValue = CHANNEL_NOT_CHILD_OF_ROOT;
+				// If the current channel is a child of the root, and we got
+				// nothing back from the first query, flag us as being outide
+				// of the root.
+				retValue = CHANNEL_NOT_CHILD_OF_ROOT;
             }
 
         }
