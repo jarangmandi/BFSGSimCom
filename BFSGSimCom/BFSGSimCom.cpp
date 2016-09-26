@@ -217,18 +217,15 @@ void callback(FSUIPCWrapper::SimComData data)
 						if (blExtendedLoggingEnabled)
 						{
 							std::ostringstream ostr;
-
 							ostr << "    Requested Move To: " << targetChannel;
-
 							ts3Functions.logMessage(ostr.str().c_str(), LogLevel::LogLevel_DEBUG, "BFSGSimCom", serverConnectionHandlerID);
 						}
 					}
                 }
-            }
-
-            // Remember where we should have gone last time for when the target changes this time!
-            lastTargetChannel = targetChannel;
-
+				
+				// Remember where we should have gone last time for when the target changes this time!
+				lastTargetChannel = targetChannel;
+			}
         }
         else
         {
