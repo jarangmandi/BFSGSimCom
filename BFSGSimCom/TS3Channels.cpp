@@ -429,6 +429,28 @@ void TS3Channels::deleteAllChannels(void)
     initDatabase();
 }
 
+const string TS3Channels::aChannelIsParentOfChild = \
+"select parent from closure where parent = :root and child = :current;";
+
+bool TS3Channels::channelIsUnderRoot(uint64 current, uint64 root)
+{
+	bool retValue = false;
+	SQLite::Statement aStmt2(mChanDb, aChannelIsParentOfChild);
+
+	aStmt2.bind(":current", sqlite3_int64(current));
+	aStmt2.bind(":root", sqlite3_int64(root));
+
+	if (aStmt2.executeStep())
+	{
+		// If the current channel is a child of the selected root, and we
+		// got nothing back from the first query, we're untuned.
+		retValue = true;
+	}
+
+	return retValue;
+}
+
+
 const string TS3Channels::aGetChannelFromFreqCurrPrnt = \
 "with stations as( " \
 "select down.child as channel, up.depth + down.depth as distance, down.depth as removed from " \
@@ -447,10 +469,6 @@ const string TS3Channels::aGetChannelFromFreqCurrPrnt = \
 "select r.channel, r.distance, r.removed, r.max_range, r.range, (r.range <= r.max_range) as in_range "
 "from ranges r" \
 "";
-
-const string TS3Channels::aChannelIsParentOfChild = \
-"select parent from closure where parent = :root and child = :current;";
-
 
 uint64 TS3Channels::getChannelID(uint16_t frequency, uint64 current, uint64 root, bool blConsiderRange, bool blOutOfRangeUntuned, double aLat, double aLon)
 {
@@ -484,25 +502,18 @@ uint64 TS3Channels::getChannelID(uint16_t frequency, uint64 current, uint64 root
         }
         else
         {
-            SQLite::Statement aStmt2(mChanDb, aChannelIsParentOfChild);
-
-            aStmt2.bind(":current", sqlite3_int64(current));
-            aStmt2.bind(":root", sqlite3_int64(root));
-
-            if (aStmt2.executeStep())
+            if (channelIsUnderRoot(current, root))
             {
-                // If the current channel is a child of the selected root, and we
-				// got nothing back from the first query, we're untuned.
+                // If the current channel is a child of the selected root, then
+				// we can't find a matching channel ID, so say so.
                 retValue = CHANNEL_ID_NOT_FOUND;
             }
             else
             {
-				// If the current channel is a child of the root, and we got
-				// nothing back from the first query, flag us as being outide
-				// of the root.
+				// If the current channel is not a child of the root, then flag
+				// us as being outide of the root.
 				retValue = CHANNEL_NOT_CHILD_OF_ROOT;
             }
-
         }
     }
     catch (SQLite::Exception&)
@@ -613,10 +624,22 @@ void TS3Channels::distanceFunc(sqlite3_context *context, int argc, sqlite3_value
     double lon1 = sqlite3_value_double(argv[1]);
     double lat2 = sqlite3_value_double(argv[2]);
     double lon2 = sqlite3_value_double(argv[3]);
-    // convert lat1 and lat2 into radians now, to avoid doing it twice below
-    double lat1rad = DEG2RAD(lat1);
-    double lat2rad = DEG2RAD(lat2);
-    // apply the spherical law of cosines to our latitudes and longitudes, and set the result appropriately
-    // 3437.746 is the approximate radius of the earth in nautical miles
-    sqlite3_result_double(context, acos(sin(lat1rad) * sin(lat2rad) + cos(lat1rad) * cos(lat2rad) * cos(DEG2RAD(lon2) - DEG2RAD(lon1))) * 3437.746);
+
+	double distance = getDistanceBetweenLatLonInNm(lat1, lon1, lat2, lon2);
+
+	sqlite3_result_double(context, distance);
+
+}
+
+double TS3Channels::getDistanceBetweenLatLonInNm(double lat1, double lon1, double lat2, double lon2)
+{
+	// convert lat1 and lat2 into radians now, to avoid doing it twice below
+	double lat1rad = DEG2RAD(lat1);
+	double lat2rad = DEG2RAD(lat2);
+	
+	// apply the spherical law of cosines to our latitudes and longitudes, and set the result appropriately
+	// 3437.746 is the approximate radius of the earth in nautical miles
+	double result = acos(sin(lat1rad) * sin(lat2rad) + cos(lat1rad) * cos(lat2rad) * cos(DEG2RAD(lon2) - DEG2RAD(lon1))) * 3437.746;
+
+	return result;
 }

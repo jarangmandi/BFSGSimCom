@@ -32,8 +32,8 @@ public:
     bool getOutOfRangeUntuned(void) { return blOutOfRangeUntuned; };
     bool getConsiderRange(void) { return blConsiderRange; };
     void setUntuned(bool bl);
-    uint64 getRootChannel(void) { return iRoot; };
-    uint64 getUntunedChannel(void) { return iUntuned; };
+    uint64 getRootChannel(void) { return (iRoot == 0) ? TS3Channels::CHANNEL_ID_NOT_FOUND : iRoot; };
+    uint64 getUntunedChannel(void) { return (iUntuned == 0) ? TS3Channels::CHANNEL_ID_NOT_FOUND : iUntuned; };
 
 protected slots:
     void accept();

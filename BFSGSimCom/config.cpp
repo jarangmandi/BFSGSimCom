@@ -178,8 +178,8 @@ Config::Config(TS3Channels& tch)
     vector<TS3Channels::ChannelInfo> channels;
 
     // Restore selected channel IDs
-    iRoot = settings.value("channel/root", TS3Channels::CHANNEL_ID_NOT_FOUND).toULongLong();
-    iUntuned = settings.value("channel/untuned", TS3Channels::CHANNEL_ID_NOT_FOUND).toULongLong();
+    iRoot = settings.value("channel/root", 0 /*TS3Channels::CHANNEL_ID_NOT_FOUND*/).toULongLong();
+    iUntuned = settings.value("channel/untuned", 0 /*TS3Channels::CHANNEL_ID_NOT_FOUND*/).toULongLong();
 
     blUntuned = settings.value("untuned/move").toBool();
     blOutOfRangeUntuned = settings.value("untuned/range").toBool();
@@ -262,10 +262,7 @@ void Config::saveSettings()
     settings.setValue("untuned/range", blOutOfRangeUntuned);
 
     // Save the channel IDs of each of the channel trees.
-    iRoot = getSelectedChannelId(treeParentChannel);
     settings.setValue("channel/root", iRoot);
-
-    iUntuned = getSelectedChannelId(treeUntunedChannel);
     settings.setValue("channel/untuned", iUntuned);
 
 }
@@ -279,7 +276,7 @@ void Config::accept()
         qMsg.setIcon(QMessageBox::Icon::Critical);
         qMsg.setStandardButtons(QMessageBox::StandardButton::Ok);
         qMsg.setText("Error in configuration");
-        qMsg.setInformativeText("An 'Untuned' channel of '0' is not valid.");
+        qMsg.setInformativeText("It is not possible to move to the \"Root\" channel when no frequency is tuned.\r\n\r\nEither select \"Stay in current channel\", or select a valid untuned channel.");
         qMsg.setDefaultButton(QMessageBox::StandardButton::Ok);
         qMsg.exec();
     }
@@ -299,7 +296,7 @@ void Config::reject()
 // Returns the ID (from the second column) of the selected channel
 uint64 Config::getSelectedChannelId(QTreeWidget* parent)
 {
-    uint64 iChannel = TS3Channels::CHANNEL_ID_NOT_FOUND;
+	uint64 iChannel = 0; // TS3Channels::CHANNEL_ID_NOT_FOUND;
 
     // Get the list of seleted items (there should be 0 or 1).
     QList<QTreeWidgetItem*> t = parent->selectedItems();
@@ -319,16 +316,13 @@ void Config::newRoot()
 {
     vector<TS3Channels::ChannelInfo> channels;
 
-    uint64 iChannel;
-    uint i = 0;
-
     // Get the root channel (which is the selected channel in the real root widget.
-    iChannel = getSelectedChannelId(treeParentChannel);
+    iRoot = getSelectedChannelId(treeParentChannel);
 
     // If we've selected a new channel
-    if (iChannel != TS3Channels::CHANNEL_ID_NOT_FOUND)
+    if (iRoot != TS3Channels::CHANNEL_ID_NOT_FOUND)
     {
-        channels = chList->getChannelList(iChannel);
+        channels = chList->getChannelList(iRoot);
         addChannelList(treeUntunedChannel, channels, iUntuned);
         treeUntunedChannel->resizeColumnToContents(0);
         treeUntunedChannel->resizeColumnToContents(1);

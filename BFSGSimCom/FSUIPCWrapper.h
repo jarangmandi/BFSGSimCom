@@ -28,6 +28,7 @@ public:
         double dLon;
         bool blComChanged;
         bool blPosChanged;
+		bool blOtherChanged;
     };
 
 private:
@@ -39,16 +40,19 @@ private:
     WORD cCom2Sby;
     BYTE cSelectedCom;
     WORD cWoW;
-    double cLat;
-    double cLon;
+	DWORD cLatitude;
+	DWORD cLongitude;
+	double cLat;
+	double cLon;
+
+	double currentLat;
+    double currentLon;
 
     void (*callback)(SimComData);
 
     BOOL checkConnection(DWORD*);
     void workerThread(void);
     
-    SimComData FSUIPCWrapper::getSimComData(bool blComChanged, bool blPosChange, bool blOtherChanged);
-
     std::thread* t1 = NULL;
 
 public:
@@ -65,6 +69,8 @@ public:
     BOOL FSUIPC_Process();
     void start(void);
     void stop(void);
+
+	SimComData FSUIPCWrapper::getSimComData(bool blComChanged, bool blPosChange, bool blOtherChanged);
 
     static std::string toString(FSUIPCWrapper::SimComData scd);
 };

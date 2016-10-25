@@ -3,6 +3,7 @@
 #include <sstream>
 
 #include "FSUIPCWrapper.h"
+#include "TS3Channels.h"
 
 bool FSUIPCWrapper::cFSUIPCConnected = false;
 bool FSUIPCWrapper::cRun = false;
@@ -60,12 +61,13 @@ void FSUIPCWrapper::workerThread(void)
         {
             bool blComChanged = false;
             bool blPosChange = false;
-            bool blOtherChanged = false;
+            
+			bool blOtherChanged = false;
 
-            cLat = double(simLatitude);
-            cLat *= 90.0 / (10001750.0 * 65536.0 * 65536.0);
-            cLon = double(simLongitude);
-            cLon *= 360.0 / (65536.0 * 65536.0 * 65536.0 * 65536.0);
+            currentLat = double(simLatitude);
+            currentLat *= 90.0 / (10001750.0 * 65536.0 * 65536.0);
+            currentLon = double(simLongitude);
+            currentLon *= 360.0 / (65536.0 * 65536.0 * 65536.0 * 65536.0);
 
             if (simCom1 != cCom1Freq)
             {
@@ -103,11 +105,23 @@ void FSUIPCWrapper::workerThread(void)
                 cWoW = simOnGnd;
             }
 
-            if (!(++counter % 50))
+			// This is set to fire if we've moved more than 0.5nm from where we were the last time it fired,
+			if (TS3Channels::getDistanceBetweenLatLonInNm(currentLat, currentLon, cLat, cLon) > 0.5)
             {
                 blPosChange = true;
-                counter = 0;
+
+				// Reset counter and save the last position
+				counter = 0;
+				cLat = currentLat;
+				cLon = currentLon;
             }
+
+			// This makes sure we go through the callback at least every 10 seconds - is it redundant now?
+			if (++counter >= 100)
+			{
+				blOtherChanged = true;
+				counter = 0;
+			}
 
             if (blComChanged || blPosChange || blOtherChanged)
             {
@@ -118,6 +132,7 @@ void FSUIPCWrapper::workerThread(void)
             }
         }
 
+		// Fetch data from the simulator every 10th of a second
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
     }
@@ -146,10 +161,12 @@ FSUIPCWrapper::SimComData FSUIPCWrapper::getSimComData(bool blComChanged, bool b
     simcomdata.blWoW = (cWoW != 0);
 
     // And finally, report the aircraft position.
-    simcomdata.dLat = cLat;
-    simcomdata.dLon = cLon;
+    simcomdata.dLat = currentLat;
+    simcomdata.dLon = currentLon;
 
     simcomdata.blPosChanged = blPosChange;
+
+	simcomdata.blOtherChanged = blOtherChanged;
 
     return simcomdata;
 };

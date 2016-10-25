@@ -16,6 +16,8 @@
 
 #include <sstream>
 
+#include <QtWidgets/QMessageBox>
+
 #include "public_errors.h"
 #include "public_errors_rare.h"
 #include "public_definitions.h"
@@ -57,11 +59,16 @@ Config* cfg;
 bool blConnectedToTeamspeak = false;
 bool blExtendedLoggingEnabled = false;
 anyID myTS3ID;
-uint64 lastTargetChannel = TS3Channels::CHANNEL_ID_NOT_FOUND;
+uint64 targetChannel = TS3Channels::CHANNEL_ID_NOT_FOUND;
 uint64 currentChannel;
+Config::ConfigMode lastMode;
 
 PluginItemType infoDataType = PluginItemType(0);
 uint64 infoDataId = 0;
+
+QMessageBox qMsg;
+
+void handleModeChange(Config::ConfigMode mode);
 
 #ifdef _WIN32
 /* Helper function to convert wchar_T to Utf-8 encoded strings on Windows */
@@ -106,8 +113,8 @@ void callback(FSUIPCWrapper::SimComData data)
     }
     
     simComData = data;
-    //string strMessage = "BFSGSimCom >> " + FSUIPCWrapper::toString(simComData);
 
+	// Generate detailed logging if required...
 	if (blExtendedLoggingEnabled)
 	{
 		std::ostringstream ostr;
@@ -128,51 +135,100 @@ void callback(FSUIPCWrapper::SimComData data)
     if (blConnectedToTeamspeak)
     {
 
-        if (cfg->getMode() != Config::CONFIG_DISABLED)
+		Config::ConfigMode operationMode = cfg->getMode();
+
+        if (operationMode == Config::CONFIG_DISABLED)
         {
-            uint16_t frequency;
-            uint64 rootChannel;
-            uint64 targetChannel;
-            Config::ConfigMode operationMode;
 
-            bool blToMove = false;
-            bool blTuned = false;
-            bool blManMoved = false;
+			if (blExtendedLoggingEnabled)
+			{
+				std::ostringstream ostr;
 
-            if (data.blComChanged || data.blPosChanged)
-            {
+				decodeChannel(ostr, "    Current", currentChannel);
+				ostr << " | ";
+				decodeChannel(ostr, "Last Target", targetChannel);
 
-                // Work out which radio is active, and therefore the current tuned frequency.
-                switch (data.selectedCom)
-                {
-                case FSUIPCWrapper::Com1:
-                    frequency = data.iCom1Freq;
-                    break;
-                case FSUIPCWrapper::Com2:
-                    frequency = data.iCom2Freq;
-                    break;
-                default:
-                    frequency = 0;
-                }
+				ts3Functions.logMessage(ostr.str().c_str(), LogLevel::LogLevel_DEBUG, "BFSGSimCom", serverConnectionHandlerID);
+			}
 
-                operationMode = cfg->getMode();
-                rootChannel = cfg->getRootChannel();
 
-                // Get any new target channel
-                targetChannel = ts3Channels.getChannelID(
-                    frequency,
-                    currentChannel,
-                    rootChannel,
-                    cfg->getConsiderRange(),
-                    cfg->getOutOfRangeUntuned(),
-                    data.dLat,
-                    data.dLon
-                );
+			// if we're connected, but disabled, keep an eye on where we are, and make it the last target.
+			targetChannel = currentChannel;
+        }
+        else
+        {
+			uint16_t frequency;
+			uint64 newTargetChannel;
 
-                // We want to move if the target channel has changed since the last iteration, or if the mode is "automatic"
-                blToMove = (targetChannel != lastTargetChannel) || operationMode == Config::CONFIG_AUTO;
-                blTuned = (targetChannel != TS3Channels::CHANNEL_ID_NOT_FOUND && targetChannel != TS3Channels::CHANNEL_NOT_CHILD_OF_ROOT);
-                blManMoved = (currentChannel != lastTargetChannel);
+			uint64 rootChannel = cfg->getRootChannel();
+
+			uint64 adjustedRootChannel;
+			uint64 adjustedCurrentChannel;
+
+			//bool blToMove = false;
+			//bool blTunedToRecognisedFrequency = false;
+			//bool blLastChannelMoveManual = false;
+
+			bool blConsiderAutoMove = (operationMode == Config::CONFIG_AUTO);
+			bool blConsiderManualMove = (operationMode == Config::CONFIG_MANUAL && data.blComChanged);
+
+			// If something has changed that might trigger a change in tuned channel...
+			// either a radio change, or a position change
+			if (data.blComChanged || data.blPosChanged || data.blOtherChanged)
+			{
+					
+				if (rootChannel == TS3Channels::CHANNEL_ID_NOT_FOUND)
+				{
+					adjustedRootChannel = currentChannel;
+				}
+				else
+				{
+					adjustedRootChannel = rootChannel;
+				}
+
+				// Where the mode is automatic, we always want to be moving to somewhere under the root,
+				// so if we're not presently under there, then assume we are at the root for the
+				// purposes of working out which channel we need to move to.
+				if (blConsiderAutoMove)
+				{
+					if (ts3Channels.channelIsUnderRoot(currentChannel, adjustedRootChannel))
+						adjustedCurrentChannel = currentChannel;
+					else
+						adjustedCurrentChannel = rootChannel;
+				}
+				else
+				{
+					adjustedCurrentChannel = currentChannel;
+				}
+
+				// Work out which radio is active, and therefore the current tuned frequency.
+				switch (data.selectedCom)
+				{
+				case FSUIPCWrapper::Com1:
+					frequency = data.iCom1Freq;
+					break;
+				case FSUIPCWrapper::Com2:
+					frequency = data.iCom2Freq;
+					break;
+				default:
+					frequency = 0;
+				}
+
+				// Get the target channel based on relevant information
+				newTargetChannel = ts3Channels.getChannelID(
+					frequency,
+					adjustedCurrentChannel,
+					adjustedRootChannel,
+					cfg->getConsiderRange(),
+					cfg->getOutOfRangeUntuned(),
+					data.dLat,
+					data.dLon
+				);
+
+				bool blTargetUnderCurrentRoot = (newTargetChannel != TS3Channels::CHANNEL_NOT_CHILD_OF_ROOT);
+				bool blTunedToRecognisedFrequency = (newTargetChannel != TS3Channels::CHANNEL_ID_NOT_FOUND && newTargetChannel != TS3Channels::CHANNEL_NOT_CHILD_OF_ROOT);
+				bool blLastChannelMoveManual = (currentChannel != targetChannel);
+				bool blTargetChannelChanged = (newTargetChannel != targetChannel);
 
 				if (blExtendedLoggingEnabled)
 				{
@@ -180,62 +236,98 @@ void callback(FSUIPCWrapper::SimComData data)
 
 					decodeChannel(ostr, "    Current", currentChannel);
 					ostr << " | ";
-					decodeChannel(ostr, "Target Channel", targetChannel);
+					decodeChannel(ostr, "Adjusted", adjustedCurrentChannel);
+					ostr << " | ";
+					decodeChannel(ostr, "Root", rootChannel);
+					ostr << " | ";
+					decodeChannel(ostr, "Adjusted Root", adjustedRootChannel);
+					ostr << " | ";
+					decodeChannel(ostr, "New Target", newTargetChannel);
 					ostr << " | ";
 					decodeChannel(ostr, "Last Target", targetChannel);
 					ostr << " | ";
-					ostr << "ToMove: " << blToMove << " | ";
-					ostr << "Tuned: " << blTuned << " | ";
-					ostr << "ManMoved: " << blManMoved;
+					ostr << "TargetUnderCurrentRoot: " << blTargetUnderCurrentRoot << " | ";
+					ostr << "TunedToRecognisedFrequency: " << blTunedToRecognisedFrequency << " | ";
+					ostr << "LastMoveManual: " << blLastChannelMoveManual << " | ";
+					ostr << "TargetChannelChanged: " << blTargetChannelChanged;
 
 					ts3Functions.logMessage(ostr.str().c_str(), LogLevel::LogLevel_DEBUG, "BFSGSimCom", serverConnectionHandlerID);
 				}
 
-            }
-
-            // We only really care if we've got a different channel to move to.
-            if (blToMove)
-            {
-                // ...but only move if there is a tuned channel or we didn't move ourselves or we've said we always want
-                // to be in the channel the radios say we should be in.
-                if (blTuned || !blManMoved || operationMode == Config::CONFIG_AUTO)
-                {
-                    // If we're not tuned, then get the "untuned" channel instead.
-                    if (!blTuned)
-                    {
-                        targetChannel = cfg->getUntunedChannel();
-                    }
-
-                    // Request the move, but only if there is one and there's a valid "untuned" channel!
-                    if (
-                        targetChannel != currentChannel &&
-                        targetChannel != TS3Channels::CHANNEL_ID_NOT_FOUND && targetChannel != TS3Channels::CHANNEL_ROOT
-                        )
-                    {
-                        ts3Functions.requestClientMove(serverConnectionHandlerID, myTS3ID, targetChannel, "", callbackReturnCode);
-
-						if (blExtendedLoggingEnabled)
+				if	(
+						// The operation mode says we can move...
+						(
+							// ...either AUTO, or MANUAL if the tuning has changed or the position has changed AND the last channel move was not manual
+							operationMode == Config::CONFIG_AUTO ||
+							operationMode == Config::CONFIG_MANUAL && (data.blComChanged || (data.blPosChanged && !blLastChannelMoveManual)) && blTargetUnderCurrentRoot
+						) &&
+						// ...We're only interested if the target channel has changed and is under the currently specified root
+						blTargetChannelChanged
+					)
+					{
+						// If the target channel is "untuned", then...
+						if (!blTunedToRecognisedFrequency)
 						{
-							std::ostringstream ostr;
-							ostr << "    Requested Move To: " << targetChannel;
-							ts3Functions.logMessage(ostr.str().c_str(), LogLevel::LogLevel_DEBUG, "BFSGSimCom", serverConnectionHandlerID);
+							// Depending on the options, the target channel is either the defined "untuned" frequency
+							// or the adjusted current channgel...
+							if (cfg->getUntuned())
+							{
+								newTargetChannel = cfg->getUntunedChannel();
+							}
+							else
+							{
+								newTargetChannel = adjustedCurrentChannel;
+							}
 						}
+
+						// Work out whether the target channel is a valid TS channel
+						bool blTargetChannelInTS = (newTargetChannel != TS3Channels::CHANNEL_ID_NOT_FOUND) && (newTargetChannel != TS3Channels::CHANNEL_ROOT);
+
+						// If the target is not the current channel, and the target is a valid TS channel, then...
+						if (newTargetChannel != currentChannel && blTargetChannelInTS)
+						{
+							// ..request a move to the target channel
+							ts3Functions.requestClientMove(serverConnectionHandlerID, myTS3ID, newTargetChannel, "", callbackReturnCode);
+
+							// and if extended logging is enabled, record that we've requested the move.
+							if (blExtendedLoggingEnabled)
+							{
+								std::ostringstream ostr;
+								ostr << "    Requested Move To: " << newTargetChannel;
+								ts3Functions.logMessage(ostr.str().c_str(), LogLevel::LogLevel_DEBUG, "BFSGSimCom", serverConnectionHandlerID);
+							}
+						}
+						else
+						{
+							// if extended logging is enables, record that we don't need to move.
+							if (blExtendedLoggingEnabled)
+							{
+								std::ostringstream ostr;
+								ostr << "    Did not request move to: " << newTargetChannel;
+								ts3Functions.logMessage(ostr.str().c_str(), LogLevel::LogLevel_DEBUG, "BFSGSimCom", serverConnectionHandlerID);
+							}
+						}
+
+						// Remember the target channel
+						targetChannel = newTargetChannel;
 					}
-                }
 				
-				// Remember where we should have gone last time for when the target changes this time!
-				lastTargetChannel = targetChannel;
+				else
+				{
+					// otherwise, the target channel is unchanged
+					targetChannel = targetChannel; // hopefully this gets optimised out!
+				}
 			}
-        }
-        else
-        {
-            // if we're connected, but disabled, keep an eye on where we are, and make it the last target.
-            lastTargetChannel = currentChannel;
-        }
+			else
+			{
+				// Last target channel is unchanged
+				targetChannel = targetChannel; // hopefully this gets optimised out!
+			}
+		}
     }
     else
-    {
-        lastTargetChannel = TS3Channels::CHANNEL_ID_NOT_FOUND;
+	{
+        targetChannel = TS3Channels::CHANNEL_ID_NOT_FOUND;
     }
 
     // This is a frig to avoid trying to update client data from an unrelated thread. What we're waiting for is
@@ -344,6 +436,7 @@ void loadChannels(uint64 serverConnectionHandlerID)
 }
 
 
+
 /*
  * Custom code called right after loading the plugin. Returns 0 on success, 1 on failure.
  * If the function returns 1 on failure, the plugin will be unloaded again.
@@ -386,6 +479,7 @@ int ts3plugin_init() {
 
 	// Initialise the plugin configuration dialog
     cfg = new Config(ts3Channels);
+	lastMode = cfg->getMode();
 
     // Load channel data from the server connection. This needs to be done before
 	// we start looking at tuned channels once the simulator connection is started.
@@ -483,7 +577,7 @@ void ts3plugin_currentServerConnectionChanged(uint64 serverConnectionHandlerID) 
 
 /* Static title shown in the left column in the info frame */
 const char* ts3plugin_infoTitle() {
-    return "BFSGSimCom Information";
+    return "BFSGSimCom";
 }
 
 /*
@@ -530,7 +624,7 @@ void ts3plugin_infoData(uint64 serverConnectionHandlerID, uint64 id, enum Plugin
                 strMode = "Enabled but not locked";
                 break;
             case Config::CONFIG_AUTO:
-                if (lastTargetChannel == 0)
+                if (targetChannel == 0)
                     strMode = strMode = "Enabled and locked but to invalid channel";
                 else
                     strMode = "Enabled and locked";
@@ -668,9 +762,7 @@ void ts3plugin_initMenus(struct PluginMenuItem*** menuItems, char** menuIcon) {
 	END_CREATE_MENUS;  /* Includes an assert checking if the number of menu items matched */
 
     // Setup initial state of menu items
-    ts3Functions.setPluginMenuEnabled(pluginID, MENU_ID_SIMCOM_MODE_DISABLE, (cfg->getMode() == Config::ConfigMode::CONFIG_DISABLED) ? 0 : 1);
-    ts3Functions.setPluginMenuEnabled(pluginID, MENU_ID_SIMCOM_MODE_MANUAL, (cfg->getMode() == Config::ConfigMode::CONFIG_MANUAL) ? 0 : 1);
-    ts3Functions.setPluginMenuEnabled(pluginID, MENU_ID_SIMCOM_MODE_AUTO, (cfg->getMode() == Config::ConfigMode::CONFIG_AUTO) ? 0 : 1);
+	handleModeChange(cfg->getMode());
 
 	ts3Functions.setPluginMenuEnabled(pluginID, MENU_ID_SIMCOM_DEBUG_ON, blExtendedLoggingEnabled ? 0 : 1);
 	ts3Functions.setPluginMenuEnabled(pluginID, MENU_ID_SIMCOM_DEBUG_OFF, blExtendedLoggingEnabled ? 1 : 0);
@@ -728,6 +820,32 @@ void ts3plugin_initHotkeys(struct PluginHotkey*** hotkeys) {
     /* The client will call ts3plugin_freeMemory to release all allocated memory */
 }
 
+void handleModeChange(Config::ConfigMode mode)
+{
+	cfg->setMode(mode);
+
+	ts3Functions.setPluginMenuEnabled(pluginID, MENU_ID_SIMCOM_MODE_DISABLE, (mode == Config::ConfigMode::CONFIG_DISABLED) ? 0 : 1);
+	ts3Functions.setPluginMenuEnabled(pluginID, MENU_ID_SIMCOM_MODE_MANUAL, (mode == Config::ConfigMode::CONFIG_MANUAL) ? 0 : 1);
+	ts3Functions.setPluginMenuEnabled(pluginID, MENU_ID_SIMCOM_MODE_AUTO, (mode == Config::ConfigMode::CONFIG_AUTO) ? 0 : 1);
+
+/*
+    if  (
+		mode != Config::ConfigMode::CONFIG_DISABLED &&
+			(cfg->getRootChannel() == TS3Channels::CHANNEL_ID_NOT_FOUND || cfg->getUntunedChannel() == TS3Channels::CHANNEL_ID_NOT_FOUND)
+		)
+	{
+		qMsg.setIcon(QMessageBox::Icon::Warning);
+		qMsg.setStandardButtons(QMessageBox::StandardButton::Ok);
+		qMsg.setText("Configuration incomplete.");
+		qMsg.setInformativeText("For BFSGSimCom to work properly, you\nneed to configure the root and default\nchannels from the Settings dialog.");
+		qMsg.setDefaultButton(QMessageBox::StandardButton::Ok);
+		qMsg.open();
+	}
+*/
+
+	lastMode = mode;
+}
+
 /************************** TeamSpeak callbacks ***************************/
 /*
  * Following functions are optional, feel free to remove unused callbacks.
@@ -763,68 +881,101 @@ void ts3plugin_onConnectStatusChangeEvent(uint64 serverConnectionHandlerID, int 
 
     switch (newStatus)
     {
-        // When we disconnect, forget everything.
+    // When we disconnect...
     case STATUS_DISCONNECTED:
+		// Forget everything.
+
+		// Delete our channel list and flag that we're no longer connected.
         ts3Channels.deleteAllChannels();
         blConnectedToTeamspeak = false;
+
+		// Reset my ID to zero.
         myTS3ID = 0;
-        break;
 
-        // Force the information window to update on disconnect
-        ts3Functions.requestServerVariables(serverConnectionHandlerID);
+		// Reset the current channel and the last target channel.
+		currentChannel = TS3Channels::CHANNEL_ROOT;
+		targetChannel = TS3Channels::CHANNEL_ROOT;
 
-        // When we connect...
+		// Force the information window to update
+		ts3Functions.requestServerVariables(serverConnectionHandlerID);
+		
+		break;
+
+    // When we connect...
     case STATUS_CONNECTION_ESTABLISHED:
         // Get a list of all of the channels on the server, and iterate through it.
         loadChannels(serverConnectionHandlerID);
         blConnectedToTeamspeak = true;
+
+		// Find out our ID, and which channel we're presently in
         ts3Functions.getClientID(serverConnectionHandlerID, &myTS3ID);
 		ts3Functions.getChannelOfClient(serverConnectionHandlerID, myTS3ID, &currentChannel);
 
-        // Force the information window to update on connect
-        ts3Functions.requestServerVariables(serverConnectionHandlerID);
-        break;
+		// Assume that our last target channel is were we started.
+		targetChannel = currentChannel;
+
+		// Force the information window to update
+		ts3Functions.requestServerVariables(serverConnectionHandlerID);
+		
+		break;
+
+	// Ignore any other status
     default:
         break;
     }
+
 
 }
 
 void ts3plugin_onClientMoveEvent(uint64 serverConnectionHandlerID, anyID clientID, uint64 oldChannelID, uint64 newChannelID, int visibility, const char* moveMessage) {
 
+	// This event is fired when any client moves. We're only interested in events where
+	// we are the member who has moved.
     if (clientID == myTS3ID)
     {
-		// This code will move us back to where we're supposed to go, if and only if...
-        // 1. We're in "AUTO" mode
-        // 2. We're connected to a simulator
+		// This code will move us back to where we're supposed to be, if and only if...
+		// 1. We're connected to a simulator
+		// 2. We're in "AUTO" mode
         // 3. There's a valid channel to move to (>0), and
         // 4. We're not where we're supposed to be!
+
         if (
-            cfg->getMode() == Config::ConfigMode::CONFIG_AUTO && fsuipc->isConnected() &&
-            lastTargetChannel != TS3Channels::CHANNEL_ROOT && lastTargetChannel != TS3Channels::CHANNEL_ID_NOT_FOUND)
+			fsuipc->isConnected() &&
+			cfg->getMode() == Config::ConfigMode::CONFIG_AUTO &&
+            targetChannel != TS3Channels::CHANNEL_ROOT &&
+			targetChannel != TS3Channels::CHANNEL_NOT_CHILD_OF_ROOT &&
+			targetChannel != TS3Channels::CHANNEL_ID_NOT_FOUND)
         {
 			string debugMessage;
-			if (newChannelID != lastTargetChannel)
+
+			//If we're here, then we want to be moving back to where we were before the move.
+
+			if (newChannelID != targetChannel)
 			{
+				// If the new channel is different to the last recorded target, then request a move back
+				// to where we're supposed to be.
 				debugMessage = "Requesting reutrn to";
-				ts3Functions.requestClientMove(serverConnectionHandlerID, clientID, lastTargetChannel, "", NULL);
+				ts3Functions.requestClientMove(serverConnectionHandlerID, clientID, targetChannel, "", NULL);
 			}
 			else
 			{
 				debugMessage = "Already in";
 			}
 
+			// Make detailed logs if enabled.
 			if (blExtendedLoggingEnabled)
 			{
 				std::ostringstream ostr;
-				ostr << "Move Event: Client has been moved to " << newChannelID << " | " << debugMessage << " channel " << lastTargetChannel;
+				ostr << "Move Event: Client has moved to " << newChannelID << " | " << debugMessage << " channel " << targetChannel;
 				ts3Functions.logMessage(ostr.str().c_str(), LogLevel::LogLevel_DEBUG, "BFSGSimCom", serverConnectionHandlerID);
 			}
 			
-			currentChannel = lastTargetChannel;
+			// Update our local record of where we are.
+			currentChannel = targetChannel;
         }
         else
         {
+			// Make detailed logs if enabled.
 			if (blExtendedLoggingEnabled)
 			{
 				std::ostringstream ostr;
@@ -832,6 +983,8 @@ void ts3plugin_onClientMoveEvent(uint64 serverConnectionHandlerID, anyID clientI
 				ts3Functions.logMessage(ostr.str().c_str(), LogLevel::LogLevel_DEBUG, "BFSGSimCom", serverConnectionHandlerID);
 			}
 			
+			// If we've not been intercepted for any of the reasons above, then accept the channel move and update
+			// our local record of where we are.
 			currentChannel = newChannelID;
         }
 
@@ -878,15 +1031,15 @@ void ts3plugin_onMenuItemEvent(uint64 serverConnectionHandlerID, enum PluginMenu
             break;
         case MENU_ID_SIMCOM_MODE_DISABLE:
             /* Menu global 1 was triggered */
-            cfg->setMode(Config::ConfigMode::CONFIG_DISABLED);
+            handleModeChange(Config::ConfigMode::CONFIG_DISABLED);
             break;
         case MENU_ID_SIMCOM_MODE_MANUAL:
             /* Menu global 1 was triggered */
-            cfg->setMode(Config::ConfigMode::CONFIG_MANUAL);
+			handleModeChange(Config::ConfigMode::CONFIG_MANUAL);
             break;
         case MENU_ID_SIMCOM_MODE_AUTO:
             /* Menu global 1 was triggered */
-            cfg->setMode(Config::ConfigMode::CONFIG_AUTO);
+			handleModeChange(Config::ConfigMode::CONFIG_AUTO);
             break;
 		case MENU_ID_SIMCOM_DEBUG_ON:
 			blExtendedLoggingEnabled = true;
@@ -897,10 +1050,6 @@ void ts3plugin_onMenuItemEvent(uint64 serverConnectionHandlerID, enum PluginMenu
 		default:
             break;
         }
-
-        ts3Functions.setPluginMenuEnabled(pluginID, MENU_ID_SIMCOM_MODE_DISABLE, (cfg->getMode() == Config::ConfigMode::CONFIG_DISABLED)? 0 : 1);
-        ts3Functions.setPluginMenuEnabled(pluginID, MENU_ID_SIMCOM_MODE_MANUAL, (cfg->getMode() == Config::ConfigMode::CONFIG_MANUAL) ? 0 : 1);
-        ts3Functions.setPluginMenuEnabled(pluginID, MENU_ID_SIMCOM_MODE_AUTO, (cfg->getMode() == Config::ConfigMode::CONFIG_AUTO) ? 0 : 1);
 
 		ts3Functions.setPluginMenuEnabled(pluginID, MENU_ID_SIMCOM_DEBUG_ON, blExtendedLoggingEnabled ? 0 : 1);
 		ts3Functions.setPluginMenuEnabled(pluginID, MENU_ID_SIMCOM_DEBUG_OFF, blExtendedLoggingEnabled ? 1 : 0);
@@ -920,20 +1069,16 @@ void ts3plugin_onHotkeyEvent(const char* keyword) {
 
     if (strKeyword == "BFSGSimCom_Off")
     {
-        cfg->setMode(Config::ConfigMode::CONFIG_DISABLED);
+		handleModeChange(Config::ConfigMode::CONFIG_DISABLED);
     }
     else if (strKeyword == "BFSGSimCom_Man")
     {
-        cfg->setMode(Config::ConfigMode::CONFIG_MANUAL);
+		handleModeChange(Config::ConfigMode::CONFIG_MANUAL);
     }
     else if (strKeyword == "BFSGSimCom_Aut")
     {
-        cfg->setMode(Config::ConfigMode::CONFIG_AUTO);
+		handleModeChange(Config::ConfigMode::CONFIG_AUTO);
     }
-
-    ts3Functions.setPluginMenuEnabled(pluginID, MENU_ID_SIMCOM_MODE_DISABLE, (cfg->getMode() == Config::ConfigMode::CONFIG_DISABLED) ? 0 : 1);
-    ts3Functions.setPluginMenuEnabled(pluginID, MENU_ID_SIMCOM_MODE_MANUAL, (cfg->getMode() == Config::ConfigMode::CONFIG_MANUAL) ? 0 : 1);
-    ts3Functions.setPluginMenuEnabled(pluginID, MENU_ID_SIMCOM_MODE_AUTO, (cfg->getMode() == Config::ConfigMode::CONFIG_AUTO) ? 0 : 1);
 
     ts3Functions.requestServerVariables(ts3Functions.getCurrentServerConnectionHandlerID());
 }

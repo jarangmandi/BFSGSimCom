@@ -96,6 +96,7 @@
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>.\;$(SolutionDir);$(SolutionDir)\SQLite3;GeneratedFiles\$(Platform);$(SolutionDir)\FSUIPCLibrary;$(SolutionDir)\~pluginsdk\include;$(QTDIR32)\include;$(QTDIR32)\include\QtCore;$(QTDIR32)\include\QtGui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <MinimalRebuild>false</MinimalRebuild>
     </ClCompile>
     <Link>
       <TargetMachine>MachineX86</TargetMachine>
@@ -120,6 +121,7 @@
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>.\;$(SolutionDir);$(SolutionDir)\SQLite3;GeneratedFiles\$(Platform);$(SolutionDir)\FSUIPCLibrary;$(SolutionDir)\~pluginsdk\include;$(QTDIR64)\include;$(QTDIR64)\include\QtCore;$(QTDIR64)\include\QtGui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <MinimalRebuild>false</MinimalRebuild>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>

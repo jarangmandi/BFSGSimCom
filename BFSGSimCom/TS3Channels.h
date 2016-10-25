@@ -67,9 +67,11 @@ public:
     uint16_t addOrUpdateChannel(string& str, string, string, string, uint64, uint64 parentChannel = 0, uint64 order = 0);
     uint64 getChannelID(uint16_t frequency, uint64 current = 0, uint64 root = 0, bool blConsiderRange = false, bool blOutOfRangeUntuned = false, double lat = -999.9, double lon = -999.0);
     uint64 getChannelID(double frequency, uint64 current = 0, uint64 root = 0, bool blConsiderRange = false, bool blOutOfRangeUntuned = false, double lat = -999.9, double lon = -999.0);
+	bool TS3Channels::channelIsUnderRoot(uint64 current, uint64 root);
 
     vector<ChannelInfo> getChannelList(uint64 root = 0);
 
     static void TS3Channels::distanceFunc(sqlite3_context *context, int argc, sqlite3_value **argv);
+	static double TS3Channels::getDistanceBetweenLatLonInNm(double lat1, double lon1, double lat2, double lon2);
 };
 
