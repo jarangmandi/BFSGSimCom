@@ -919,7 +919,10 @@ void ts3plugin_onConnectStatusChangeEvent(uint64 serverConnectionHandlerID, int 
 		ts3Functions.requestServerVariables(serverConnectionHandlerID);
 
 		// Just in case we need to move when we first start...
-		callback(fsuipc->getSimComData(false, false, true));
+		if (fsuipc->isConnected())
+		{
+			callback(simComData);
+		}
 
 		break;
 
