@@ -169,6 +169,17 @@ void callback(FSUIPCWrapper::SimComData data)
 			//bool blTunedToRecognisedFrequency = false;
 			//bool blLastChannelMoveManual = false;
 
+			// In the unlikely event that someone starts up the plugin whilst connected we need to set
+			// the current channel and last target channel correctly!
+			// Find out our ID, and which channel we're presently in
+			ts3Functions.getClientID(serverConnectionHandlerID, &myTS3ID);
+			ts3Functions.getChannelOfClient(serverConnectionHandlerID, myTS3ID, &currentChannel);
+
+			targetChannel = currentChannel;
+
+
+			// And now into the processing...
+
 			bool blConsiderAutoMove = (operationMode == Config::CONFIG_AUTO);
 			bool blConsiderManualMove = (operationMode == Config::CONFIG_MANUAL && data.blComChanged);
 
@@ -545,6 +556,8 @@ void ts3plugin_configure(void* handle, void* qParentWidget) {
 
     /* Execute the config dialog */
     cfg->exec();
+
+	handleModeChange(cfg->getMode());
 }
 
 /*
@@ -828,22 +841,10 @@ void handleModeChange(Config::ConfigMode mode)
 	ts3Functions.setPluginMenuEnabled(pluginID, MENU_ID_SIMCOM_MODE_MANUAL, (mode == Config::ConfigMode::CONFIG_MANUAL) ? 0 : 1);
 	ts3Functions.setPluginMenuEnabled(pluginID, MENU_ID_SIMCOM_MODE_AUTO, (mode == Config::ConfigMode::CONFIG_AUTO) ? 0 : 1);
 
-/*
-    if  (
-		mode != Config::ConfigMode::CONFIG_DISABLED &&
-			(cfg->getRootChannel() == TS3Channels::CHANNEL_ID_NOT_FOUND || cfg->getUntunedChannel() == TS3Channels::CHANNEL_ID_NOT_FOUND)
-		)
-	{
-		qMsg.setIcon(QMessageBox::Icon::Warning);
-		qMsg.setStandardButtons(QMessageBox::StandardButton::Ok);
-		qMsg.setText("Configuration incomplete.");
-		qMsg.setInformativeText("For BFSGSimCom to work properly, you\nneed to configure the root and default\nchannels from the Settings dialog.");
-		qMsg.setDefaultButton(QMessageBox::StandardButton::Ok);
-		qMsg.open();
-	}
-*/
-
+	targetChannel = currentChannel;
 	lastMode = mode;
+
+	callback(simComData);
 }
 
 /************************** TeamSpeak callbacks ***************************/
@@ -916,7 +917,10 @@ void ts3plugin_onConnectStatusChangeEvent(uint64 serverConnectionHandlerID, int 
 
 		// Force the information window to update
 		ts3Functions.requestServerVariables(serverConnectionHandlerID);
-		
+
+		// Just in case we need to move when we first start...
+		callback(fsuipc->getSimComData(false, false, true));
+
 		break;
 
 	// Ignore any other status
@@ -1028,6 +1032,7 @@ void ts3plugin_onMenuItemEvent(uint64 serverConnectionHandlerID, enum PluginMenu
         case MENU_ID_SIMCOM_CONFIGURE:
             /* Menu global 1 was triggered */
             cfg->exec();
+			handleModeChange(cfg->getMode());
             break;
         case MENU_ID_SIMCOM_MODE_DISABLE:
             /* Menu global 1 was triggered */
