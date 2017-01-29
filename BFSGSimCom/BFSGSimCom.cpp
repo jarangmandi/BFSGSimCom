@@ -18,13 +18,21 @@
 
 #include <QtWidgets/QMessageBox>
 
-#include "public_errors.h"
-#include "public_errors_rare.h"
-#include "public_definitions.h"
-#include "public_rare_definitions.h"
+#include "teamspeak/public_errors.h"
+#include "teamspeak/public_errors_rare.h"
+#include "teamspeak/public_definitions.h"
+#include "teamspeak/public_rare_definitions.h"
+#include "teamspeak/clientlib_publicdefinitions.h"
 #include "ts3_functions.h"
 
+//#include "ts3_functions.h"
+//#include "public_errors.h"
+//#include "public_errors_rare.h"
+//#include "public_definitions.h"
+//#include "public_rare_definitions.h"
+
 #include "BFSGSimCom.h"
+
 #include "FSUIPCWrapper.h"
 #include "TS3Channels.h"
 
@@ -39,20 +47,25 @@ struct TS3Functions ts3Functions;
 #define _strcpy(dest, destSize, src) { strncpy(dest, src, destSize-1); (dest)[destSize-1] = '\0'; }
 #endif
 
-#define PLUGIN_API_VERSION 20
-
-#define PATH_BUFSIZE 512
-#define COMMAND_BUFSIZE 128
-#define INFODATA_BUFSIZE 1024
-#define SERVERINFO_BUFSIZE 256
-#define CHANNELINFO_BUFSIZE 512
-#define RETURNCODE_BUFSIZE 128
+//#define PLUGIN_API_VERSION 21
+//
+//#define PATH_BUFSIZE 512
+//#define COMMAND_BUFSIZE 128
+//#define INFODATA_BUFSIZE 1024
+//#define SERVERINFO_BUFSIZE 256
+//#define CHANNELINFO_BUFSIZE 512
+//#define RETURNCODE_BUFSIZE 128
 
 static char* pluginID = NULL;
 static char* callbackReturnCode = NULL;
 
+//static char appPath[PATH_BUFSIZE];
+//static char resourcesPath[PATH_BUFSIZE];
+//static char configPath[PATH_BUFSIZE];
+char pluginPath[PATH_BUFSIZE];
+
 static FSUIPCWrapper* fsuipc = NULL;
-TS3Channels ts3Channels;
+TS3Channels* ts3Channels = NULL;
 FSUIPCWrapper::SimComData simComData;
 Config* cfg;
 
@@ -202,7 +215,7 @@ void callback(FSUIPCWrapper::SimComData data)
 				// purposes of working out which channel we need to move to.
 				if (blConsiderAutoMove)
 				{
-					if (ts3Channels.channelIsUnderRoot(currentChannel, adjustedRootChannel))
+					if (ts3Channels->channelIsUnderRoot(currentChannel, adjustedRootChannel))
 						adjustedCurrentChannel = currentChannel;
 					else
 						adjustedCurrentChannel = rootChannel;
@@ -226,7 +239,7 @@ void callback(FSUIPCWrapper::SimComData data)
 				}
 
 				// Get the target channel based on relevant information
-				newTargetChannel = ts3Channels.getChannelID(
+				newTargetChannel = ts3Channels->getChannelID(
 					frequency,
 					adjustedCurrentChannel,
 					adjustedRootChannel,
@@ -371,7 +384,7 @@ const char* ts3plugin_name() {
 
 /* Plugin version */
 const char* ts3plugin_version() {
-    return "0.8.1";
+    return "0.9.1";
 }
 
 /* Plugin API version. Must be the same as the clients API major version, else the plugin fails to load. */
@@ -417,7 +430,7 @@ void loadChannel(uint64 serverConnectionHandlerID, uint64 channel, uint64 parent
     ts3Functions.getChannelVariableAsString(serverConnectionHandlerID, channel, CHANNEL_TOPIC, &cTopic);
     ts3Functions.getChannelVariableAsString(serverConnectionHandlerID, channel, CHANNEL_DESCRIPTION, &cDesc);
     ts3Functions.getChannelVariableAsUInt64(serverConnectionHandlerID, channel, CHANNEL_ORDER, &order);
-    ts3Channels.addOrUpdateChannel(strComment, cName, cTopic, cDesc, channel, parent, order);
+    ts3Channels->addOrUpdateChannel(strComment, cName, cTopic, cDesc, channel, parent, order);
 
     // Not forgetting to free up the memory we've used for the channel name.
     ts3Functions.freeMemory(cName);
@@ -467,8 +480,11 @@ int ts3plugin_init() {
 	blExtendedLoggingEnabled = false;
 #endif // DEBUG
 
+	//ts3Functions.getAppPath(appPath, PATH_BUFSIZE);
+	//ts3Functions.getResourcesPath(resourcesPath, PATH_BUFSIZE);
+	//ts3Functions.getConfigPath(configPath, PATH_BUFSIZE);
+	ts3Functions.getPluginPath(pluginPath, PATH_BUFSIZE, pluginID);
 
-    
     // Initialise the TS3 server connection status
     if (ts3Functions.getConnectionStatus(serverConnectionHandlerID, &connectionStatus) == ERROR_ok)
     {
@@ -488,8 +504,11 @@ int ts3plugin_init() {
         blConnectedToTeamspeak = false;
     }
 
+	// Initialise the channel information
+	ts3Channels = new TS3Channels();
+
 	// Initialise the plugin configuration dialog
-    cfg = new Config(ts3Channels);
+    cfg = new Config(*ts3Channels);
 	lastMode = cfg->getMode();
 
     // Load channel data from the server connection. This needs to be done before
@@ -864,7 +883,7 @@ void ts3plugin_onNewChannelCreatedEvent(uint64 serverConnectionHandlerID, uint64
 
 void ts3plugin_onDelChannelEvent(uint64 serverConnectionHandlerID, uint64 channelID, anyID invokerID, const char* invokerName, const char* invokerUniqueIdentifier)
 {
-    ts3Channels.deleteChannel(channelID);
+    ts3Channels->deleteChannel(channelID);
 }
 
 void ts3plugin_onChannelMoveEvent(uint64 serverConnectionHandlerID, uint64 channelID, uint64 newChannelParentID, anyID invokerID, const char* invokerName, const char* invokerUniqueIdentifier)
@@ -887,7 +906,7 @@ void ts3plugin_onConnectStatusChangeEvent(uint64 serverConnectionHandlerID, int 
 		// Forget everything.
 
 		// Delete our channel list and flag that we're no longer connected.
-        ts3Channels.deleteAllChannels();
+        ts3Channels->deleteAllChannels();
         blConnectedToTeamspeak = false;
 
 		// Reset my ID to zero.
