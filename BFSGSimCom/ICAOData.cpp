@@ -1,5 +1,7 @@
 #include "ICAOData.h"
 
+#include "BFSGSimCom.h"
+
 #include <sqlite3.h>
 
 #include <vector>
@@ -7,7 +9,11 @@
 
 string ICAOData::determineIcaoDbFileName(void)
 {
-    return ".\\plugins\\BFSGSimComFiles\\BFSGSimCom.db";
+    //return "C:\\Users\\Andrew Parish\\AppData\\Roaming\\TS3Client\\plugins\\BFSGSimComFiles\\BFSGSimCom.db";
+
+	string retVal = string(pluginPath).append("BFSGSimComFiles/BFSGSimCom.db");
+	return retVal;
+
 }
 
 ICAOData::ICAOData() :

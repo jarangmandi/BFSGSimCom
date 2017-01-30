@@ -11,7 +11,7 @@
 
 using namespace std;
 
-ICAOData icaoData;
+ICAOData* icaoData = NULL;
 
 string TS3Channels::determineChanDbFileName(void)
 {
@@ -42,6 +42,7 @@ TS3Channels::TS3Channels() :
     mChanDbFileName(determineChanDbFileName()),
     mChanDb(TS3Channels::mChanDbFileName, SQLITE_OPEN_CREATE | SQLITE_OPEN_READWRITE)
 {
+	icaoData = new ICAOData();
     initDatabase();
 }
 
@@ -257,7 +258,7 @@ uint16_t TS3Channels::addOrUpdateChannel(string& strC, string cName, string cTop
     ::tie(lat, lon) = latlon;
     blLatLonFromTS = (lat != 999.9) && (lon != 999.9);
     
-    vector<ICAOData::Station> station = icaoData.getStationData(ident);
+    vector<ICAOData::Station> station = icaoData->getStationData(ident);
 
     if (station.size() > 0)
     {

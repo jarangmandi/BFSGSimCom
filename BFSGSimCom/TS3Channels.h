@@ -8,9 +8,13 @@
 #include <SQLiteCpp\Database.h>
 #include <sqlite3.h>
 
-#include "public_definitions.h"
+#include "teamspeak/public_definitions.h"
+
+#include "ICAOData.h"
 
 using namespace ::std;
+
+extern ICAOData* icaoData;
 
 class TS3Channels
 {
@@ -74,4 +78,3 @@ public:
     static void TS3Channels::distanceFunc(sqlite3_context *context, int argc, sqlite3_value **argv);
 	static double TS3Channels::getDistanceBetweenLatLonInNm(double lat1, double lon1, double lat2, double lon2);
 };
-

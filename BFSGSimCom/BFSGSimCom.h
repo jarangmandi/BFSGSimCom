@@ -3,9 +3,9 @@
  *
  * Copyright (c) 2008-2014 TeamSpeak Systems GmbH
  */
+#pragma once
 
-#ifndef PLUGIN_H
-#define PLUGIN_H
+#include "teamspeak\public_definitions.h"
 
 #ifdef WIN32
 #define PLUGINS_EXPORTDLL __declspec(dllexport)
@@ -16,6 +16,17 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+	#define PLUGIN_API_VERSION 21
+	
+	#define PATH_BUFSIZE 512
+	#define COMMAND_BUFSIZE 128
+	#define INFODATA_BUFSIZE 1024
+	#define SERVERINFO_BUFSIZE 256
+	#define CHANNELINFO_BUFSIZE 512
+	#define RETURNCODE_BUFSIZE 128
+
+	extern char pluginPath[];
 
     /* Required functions */
     PLUGINS_EXPORTDLL const char* ts3plugin_name();
@@ -142,6 +153,4 @@ extern "C" {
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif
