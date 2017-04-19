@@ -25,12 +25,6 @@
 #include "teamspeak/clientlib_publicdefinitions.h"
 #include "ts3_functions.h"
 
-//#include "ts3_functions.h"
-//#include "public_errors.h"
-//#include "public_errors_rare.h"
-//#include "public_definitions.h"
-//#include "public_rare_definitions.h"
-
 #include "BFSGSimCom.h"
 
 #include "FSUIPCWrapper.h"
@@ -47,21 +41,9 @@ struct TS3Functions ts3Functions;
 #define _strcpy(dest, destSize, src) { strncpy(dest, src, destSize-1); (dest)[destSize-1] = '\0'; }
 #endif
 
-//#define PLUGIN_API_VERSION 21
-//
-//#define PATH_BUFSIZE 512
-//#define COMMAND_BUFSIZE 128
-//#define INFODATA_BUFSIZE 1024
-//#define SERVERINFO_BUFSIZE 256
-//#define CHANNELINFO_BUFSIZE 512
-//#define RETURNCODE_BUFSIZE 128
-
 static char* pluginID = NULL;
 static char* callbackReturnCode = NULL;
 
-//static char appPath[PATH_BUFSIZE];
-//static char resourcesPath[PATH_BUFSIZE];
-//static char configPath[PATH_BUFSIZE];
 char pluginPath[PATH_BUFSIZE];
 
 static FSUIPCWrapper* fsuipc = NULL;
@@ -480,9 +462,6 @@ int ts3plugin_init() {
 	blExtendedLoggingEnabled = false;
 #endif // DEBUG
 
-	//ts3Functions.getAppPath(appPath, PATH_BUFSIZE);
-	//ts3Functions.getResourcesPath(resourcesPath, PATH_BUFSIZE);
-	//ts3Functions.getConfigPath(configPath, PATH_BUFSIZE);
 	ts3Functions.getPluginPath(pluginPath, PATH_BUFSIZE, pluginID);
 
     // Initialise the TS3 server connection status
