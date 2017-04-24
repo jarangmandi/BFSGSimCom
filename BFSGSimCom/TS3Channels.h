@@ -19,10 +19,12 @@ extern ICAOData* icaoData;
 class TS3Channels
 {
 private:
+	static const string aAddInsertChannelFrequency;
     static const string aAddInsertChannel;
     static const string aAddInsertClosure1;
     static const string aAddInsertClosure2;
-    static const string aDeleteChannels;
+	static const string TS3Channels::aDeleteChannelFrequencies;
+	static const string aDeleteChannels;
     static const string aDeleteClosure;
     static const string aGetChannelFromFreqCurrPrnt;
     static const string aChannelIsParentOfChild;

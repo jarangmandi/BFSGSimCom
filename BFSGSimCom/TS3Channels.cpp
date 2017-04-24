@@ -54,32 +54,39 @@ int TS3Channels::initDatabase()
 {
     int retValue = SQLITE_OK;
 
-    static const string aInitDatabase = \
-        "DROP TABLE IF EXISTS channels;" \
-        "DROP TABLE IF EXISTS closure;" \
-        "CREATE TABLE IF NOT EXISTS channels(" \
-        "   channelId UNSIGNED BIG INT PRIMARY KEY NOT NULL, "  \
-        "   latitude DOUBLE, " \
-        "   longitude DOUBLE, " \
-        "   range DOUBLE, " \
-        "   frequency INT, "    \
-        "   parent UNSIGNED BIG INT, "  \
-        "   ordering UNSIGNED BIG INT, "  \
-        "   name CHAR(256)," \
-        "   topic CHAR(256)," \
-        "   description TEXT," \
-        "   FOREIGN KEY (parent) REFERENCES channels (channelId)" \
-        "); " \
-        "create table if not exists closure(" \
-        "   parent unsigned big int not null," \
-        "   child unsigned big int not null," \
-        "   depth int not null," \
-        "   frequency" \
-        ");" \
-        "create unique index if not exists closureprntchld on closure(parent, child, depth);" \
-        "create unique index if not exists closurechldprnt on closure(child, parent, depth);"
-        "create index parent_idx on channels(parent);" \
-        "insert into channels(channelId, latitude, longitude, range, frequency, parent, ordering, name, topic, description) values (0, null, null, null, null, 0, 0, 'Root', 'Root Channel', 'Root Channel');"
+	static const string aInitDatabase = \
+		"DROP TABLE IF EXISTS channels;" \
+		"DROP TABLE IF EXISTS closure;" \
+		"CREATE TABLE IF NOT EXISTS channels(" \
+		"   channelId UNSIGNED BIG INT PRIMARY KEY NOT NULL, "  \
+		"   latitude DOUBLE, " \
+		"   longitude DOUBLE, " \
+		"   range DOUBLE, " \
+		"   parent UNSIGNED BIG INT, "  \
+		"   ordering UNSIGNED BIG INT, "  \
+		"   name CHAR(256)," \
+		"   topic CHAR(256)," \
+		"   description TEXT," \
+		"   FOREIGN KEY (parent) REFERENCES channels (channelId)" \
+		"); " \
+		"create table if not exists closure(" \
+		"   parent unsigned big int not null," \
+		"   child unsigned big int not null," \
+		"   depth int not null" \
+		");" \
+		"create table if not exists channelFrequency(" \
+		"   channel UNSIGNED BIG INT NOT NULL," \
+		"   frequency INT," \
+		"   PRIMARY KEY (channel, frequency)," \
+		"   FOREIGN KEY (channel) REFERENCES channels (channelId)"
+		");" \
+		"create unique index if not exists closureprntchld on closure(parent, child, depth);" \
+		"create unique index if not exists closurechldprnt on closure(child, parent, depth);" \
+		"create index parent_idx on channels(parent);" \
+		"delete from channels;" \
+		"delete from closure;" \
+		"delete from channelFrequency;" \
+        "insert into channels(channelId, latitude, longitude, range, parent, ordering, name, topic, description) values (0, null, null, null, 0, 0, 'Root', 'Root Channel', 'Root Channel');"
         "insert into closure(parent, child, depth) values (0, 0, 0);" \
         "";
 
@@ -208,20 +215,27 @@ tuple<double, double> TS3Channels::getLatLonFromStrings(const vector<string>& st
 
 
 // Define queries here - they get resolved at compile time...
-const string TS3Channels::aAddInsertChannel = \
-"insert into channels (channelId, latitude, longitude, range, frequency, parent, ordering, name, topic, description)" \
+const string TS3Channels::aAddInsertChannelFrequency = \
+"insert into channelFrequency(channel, frequency)" \
 "values" \
-"(:channelId, :latitude, :longitude, :range, :frequency, :parent, :order, :name, :topic, :desc)" \
+"(:channel, :frequency)" \
+";" \
+"";
+
+const string TS3Channels::aAddInsertChannel = \
+"insert into channels (channelId, latitude, longitude, range, parent, ordering, name, topic, description)" \
+"values" \
+"(:channelId, :latitude, :longitude, :range, :parent, :order, :name, :topic, :desc)" \
 ";" \
 "";
 
 const string TS3Channels::aAddInsertClosure1 = \
-"insert into closure (parent, child, depth, frequency)" \
-"values (:child, :child, 0, :frequency);";
+"insert into closure (parent, child, depth)" \
+"values (:child, :child, 0);";
 
 const string TS3Channels::aAddInsertClosure2 = \
-"insert into closure (parent, child, depth, frequency)" \
-"select p.parent, c.child, p.depth + c.depth + 1, :frequency " \
+"insert into closure (parent, child, depth)" \
+"select p.parent, c.child, p.depth + c.depth + 1 " \
 "from closure p, closure c " \
 "where p.child = :parent and c.parent = :child" \
 ";" \
@@ -308,7 +322,8 @@ uint16_t TS3Channels::addOrUpdateChannel(string& strC, string cName, string cTop
     {
         SQLite::Transaction aTrans(mChanDb);
 
-        SQLite::Statement aChannelStmt(mChanDb, aAddInsertChannel);
+		SQLite::Statement aChannelStmt(mChanDb, aAddInsertChannel);
+		SQLite::Statement aChannelFrequencyStmt(mChanDb, aAddInsertChannelFrequency);
         SQLite::Statement aClosureStmt1(mChanDb, aAddInsertClosure1);
         SQLite::Statement aClosureStmt2(mChanDb, aAddInsertClosure2);
 
@@ -316,7 +331,6 @@ uint16_t TS3Channels::addOrUpdateChannel(string& strC, string cName, string cTop
         (lon != 999.9) ? aChannelStmt.bind(":latitude", lat) : aChannelStmt.bind(":latitude");
         (lat != 999.9) ? aChannelStmt.bind(":longitude", lon) : aChannelStmt.bind(":longitude");
         aChannelStmt.bind(":range", range);
-        (frequency) ? aChannelStmt.bind(":frequency", frequency) : aChannelStmt.bind(":frequency");
         aChannelStmt.bind(":parent", sqlite3_int64(parentChannel));
         aChannelStmt.bind(":order", sqlite3_int64(order));
         aChannelStmt.bind(":name", cName);
@@ -324,14 +338,16 @@ uint16_t TS3Channels::addOrUpdateChannel(string& strC, string cName, string cTop
         aChannelStmt.bind(":desc", cDesc);
         aChannelStmt.exec();
 
+		aChannelFrequencyStmt.bind(":channel", sqlite3_int64(channelID));
+		(frequency) ? aChannelFrequencyStmt.bind(":frequency", frequency) : aChannelFrequencyStmt.bind(":frequency");
+		aChannelFrequencyStmt.exec();
+
         aClosureStmt1.bind(":child", sqlite3_int64(channelID));
-        (frequency) ? aClosureStmt1.bind(":frequency", frequency) : aClosureStmt1.bind(":frequency");
         aClosureStmt1.exec();
 
         aClosureStmt2.bind(":parent", sqlite3_int64(parentChannel));
         aClosureStmt2.bind(":child", sqlite3_int64(channelID));
-        (frequency) ? aClosureStmt2.bind(":frequency", frequency) : aClosureStmt2.bind(":frequency");
-        aClosureStmt2.exec();
+		aClosureStmt2.exec();
 
         aTrans.commit();
 
@@ -370,6 +386,13 @@ uint16_t TS3Channels::addOrUpdateChannel(string& strC, string cName, string cTop
     return retValue;
 }
 
+
+const string TS3Channels::aDeleteChannelFrequencies = \
+"delete from channelFrequency where channel in (" \
+"    select child from closure where parent = :delete" \
+");" \
+"";
+
 const string TS3Channels::aDeleteChannels = \
 "delete from channels where channelId in (" \
 "    select child from closure where parent = :delete" \
@@ -404,7 +427,11 @@ int TS3Channels::deleteChannel(uint64 channelID)
     {
         SQLite::Transaction aTrans(mChanDb);
 
-        SQLite::Statement aChannelStmt(mChanDb, aDeleteChannels);
+		SQLite::Statement aChannelFrequencyStmt(mChanDb, aDeleteChannelFrequencies);
+		aChannelFrequencyStmt.bind(":delete", sqlite3_int64(channelID));
+		aChannelFrequencyStmt.exec();
+
+		SQLite::Statement aChannelStmt(mChanDb, aDeleteChannels);
         aChannelStmt.bind(":delete", sqlite3_int64(channelID));
         aChannelStmt.exec();
 
@@ -456,7 +483,7 @@ const string TS3Channels::aGetChannelFromFreqCurrPrnt = \
 "with stations as( " \
 "select down.child as channel, up.depth + down.depth as distance, down.depth as removed from " \
 "(select * from closure where child = :current and parent in(select child from closure where parent = :root)) as up, " \
-"(select * from closure where frequency = :frequency) as down " \
+"(select * from closure as c inner join channelFrequency as cf on c.child = cf.channel and frequency = :frequency) as down " \
 "where " \
 "up.parent = down.parent " \
 "order by up.depth + down.depth, down.depth desc " \
