@@ -1,6 +1,7 @@
 #include <regex>
 #include <string>
 #include <map>
+#include <sstream>
 
 #include <ShlObj.h>
 
@@ -142,6 +143,47 @@ uint16_t TS3Channels::getFrequencyFromStrings(const vector<string> &strs)
     return frequency;
 }
 
+vector<uint16_t> TS3Channels::getFrequenciesFromString(string str1)
+{
+	const vector<string> strs = { str1 };
+	return getFrequenciesFromStrings(strs);
+}
+
+
+vector<uint16_t> TS3Channels::getFrequenciesFromStrings(string str1, string str2, string str3)
+{
+	const vector<string> strs = { str1, str2, str3 };
+	return getFrequenciesFromStrings(strs);
+}
+
+
+vector<uint16_t> TS3Channels::getFrequenciesFromStrings(const vector<string> &strs)
+{
+	// A valid frequency is three digits (of which the first is a "1", and the second is a "1", a "2" or a "3"), a decimal point,
+	// and then two more digits, the last of which is a "0", a "2", a "5" or a "7".
+	static regex r("1[123]\\d\\.\\d[0257]");
+
+	smatch matchedFrequency;
+	vector<uint16_t> frequency;
+
+	//Iterating through each string in the vector we were sent.
+	for (string str : strs)
+	{
+		// Look for all frequencies in the string.
+		while (std::regex_search(str, matchedFrequency, r)) {
+			frequency.push_back( uint16_t(100 * std::stod(matchedFrequency.str()) + 0.5) );
+			str = matchedFrequency.suffix().str();
+		}
+
+		// If we found frequencies in the string we've just looked at then
+		// don't look at any more.
+		if (frequency.size() > 0) break;
+	}
+
+	return frequency;
+}
+
+
 string TS3Channels::getAirportIdentFromString(string str1)
 {
     const vector<string> strs = { str1 };
@@ -187,7 +229,8 @@ tuple<double, double> TS3Channels::getLatLonFromStrings(string str1, string str2
 
 tuple<double, double> TS3Channels::getLatLonFromStrings(const vector<string>& strs)
 {
-    static regex r("([+-]?(?:\\d+\\.?\\d*|\\d*\\.?\\d+))\\s+([+-]?(?:\\d+\\.?\\d*|\\d*\\.?\\d+))");
+	static regex r("([NS](?:[1-8]?\\d(?:\\.\\d+)?|90(?:\\.0+)?))\\s*([EW](?:180(?:\\.0+)?|(?:(?:1[0-7]\\d)|(?:[1-9]?\\d))(?:\\.\\d+)?))");
+    //static regex r("([+-]?(?:\\d+\\.?\\d*|\\d*\\.?\\d+))\\s+([+-]?(?:\\d+\\.?\\d*|\\d*\\.?\\d+))");
 
     tuple<double, double> retVal(999.9, 999.9);
     double tLat;
@@ -200,8 +243,8 @@ tuple<double, double> TS3Channels::getLatLonFromStrings(const vector<string>& st
         if (std::regex_search(str, matchedLatLon, r)) {
             string strLat = matchedLatLon[1]; // .str().substr(0, matchedLatLon[1]);
             string strLon = matchedLatLon[2]; // .str().substr(0, matchedLatLon[2]);
-            tLat = ::stod(strLat, NULL);
-            tLon = ::stod(strLon, NULL);
+			tLat = ::stod(strLat.substr(1), NULL) * ((strLat.at(0) == 'S') ? -1 : 1);
+            tLon = ::stod(strLon.substr(1), NULL) * ((strLon.at(0) == 'W') ? -1 : 1);
 
             retVal = ::make_tuple(tLat, tLon);
 
@@ -210,6 +253,19 @@ tuple<double, double> TS3Channels::getLatLonFromStrings(const vector<string>& st
     }
 
     return retVal;
+}
+
+string TS3Channels::concatFreqs(const vector<uint16_t>& freqs)
+{
+	stringstream retValue;
+
+	for (uint16_t freq : freqs)
+	{
+		if (retValue.tellp() > 0) retValue << ", ";
+		retValue << freq;
+	}
+
+	return retValue.str();
 }
 
 
@@ -255,7 +311,7 @@ uint16_t TS3Channels::addOrUpdateChannel(string& strC, string cName, string cTop
     bool blLatLonFromDb = false;
 
     string ident = "";
-    uint16_t frequency = 0;
+    vector<uint16_t> frequencies;
     tuple<double, double> latlon;
 
     // First, delete the channel from the list
@@ -265,8 +321,8 @@ uint16_t TS3Channels::addOrUpdateChannel(string& strC, string cName, string cTop
     ident = getAirportIdentFromStrings(cName, cTopic, cDesc);
     blIdentFromTS = (ident != "");
 
-    frequency = getFrequencyFromStrings(cName, cTopic, cDesc);
-    blFreqFromTS = (frequency != 0);
+    frequencies = getFrequenciesFromStrings(cName, cTopic, cDesc);
+    blFreqFromTS = (frequencies.size() != 0);
 
     latlon = getLatLonFromStrings(cName, cTopic, cDesc);
     ::tie(lat, lon) = latlon;
@@ -297,7 +353,11 @@ uint16_t TS3Channels::addOrUpdateChannel(string& strC, string cName, string cTop
 
         if (!blFreqFromTS)
         {
-            frequency = station[0].frequency;
+			// Prepare a list of valid frequencies from all returned stations
+			for (ICAOData::Station st : station)
+			{
+				if (st.frequency >= 11000 && st.frequency <= 13999) frequencies.push_back(st.frequency);
+			}
             blFreqFromDb = true;
         }
             
@@ -323,7 +383,6 @@ uint16_t TS3Channels::addOrUpdateChannel(string& strC, string cName, string cTop
         SQLite::Transaction aTrans(mChanDb);
 
 		SQLite::Statement aChannelStmt(mChanDb, aAddInsertChannel);
-		SQLite::Statement aChannelFrequencyStmt(mChanDb, aAddInsertChannelFrequency);
         SQLite::Statement aClosureStmt1(mChanDb, aAddInsertClosure1);
         SQLite::Statement aClosureStmt2(mChanDb, aAddInsertClosure2);
 
@@ -338,9 +397,27 @@ uint16_t TS3Channels::addOrUpdateChannel(string& strC, string cName, string cTop
         aChannelStmt.bind(":desc", cDesc);
         aChannelStmt.exec();
 
-		aChannelFrequencyStmt.bind(":channel", sqlite3_int64(channelID));
-		(frequency) ? aChannelFrequencyStmt.bind(":frequency", frequency) : aChannelFrequencyStmt.bind(":frequency");
-		aChannelFrequencyStmt.exec();
+		// Add all of the frequencies into the channel frequency table.
+		for (uint16_t frequency : frequencies)
+		{
+			SQLite::Statement aChannelFrequencyStmt(mChanDb, aAddInsertChannelFrequency);
+			aChannelFrequencyStmt.bind(":channel", sqlite3_int64(channelID));
+			(frequency) ? aChannelFrequencyStmt.bind(":frequency", frequency) : aChannelFrequencyStmt.bind(":frequency");
+
+			try
+			{
+				aChannelFrequencyStmt.exec();
+			}
+			catch (SQLite::Exception e)
+			{
+				// The statement above will cause a primary key constraint violation if the same frequency is specified twice.
+				// It's safe to ignore that, but anything else should be propagated.
+				if (e.getErrorCode() != SQLITE_CONSTRAINT && e.getExtendedErrorCode() != SQLITE_CONSTRAINT_PRIMARYKEY)
+				{
+					throw(e);
+				}
+			}
+		}
 
         aClosureStmt1.bind(":child", sqlite3_int64(channelID));
         aClosureStmt1.exec();
@@ -351,26 +428,26 @@ uint16_t TS3Channels::addOrUpdateChannel(string& strC, string cName, string cTop
 
         aTrans.commit();
 
-        string strCommentary = "";
-        strCommentary = strCommentary + "ChannelID: " + to_string(channelID);
-        strCommentary = strCommentary + " | Name: " + cName;
-        strCommentary = strCommentary + " | Topic: " + cTopic;
-        strCommentary = strCommentary + " | Desc: " + cDesc;
+        stringstream ssCommentary;
+        ssCommentary << "ChannelID: " << channelID;
+        ssCommentary << " | Name: " << cName;
+        ssCommentary << " | Topic: " << cTopic;
+        ssCommentary << " | Desc: " << cDesc;
 
         if (blFreqFromDb || blLatLonFromDb)
-            strCommentary = strCommentary + " | Ident: " + ident;
+            ssCommentary << " | Ident: " << ident;
 
         if (blFreqFromDb)
-            strCommentary = strCommentary + " | DBFreq: " + to_string(frequency);
+            ssCommentary << " | DBFreq: " << concatFreqs(frequencies);
         else if (blFreqFromTS)
-            strCommentary = strCommentary + " | TSFreq: " + to_string(frequency);
+            ssCommentary << " | TSFreq: " << concatFreqs(frequencies);
 
         if (blLatLonFromDb)
-            strCommentary = strCommentary + " | DBLatLon: " + to_string(lat) + "/" + to_string(lon);
+            ssCommentary << " | DBLatLon: " << lat << "/" << lon;
         else if (blLatLonFromTS)
-            strCommentary = strCommentary + " | TSLatLon: " + to_string(lat) + "/" + to_string(lon);
+            ssCommentary << " | TSLatLon: " << lat << "/" << lon;
 
-        strC = strCommentary;
+        strC = ssCommentary.str();
     }
     catch (SQLite::Exception& e)
     {

@@ -43,12 +43,16 @@ private:
     uint16_t getFrequencyFromString(string);
     uint16_t getFrequencyFromStrings(string, string, string);
     uint16_t getFrequencyFromStrings(const vector<string>&);
-    string TS3Channels::getAirportIdentFromString(string);
+	vector<uint16_t> getFrequenciesFromString(string);
+	vector<uint16_t> getFrequenciesFromStrings(string, string, string);
+	vector<uint16_t> getFrequenciesFromStrings(const vector<string>&);
+	string TS3Channels::getAirportIdentFromString(string);
     string TS3Channels::getAirportIdentFromStrings(string, string, string);
     string TS3Channels::getAirportIdentFromStrings(const vector<string>&);
     tuple<double, double> TS3Channels::getLatLonFromString(string);
     tuple<double, double> TS3Channels::getLatLonFromStrings(string, string, string);
     tuple<double, double> TS3Channels::getLatLonFromStrings(const vector<string>&);
+	string TS3Channels::concatFreqs(const vector<uint16_t>& freqs);
 
 public:
     struct ChannelInfo
