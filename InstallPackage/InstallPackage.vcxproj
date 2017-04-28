@@ -228,7 +228,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
-      <Command>"$(SolutionDir)$(Platform)\$(Configuration)\make_plugin.bat" "$(OutDir)" "$(OutDir)BFSGSimCom.db" BFSGSimCom32</Command>
+      <Command>"$(SolutionDir)$(Platform)\$(Configuration)\make_plugin.bat" "$(OutDir)\" BFSGSimCom win32</Command>
       <Message>Building Install Package</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -242,7 +242,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
-      <Command>"$(SolutionDir)$(Platform)\$(Configuration)\make_plugin.bat" "$(OutDir)" "$(OutDir)BFSGSimCom.db" BFSGSimCom64</Command>
+      <Command>"$(SolutionDir)$(Platform)\$(Configuration)\make_plugin.bat" "$(OutDir)\" BFSGSimCom win64</Command>
       <Message>Building Install Package</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -260,7 +260,7 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
     <PostBuildEvent>
-      <Command>"$(SolutionDir)$(Platform)\$(Configuration)\make_plugin.bat" "$(OutDir)" "$(OutDir)BFSGSimCom.db" BFSGSimCom32</Command>
+      <Command>"$(SolutionDir)$(Platform)\$(Configuration)\make_plugin.bat" "$(OutDir)\" BFSGSimCom win32</Command>
       <Message>Building Install Package</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -278,7 +278,7 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
     <PostBuildEvent>
-      <Command>"$(SolutionDir)$(Platform)\$(Configuration)\make_plugin.bat" "$(OutDir)" "$(OutDir)BFSGSimCom.db" BFSGSimCom64</Command>
+      <Command>"$(SolutionDir)$(Platform)\$(Configuration)\make_plugin.bat" "$(OutDir)\" BFSGSimCom win64</Command>
       <Message>Building Install Package</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
