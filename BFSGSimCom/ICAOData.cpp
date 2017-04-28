@@ -11,7 +11,7 @@ string ICAOData::determineIcaoDbFileName(void)
 {
     //return "C:\\Users\\Andrew Parish\\AppData\\Roaming\\TS3Client\\plugins\\BFSGSimComFiles\\BFSGSimCom.db";
 
-	string retVal = string(pluginPath).append("BFSGSimComFiles/BFSGSimCom.db");
+	string retVal = string(pluginPath).append("BFSGSimCom_plugin/BFSGSimCom.db");
 	return retVal;
 
 }
