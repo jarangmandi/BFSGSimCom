@@ -164,8 +164,8 @@ Config::Config(TS3Channels& tch)
     bool blM;
     bool blA;
 
-    QCoreApplication::setOrganizationName("BFSG");
-    QCoreApplication::setApplicationName("BFSGSimCom");
+    //QCoreApplication::setOrganizationName("BFSG");
+    //QCoreApplication::setApplicationName("BFSGSimCom");
     QSettings::setDefaultFormat(QSettings::IniFormat);
 
     setupUi(this);
