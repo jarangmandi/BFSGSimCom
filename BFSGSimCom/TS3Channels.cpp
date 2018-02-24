@@ -199,7 +199,7 @@ string TS3Channels::getAirportIdentFromStrings(string str1, string str2, string 
 
 string TS3Channels::getAirportIdentFromStrings(const vector<string> &strs)
 {
-    static regex r("[0-9A-Z]{3,7}_(TWR|GND|APP|DEP|CNTR|ATIS|INFO|CLD)");
+    static regex r("[0-9A-Z]{3,7}_(TWR|GND|APP|DEP|CNTR|ATIS|INFO|CLD|OPS|AFIS)");
 
     smatch matchedIdent;
     string ident = "";
@@ -332,22 +332,26 @@ uint16_t TS3Channels::addOrUpdateChannel(string& strC, string cName, string cTop
 
     if (station.size() > 0)
     {
-        if (station[0].type == "TWR")
-            range = 50.0;
-        else if (station[0].type == "GND")
-            range = 10.0;
-        else if (station[0].type == "APP")
-            range = 400.0;
-        else if (station[0].type == "DEP")
-            range = 400.0;
-        else if (station[0].type == "CNTR")
-            range = 1000.0;
-        else if (station[0].type == "ATIS")
-            range = 400.0;
-        else if (station[0].type == "INFO")
-            range = 50.0;
-        else if (station[0].type == "CLD")
-            range = 10.0;
+		if (station[0].type == "TWR")
+			range = 50.0;
+		else if (station[0].type == "GND")
+			range = 10.0;
+		else if (station[0].type == "APP")
+			range = 400.0;
+		else if (station[0].type == "DEP")
+			range = 400.0;
+		else if (station[0].type == "CNTR")
+			range = 1000.0;
+		else if (station[0].type == "ATIS")
+			range = 400.0;
+		else if (station[0].type == "INFO")
+			range = 50.0;
+		else if (station[0].type == "CLD")
+			range = 10.0;
+		else if (station[0].type == "OPS")
+			range = 50.0;
+		else if (station[0].type == "AFIS")
+			range = 50.0;
         else
             range = 10800.0;
 
