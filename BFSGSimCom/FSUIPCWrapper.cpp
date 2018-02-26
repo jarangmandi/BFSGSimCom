@@ -45,9 +45,14 @@ void FSUIPCWrapper::workerThread(void)
     int64_t simLongitude;
 
     int counter = 0;
+
+	bool firstPass = true;
     
     while (cRun)
     {
+		DWORD dwResult;
+		checkConnection(&dwResult);
+
         FSUIPC_Read(0x034E, 2, &simCom1);
         FSUIPC_Read(0x3118, 2, &simCom2);
         FSUIPC_Read(0x311A, 2, &simCom1s);
@@ -123,14 +128,27 @@ void FSUIPCWrapper::workerThread(void)
 				counter = 0;
 			}
 
-            if (blComChanged || blPosChange || blOtherChanged)
+            if (blComChanged || blPosChange || blOtherChanged || firstPass )
             {
                 if (callback != NULL)
                 {
                     (*callback)(getSimComData(blComChanged, blPosChange, blOtherChanged));
                 }
+
+				firstPass = false;
             }
         }
+		else
+		{
+			if (callback != NULL)
+			{
+				(*callback)(getSimComData(false, false, false));
+			}
+
+			::FSUIPC_Close();
+			cFSUIPCConnected = false;
+			firstPass = true;
+		}
 
 		// Fetch data from the simulator every 10th of a second
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -205,8 +223,8 @@ BOOL FSUIPCWrapper::FSUIPC_Read(DWORD dwOffset, DWORD dwSize, void* pDest)
     BOOL retValue = 0;
     DWORD dwResult = FSUIPC_ERR_OK;
 
-    if (checkConnection(&dwResult))
-    {
+//    if (checkConnection(&dwResult))
+//    {
         try
         {
             retValue = ::FSUIPC_Read(dwOffset, dwSize, pDest, &dwResult);
@@ -215,7 +233,7 @@ BOOL FSUIPCWrapper::FSUIPC_Read(DWORD dwOffset, DWORD dwSize, void* pDest)
         {
             retValue = FALSE;
         }
-    }
+//    }
 
     cFSUIPCConnected = (dwResult == FSUIPC_ERR_OK);
 
@@ -227,8 +245,8 @@ BOOL FSUIPCWrapper::FSUIPC_Write(DWORD dwOffset, DWORD dwSize, void* pSrc)
     BOOL retValue = 0;
     DWORD dwResult;
 
-    if (checkConnection(&dwResult))
-    {
+//    if (checkConnection(&dwResult))
+//    {
         try
         {
             retValue = ::FSUIPC_Write(dwOffset, dwSize, pSrc, &dwResult);
@@ -237,7 +255,7 @@ BOOL FSUIPCWrapper::FSUIPC_Write(DWORD dwOffset, DWORD dwSize, void* pSrc)
         {
             retValue = FALSE;
         }
-    }
+//    }
 
     cFSUIPCConnected = (dwResult != FSUIPC_ERR_NOTOPEN);
 
@@ -249,8 +267,8 @@ BOOL FSUIPCWrapper::FSUIPC_Process()
     BOOL retValue = 0;
     DWORD dwResult = FSUIPC_ERR_NOTOPEN;
 
-    if (checkConnection(&dwResult))
-    {
+//    if (checkConnection(&dwResult))
+//    {
         try
         {
             retValue = ::FSUIPC_Process(&dwResult);
@@ -259,7 +277,7 @@ BOOL FSUIPCWrapper::FSUIPC_Process()
         {
             retValue = FALSE;
         }
-    }
+//    }
 
     cFSUIPCConnected = (dwResult == FSUIPC_ERR_OK);
 

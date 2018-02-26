@@ -172,17 +172,15 @@ void callback(FSUIPCWrapper::SimComData data)
 
 			targetChannel = currentChannel;
 
-
-			// And now into the processing...
-
-			bool blConsiderAutoMove = (operationMode == Config::CONFIG_AUTO);
-			bool blConsiderManualMove = (operationMode == Config::CONFIG_MANUAL && data.blComChanged);
-
 			// If something has changed that might trigger a change in tuned channel...
 			// either a radio change, or a position change
 			if (data.blComChanged || data.blPosChanged || data.blOtherChanged)
 			{
 					
+				// And now into the processing...
+				bool blConsiderAutoMove = (operationMode == Config::CONFIG_AUTO);
+				bool blConsiderManualMove = (operationMode == Config::CONFIG_MANUAL && data.blComChanged);
+
 				if (rootChannel == TS3Channels::CHANNEL_ID_NOT_FOUND)
 				{
 					adjustedRootChannel = currentChannel;
