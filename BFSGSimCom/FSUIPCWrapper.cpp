@@ -47,6 +47,9 @@ void FSUIPCWrapper::workerThread(void)
     int counter = 0;
 
 	bool firstPass = true;
+
+	bool firstDisconnectedPass = true;
+	bool firstConnectedPass = true;
     
     while (cRun)
     {
@@ -128,26 +131,36 @@ void FSUIPCWrapper::workerThread(void)
 				counter = 0;
 			}
 
-            if (blComChanged || blPosChange || blOtherChanged || firstPass )
+            if (blComChanged || blPosChange || blOtherChanged || firstConnectedPass )
             {
                 if (callback != NULL)
                 {
                     (*callback)(getSimComData(blComChanged, blPosChange, blOtherChanged));
                 }
 
-				firstPass = false;
+				firstConnectedPass = false;
             }
+
+			firstDisconnectedPass = true;
+
         }
 		else
 		{
-			if (callback != NULL)
+			if (firstDisconnectedPass)
 			{
-				(*callback)(getSimComData(false, false, false));
+				if (callback != NULL)
+				{
+					(*callback)(getSimComData(false, false, false));
+				}
+
+				firstDisconnectedPass = false;
 			}
 
 			::FSUIPC_Close();
 			cFSUIPCConnected = false;
-			firstPass = true;
+
+			firstConnectedPass = true;
+
 		}
 
 		// Fetch data from the simulator every 10th of a second
