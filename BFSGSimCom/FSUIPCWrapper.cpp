@@ -182,7 +182,7 @@ FSUIPCWrapper::SimComData FSUIPCWrapper::getSimComData(bool blComChanged, bool b
     // This is a kluge because XPUIPC doesn't report the correct channel and the config file that comes with it doesn't seem to work as advertised.
     // Look for a FSUIPC_Version with an most significant half word of 0x50000000 - who knows what will happen when FSUIPC catches up
     if ((FSUIPC_Version & 0xffff0000) == 0x50000000)
-        simcomdata.selectedCom = ComRadio(((cSelectedCom & 0x40) ? Com1 : None) + ((cSelectedCom & 0x80) ? Com2 : None));
+        simcomdata.selectedCom = ComRadio(((cSelectedCom & 0x80) ? None : Com1) + ((cSelectedCom & 0x40) ? None : Com2));
     else
         simcomdata.selectedCom = ComRadio(((cSelectedCom & 0x80) ? Com1 : None) + ((cSelectedCom & 0x40) ? Com2 : None));
 

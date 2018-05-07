@@ -66,6 +66,7 @@ int TS3Channels::initDatabase()
 		"   parent UNSIGNED BIG INT, "  \
 		"   ordering UNSIGNED BIG INT, "  \
 		"   name CHAR(256)," \
+		"   station CHAR(16)," \
 		"   topic CHAR(256)," \
 		"   description TEXT," \
 		"   FOREIGN KEY (parent) REFERENCES channels (channelId)" \
@@ -87,7 +88,7 @@ int TS3Channels::initDatabase()
 		"delete from channels;" \
 		"delete from closure;" \
 		"delete from channelFrequency;" \
-        "insert into channels(channelId, latitude, longitude, range, parent, ordering, name, topic, description) values (0, null, null, null, 0, 0, 'Root', 'Root Channel', 'Root Channel');"
+        "insert into channels(channelId, latitude, longitude, range, parent, ordering, name, station, topic, description) values (0, null, null, null, 0, 0, 'Root', 'Root Channel', 'Root Channel', 'Root Channel');"
         "insert into closure(parent, child, depth) values (0, 0, 0);" \
         "";
 
@@ -279,9 +280,9 @@ const string TS3Channels::aAddInsertChannelFrequency = \
 "";
 
 const string TS3Channels::aAddInsertChannel = \
-"insert into channels (channelId, latitude, longitude, range, parent, ordering, name, topic, description)" \
+"insert into channels (channelId, latitude, longitude, range, parent, ordering, name, station, topic, description)" \
 "values" \
-"(:channelId, :latitude, :longitude, :range, :parent, :order, :name, :topic, :desc)" \
+"(:channelId, :latitude, :longitude, :range, :parent, :order, :name, :station, :topic, :desc)" \
 ";" \
 "";
 
@@ -404,7 +405,8 @@ uint16_t TS3Channels::addOrUpdateChannel(string& strC, string cName, string cTop
         aChannelStmt.bind(":range", range);
         aChannelStmt.bind(":parent", sqlite3_int64(parentChannel));
         aChannelStmt.bind(":order", sqlite3_int64(order));
-        aChannelStmt.bind(":name", cName);
+		aChannelStmt.bind(":name", cName);
+		aChannelStmt.bind(":station", ident);
         aChannelStmt.bind(":topic", cTopic);
         aChannelStmt.bind(":desc", cDesc);
         aChannelStmt.exec();
@@ -474,6 +476,50 @@ uint16_t TS3Channels::addOrUpdateChannel(string& strC, string cName, string cTop
 
     return retValue;
 }
+
+
+const string TS3Channels::aUpdateChannelDescription = \
+"update channels set description = :desc where channelId = :update;" \
+"";
+
+int TS3Channels::updateChannelDescription(string& strC, uint64 channelID, string cDesc)
+{
+	int retValue = SQLITE_OK;
+
+	try
+	{
+		SQLite::Transaction aTrans(mChanDb);
+
+		SQLite::Statement aChannelStmt(mChanDb, aUpdateChannelDescription);
+		aChannelStmt.bind(":update", sqlite3_int64(channelID));
+		aChannelStmt.bind(":desc", cDesc);
+		aChannelStmt.exec();
+
+		aTrans.commit();
+
+		stringstream ssCommentary;
+		ssCommentary << "ChannelID: " << channelID;
+		ssCommentary << " | Desc: " << cDesc;
+
+		strC = ssCommentary.str();
+
+	}
+	catch (SQLite::Exception& e)
+	{
+		e;
+		retValue = mChanDb.getErrorCode();
+	}
+	catch (exception& e)
+	{
+		e;
+		retValue = UINT16_MAX;
+	}
+
+	return retValue;
+
+}
+
+
 
 
 const string TS3Channels::aDeleteChannelFrequencies = \
@@ -578,21 +624,64 @@ const string TS3Channels::aGetChannelFromFreqCurrPrnt = \
 "order by up.depth + down.depth, down.depth desc " \
 "), " \
 "ranges as( " \
-"select s.channel, s.distance, s.removed, c.range as max_range, ifnull(range(c.latitude, c.longitude, :lat, :lon), c.range) as range " \
+"select s.channel, s.distance, s.removed, c.range as max_range, c.latitude, c.longitude, c.station, ifnull(range(c.latitude, c.longitude, :lat, :lon), c.range) as range " \
 "from stations as s " \
 "left join channels as c " \
 "on s.channel = c.channelId " \
 ") " \
-"select r.channel, r.distance, r.removed, r.max_range, r.range, (r.range <= r.max_range) as in_range "
+"select r.channel, r.distance, r.removed, r.latitude, r.longitude, r.range, r.max_range, (r.range <= r.max_range) as in_range, r.station " \
 "from ranges r" \
 "";
 
-uint64 TS3Channels::getChannelID(uint16_t frequency, uint64 current, uint64 root, bool blConsiderRange, bool blOutOfRangeUntuned, double aLat, double aLon)
+TS3Channels::StationInfo::StationInfo()
+{
+	ch = CHANNEL_ID_NOT_FOUND;
+	lat = -999.0;
+	lon = -999.0;
+	range = 10800.0;
+	maxRange = 10800.0;
+	in_range = false;
+	id = "";
+}
+
+TS3Channels::StationInfo::StationInfo(uint64 channelID)
+{
+	ch = channelID;
+	lat = -999.0;
+	lon = -999.0;
+	range = 10800.0;
+	maxRange = 10800.0;
+	in_range = false;
+	id = "";
+}
+
+TS3Channels::StationInfo::StationInfo(uint64 pCh, double pLat, double pLon, double pRange, double pMaxR, bool pIn_range, string pStation_id)
+{
+	ch = pCh;
+	lat = pLat;
+	lon = pLon;
+	range = pRange;
+	maxRange = pMaxR;
+	in_range = pIn_range;
+	id = pStation_id;
+}
+
+bool TS3Channels::StationInfo::operator!=(const TS3Channels::StationInfo& rhs) const
+{
+	return this->ch != rhs.ch;
+}
+
+bool TS3Channels::StationInfo::operator==(const TS3Channels::StationInfo& rhs) const
+{
+	return this->ch == rhs.ch;
+}
+
+TS3Channels::StationInfo TS3Channels::getChannelID(uint16_t frequency, uint64 current, uint64 root, bool blConsiderRange, bool blOutOfRangeUntuned, double aLat, double aLon)
 {
     // Define this here - it gets resolved at compile time...
     // Default scenario is that we don't find a result
-    uint64 retValue = CHANNEL_ID_NOT_FOUND;
-
+	TS3Channels::StationInfo retValue(CHANNEL_ID_NOT_FOUND);
+	
     try
     {
         string strQuery = aGetChannelFromFreqCurrPrnt +
@@ -615,7 +704,15 @@ uint64 TS3Channels::getChannelID(uint16_t frequency, uint64 current, uint64 root
         if (aStmt.executeStep())
         {
             // The query is written to return the station to be tuned in the first row.
-            retValue = aStmt.getColumn(0).getInt64();
+			retValue = StationInfo(
+				aStmt.getColumn(0).getInt64(),
+				aStmt.getColumn(3).getDouble(),
+				aStmt.getColumn(4).getDouble(),
+				aStmt.getColumn(5).getDouble(),
+				aStmt.getColumn(6).getDouble(),
+				aStmt.getColumn(7).getInt() != 0,
+				aStmt.getColumn(8).getString()
+				);
         }
         else
         {
@@ -623,20 +720,20 @@ uint64 TS3Channels::getChannelID(uint16_t frequency, uint64 current, uint64 root
             {
                 // If the current channel is a child of the selected root, then
 				// we can't find a matching channel ID, so say so.
-                retValue = CHANNEL_ID_NOT_FOUND;
+                retValue = TS3Channels::StationInfo(CHANNEL_ID_NOT_FOUND);
             }
             else
             {
 				// If the current channel is not a child of the root, then flag
 				// us as being outide of the root.
-				retValue = CHANNEL_NOT_CHILD_OF_ROOT;
+				retValue = TS3Channels::StationInfo(CHANNEL_NOT_CHILD_OF_ROOT);
             }
         }
     }
     catch (SQLite::Exception&)
     {
         // If anything goes wrong (it shouldn't) then we've not found a frequency.
-        retValue = CHANNEL_ID_NOT_FOUND;
+        retValue = TS3Channels::StationInfo(CHANNEL_ID_NOT_FOUND);
     }
 
     return retValue;
@@ -644,7 +741,7 @@ uint64 TS3Channels::getChannelID(uint16_t frequency, uint64 current, uint64 root
 }
 
 // Returns the ID of the channel corresponding to a frequency provided as a double.
-uint64 TS3Channels::getChannelID(double frequency, uint64 current, uint64 root, bool blConsiderRange, bool blOutOfRangeUntuned, double aLat, double aLon)
+TS3Channels::StationInfo TS3Channels::getChannelID(double frequency, uint64 current, uint64 root, bool blConsiderRange, bool blOutOfRangeUntuned, double aLat, double aLon)
 {
     // Need to get the rounding right
     // Try 128.300 to see why this is needed!

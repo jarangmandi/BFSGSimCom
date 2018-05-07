@@ -23,6 +23,7 @@ private:
     static const string aAddInsertChannel;
     static const string aAddInsertClosure1;
     static const string aAddInsertClosure2;
+	static const string aUpdateChannelDescription;
 	static const string TS3Channels::aDeleteChannelFrequencies;
 	static const string aDeleteChannels;
     static const string aDeleteClosure;
@@ -63,7 +64,25 @@ public:
 
     public:
         ChannelInfo(uint64, int, string);
-    };
+	};
+
+	struct StationInfo
+	{
+		uint64 ch;
+		double lat;
+		double lon;
+		double range;
+		double maxRange;
+		bool in_range;
+		string id;
+
+	public:
+		StationInfo();
+		StationInfo(uint64);
+		StationInfo(uint64, double, double, double, double, bool, string);
+		bool operator==(const StationInfo&) const;
+		bool operator!=(const StationInfo&) const;
+	};
 
     TS3Channels();
     ~TS3Channels();
@@ -75,8 +94,9 @@ public:
     int deleteChannel(uint64);
     void deleteAllChannels(void);
     uint16_t addOrUpdateChannel(string& str, string, string, string, uint64, uint64 parentChannel = 0, uint64 order = 0);
-    uint64 getChannelID(uint16_t frequency, uint64 current = 0, uint64 root = 0, bool blConsiderRange = false, bool blOutOfRangeUntuned = false, double lat = -999.9, double lon = -999.0);
-    uint64 getChannelID(double frequency, uint64 current = 0, uint64 root = 0, bool blConsiderRange = false, bool blOutOfRangeUntuned = false, double lat = -999.9, double lon = -999.0);
+	int updateChannelDescription(string& str, uint64, string);
+	TS3Channels::StationInfo getChannelID(uint16_t frequency, uint64 current = 0, uint64 root = 0, bool blConsiderRange = false, bool blOutOfRangeUntuned = false, double lat = -999.9, double lon = -999.0);
+	TS3Channels::StationInfo getChannelID(double frequency, uint64 current = 0, uint64 root = 0, bool blConsiderRange = false, bool blOutOfRangeUntuned = false, double lat = -999.9, double lon = -999.0);
 	bool TS3Channels::channelIsUnderRoot(uint64 current, uint64 root);
 
     vector<ChannelInfo> getChannelList(uint64 root = 0);
