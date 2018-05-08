@@ -35,7 +35,7 @@ ICAOData::Station::Station(string strIdent, string strType, int iFrequency, stri
 
 const string ICAOData::aGetStationList = \
 "select " \
-"   af.airport_ident, " \
+"   a.ident, " \
 "   af.type, " \
 "   af.frequency, " \
 "   a.name, " \
@@ -46,7 +46,7 @@ const string ICAOData::aGetStationList = \
 "   left join airports a " \
 "   on af.airport_ref = a.id " \
 "where " \
-"   af.airport_ident = :icao " \
+"   a.ident = :icao " \
 ";" \
 "";
 
@@ -101,7 +101,7 @@ vector<struct ICAOData::Station> ICAOData::getAirportData(string strICAO)
 
 const string ICAOData::aGetStation1 = \
 "select " \
-"   af.airport_ident, " \
+"   a.ident, " \
 "   af.type, " \
 "   af.frequency, " \
 "   a.name, " \
@@ -112,7 +112,7 @@ const string ICAOData::aGetStation1 = \
 "   left join airports a " \
 "   on af.airport_ref = a.id " \
 "where " \
-"   af.airport_ident = :icao " \
+"   a.ident = :icao " \
 "   and " \
 "   af.type = :type";
 
@@ -167,7 +167,7 @@ vector<struct ICAOData::Station> ICAOData::getStationData(string strICAO, string
 
 const string ICAOData::aGetStation2 = \
 "select " \
-"   af.airport_ident, " \
+"   a.ident, " \
 "   af.type, " \
 "   af.frequency, " \
 "   a.name, " \
@@ -178,7 +178,7 @@ const string ICAOData::aGetStation2 = \
 "   left join airports a " \
 "   on af.airport_ref = a.id " \
 "where " \
-"   af.airport_ident || '_' || af.type = :icaotype";
+"   a.ident || '_' || af.type = :icaotype";
 
 
 vector<struct ICAOData::Station> ICAOData::getStationData(string strICAOType)
