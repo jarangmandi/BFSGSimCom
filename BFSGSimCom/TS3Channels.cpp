@@ -360,6 +360,10 @@ uint16_t TS3Channels::addOrUpdateChannel(string& strC, string cName, string cTop
 			range = 400.0;
 		else if (station[0].type == "CNTR")
 			range = 1000.0;
+		else if (station[0].type == "OPS")
+			range = 50.0;
+		else if (station[0].type == "AFIS")
+			range = 50.0;
         else
             range = 10800.0;
 
