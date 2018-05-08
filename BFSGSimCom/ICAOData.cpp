@@ -33,137 +33,137 @@ ICAOData::Station::Station(string strIdent, string strType, int iFrequency, stri
     lon = dLon;
 }
 
-const string ICAOData::aGetStationList = \
-"select " \
-"   a.ident, " \
-"   af.type, " \
-"   af.frequency, " \
-"   a.name, " \
-"   a.latitude, " \
-"   a.longitude " \
-"from " \
-"   airportfrequencies af " \
-"   left join airports a " \
-"   on af.airport_ref = a.id " \
-"where " \
-"   a.ident = :icao " \
-";" \
-"";
+//const string ICAOData::aGetStationList = \
+//"select " \
+//"   a.ident, " \
+//"   af.type, " \
+//"   af.frequency, " \
+//"   a.name, " \
+//"   a.latitude, " \
+//"   a.longitude " \
+//"from " \
+//"   airportfrequencies af " \
+//"   left join airports a " \
+//"   on af.airport_ref = a.id " \
+//"where " \
+//"   a.ident = :icao " \
+//";" \
+//"";
 
-vector<struct ICAOData::Station> ICAOData::getAirportData(string strICAO)
-{
-    vector<struct ICAOData::Station> retValue;
+//vector<struct ICAOData::Station> ICAOData::getAirportData(string strICAO)
+//{
+//    vector<struct ICAOData::Station> retValue;
+//
+//    try
+//    {
+//        // Create the statement
+//        SQLite::Statement aStmt(mIcaoDb, aGetStationList);
+//
+//        // Bind the variables
+//        aStmt.bind(":icao", strICAO);
+//
+//        while (aStmt.executeStep())
+//            // Execute the query, and if we get a result.
+//        {
+//            string ident;
+//            string type;
+//            int frequency;
+//            string name;
+//            double lat;
+//            double lon;
+//
+//            ident = string(aStmt.getColumn(0).getText());
+//            type = string(aStmt.getColumn(1).getText());
+//            frequency = aStmt.getColumn(2).getInt();
+//            name = string(aStmt.getColumn(3).getText());
+//            lat = aStmt.getColumn(4).getDouble();
+//            lon = aStmt.getColumn(5).getDouble();
+//
+//            Station st(ident, type, frequency, name, lat, lon);
+//
+//            retValue.push_back(st);
+//        }
+//
+//    }
+//    catch (SQLite::Exception& e)
+//    {
+//        e;
+//        int a = 1;
+//    }
+//    catch (exception& e)
+//    {
+//        e;
+//    }
+//    
+//
+//    return retValue;
+//}
 
-    try
-    {
-        // Create the statement
-        SQLite::Statement aStmt(mIcaoDb, aGetStationList);
+//const string ICAOData::aGetStation1 = \
+//"select " \
+//"   a.ident, " \
+//"   af.type, " \
+//"   af.frequency, " \
+//"   a.name, " \
+//"   a.latitude, " \
+//"   a.longitude " \
+//"from " \
+//"   airportfrequencies af " \
+//"   left join airports a " \
+//"   on af.airport_ref = a.id " \
+//"where " \
+//"   a.ident = :icao " \
+//"   and " \
+//"   af.type = :type";
 
-        // Bind the variables
-        aStmt.bind(":icao", strICAO);
-
-        while (aStmt.executeStep())
-            // Execute the query, and if we get a result.
-        {
-            string ident;
-            string type;
-            int frequency;
-            string name;
-            double lat;
-            double lon;
-
-            ident = string(aStmt.getColumn(0).getText());
-            type = string(aStmt.getColumn(1).getText());
-            frequency = aStmt.getColumn(2).getInt();
-            name = string(aStmt.getColumn(3).getText());
-            lat = aStmt.getColumn(4).getDouble();
-            lon = aStmt.getColumn(5).getDouble();
-
-            Station st(ident, type, frequency, name, lat, lon);
-
-            retValue.push_back(st);
-        }
-
-    }
-    catch (SQLite::Exception& e)
-    {
-        e;
-        int a = 1;
-    }
-    catch (exception& e)
-    {
-        e;
-    }
-    
-
-    return retValue;
-}
-
-const string ICAOData::aGetStation1 = \
-"select " \
-"   a.ident, " \
-"   af.type, " \
-"   af.frequency, " \
-"   a.name, " \
-"   a.latitude, " \
-"   a.longitude " \
-"from " \
-"   airportfrequencies af " \
-"   left join airports a " \
-"   on af.airport_ref = a.id " \
-"where " \
-"   a.ident = :icao " \
-"   and " \
-"   af.type = :type";
-
-vector<struct ICAOData::Station> ICAOData::getStationData(string strICAO, string strType)
-{
-    vector<struct ICAOData::Station> retValue;
-
-    try
-    {
-        // Create the statement
-        SQLite::Statement aStmt(mIcaoDb, aGetStation1);
-
-        // Bind the variables
-        aStmt.bind(":icao", strICAO);
-        aStmt.bind(":type", strType);
-
-        while (aStmt.executeStep())
-            // Execute the query, and if we get a result.
-        {
-            string ident;
-            string type;
-            int frequency;
-            string name;
-            double lat;
-            double lon;
-
-            ident = string(aStmt.getColumn(0).getText());
-            type = string(aStmt.getColumn(1).getText());
-            frequency = aStmt.getColumn(2).getInt();
-            name = string(aStmt.getColumn(3).getText());
-            lat = aStmt.getColumn(4).getDouble();
-            lon = aStmt.getColumn(5).getDouble();
-
-            Station st(ident, type, frequency, name, lat, lon);
-
-            retValue.push_back(st);
-        }
-
-    }
-    catch (SQLite::Exception& e)
-    {
-        e;
-        int a = 1;
-    }
-    catch (exception& e)
-    {
-        e;
-    }
-
-    return retValue;
-}
+//vector<struct ICAOData::Station> ICAOData::getStationData(string strICAO, string strType)
+//{
+//    vector<struct ICAOData::Station> retValue;
+//
+//    try
+//    {
+//        // Create the statement
+//        SQLite::Statement aStmt(mIcaoDb, aGetStation1);
+//
+//        // Bind the variables
+//        aStmt.bind(":icao", strICAO);
+//        aStmt.bind(":type", strType);
+//
+//        while (aStmt.executeStep())
+//            // Execute the query, and if we get a result.
+//        {
+//            string ident;
+//            string type;
+//            int frequency;
+//            string name;
+//            double lat;
+//            double lon;
+//
+//            ident = string(aStmt.getColumn(0).getText());
+//            type = string(aStmt.getColumn(1).getText());
+//            frequency = aStmt.getColumn(2).getInt();
+//            name = string(aStmt.getColumn(3).getText());
+//            lat = aStmt.getColumn(4).getDouble();
+//            lon = aStmt.getColumn(5).getDouble();
+//
+//            Station st(ident, type, frequency, name, lat, lon);
+//
+//            retValue.push_back(st);
+//        }
+//
+//    }
+//    catch (SQLite::Exception& e)
+//    {
+//        e;
+//        int a = 1;
+//    }
+//    catch (exception& e)
+//    {
+//        e;
+//    }
+//
+//    return retValue;
+//}
 
 const string ICAOData::aGetStation2 = \
 "select " \
