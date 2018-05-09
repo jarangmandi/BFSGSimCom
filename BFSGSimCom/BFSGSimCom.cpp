@@ -15,6 +15,8 @@
 #include <assert.h>
 
 #include <sstream>
+#include <iomanip>
+#include <unordered_set>
 
 #include <QtWidgets/QMessageBox>
 
@@ -54,14 +56,26 @@ Config* cfg;
 bool blConnectedToTeamspeak = false;
 bool blExtendedLoggingEnabled = false;
 anyID myTS3ID;
-uint64 targetChannel = TS3Channels::CHANNEL_ID_NOT_FOUND;
-uint64 currentChannel;
+TS3Channels::StationInfo targetChannel(TS3Channels::CHANNEL_ID_NOT_FOUND);
+TS3Channels::StationInfo currentChannel;
 Config::ConfigMode lastMode;
 
 PluginItemType infoDataType = PluginItemType(0);
 uint64 infoDataId = 0;
 
 QMessageBox qMsg;
+
+struct pair_hash {
+	template <class T1, class T2>
+	std::size_t operator () (const std::pair<T1, T2> &p) const {
+		auto h1 = std::hash<T1>{}(p.first);
+		auto h2 = std::hash<T2>{}(p.second);
+
+		return h1 ^ h2;
+	}
+};
+
+std::unordered_set<std::pair<uint64,uint64>, pair_hash> channelUpdates;
 
 void handleModeChange(Config::ConfigMode mode);
 
@@ -139,9 +153,9 @@ void callback(FSUIPCWrapper::SimComData data)
 			{
 				std::ostringstream ostr;
 
-				decodeChannel(ostr, "    Current", currentChannel);
+				decodeChannel(ostr, "    Current", currentChannel.ch);
 				ostr << " | ";
-				decodeChannel(ostr, "Last Target", targetChannel);
+				decodeChannel(ostr, "Last Target", targetChannel.ch);
 
 				ts3Functions.logMessage(ostr.str().c_str(), LogLevel::LogLevel_DEBUG, "BFSGSimCom", serverConnectionHandlerID);
 			}
@@ -153,12 +167,13 @@ void callback(FSUIPCWrapper::SimComData data)
         else
         {
 			uint16_t frequency;
-			uint64 newTargetChannel;
 
-			uint64 rootChannel = cfg->getRootChannel();
+			TS3Channels::StationInfo newTargetChannel;
 
-			uint64 adjustedRootChannel;
-			uint64 adjustedCurrentChannel;
+			TS3Channels::StationInfo rootChannel(cfg->getRootChannel());
+
+			TS3Channels::StationInfo adjustedRootChannel;
+			TS3Channels::StationInfo adjustedCurrentChannel;
 
 			//bool blToMove = false;
 			//bool blTunedToRecognisedFrequency = false;
@@ -168,7 +183,7 @@ void callback(FSUIPCWrapper::SimComData data)
 			// the current channel and last target channel correctly!
 			// Find out our ID, and which channel we're presently in
 			ts3Functions.getClientID(serverConnectionHandlerID, &myTS3ID);
-			ts3Functions.getChannelOfClient(serverConnectionHandlerID, myTS3ID, &currentChannel);
+			ts3Functions.getChannelOfClient(serverConnectionHandlerID, myTS3ID, &currentChannel.ch);
 
 			targetChannel = currentChannel;
 
@@ -181,7 +196,7 @@ void callback(FSUIPCWrapper::SimComData data)
 				bool blConsiderAutoMove = (operationMode == Config::CONFIG_AUTO);
 				bool blConsiderManualMove = (operationMode == Config::CONFIG_MANUAL && data.blComChanged);
 
-				if (rootChannel == TS3Channels::CHANNEL_ID_NOT_FOUND)
+				if (rootChannel == TS3Channels::StationInfo(TS3Channels::CHANNEL_ID_NOT_FOUND))
 				{
 					adjustedRootChannel = currentChannel;
 				}
@@ -195,7 +210,7 @@ void callback(FSUIPCWrapper::SimComData data)
 				// purposes of working out which channel we need to move to.
 				if (blConsiderAutoMove)
 				{
-					if (ts3Channels->channelIsUnderRoot(currentChannel, adjustedRootChannel))
+					if (ts3Channels->channelIsUnderRoot(currentChannel.ch, adjustedRootChannel.ch))
 						adjustedCurrentChannel = currentChannel;
 					else
 						adjustedCurrentChannel = rootChannel;
@@ -221,16 +236,16 @@ void callback(FSUIPCWrapper::SimComData data)
 				// Get the target channel based on relevant information
 				newTargetChannel = ts3Channels->getChannelID(
 					frequency,
-					adjustedCurrentChannel,
-					adjustedRootChannel,
+					adjustedCurrentChannel.ch,
+					adjustedRootChannel.ch,
 					cfg->getConsiderRange(),
 					cfg->getOutOfRangeUntuned(),
 					data.dLat,
 					data.dLon
 				);
 
-				bool blTargetUnderCurrentRoot = (newTargetChannel != TS3Channels::CHANNEL_NOT_CHILD_OF_ROOT);
-				bool blTunedToRecognisedFrequency = (newTargetChannel != TS3Channels::CHANNEL_ID_NOT_FOUND && newTargetChannel != TS3Channels::CHANNEL_NOT_CHILD_OF_ROOT);
+				bool blTargetUnderCurrentRoot = (newTargetChannel.ch != TS3Channels::CHANNEL_NOT_CHILD_OF_ROOT);
+				bool blTunedToRecognisedFrequency = (newTargetChannel.ch != TS3Channels::CHANNEL_ID_NOT_FOUND && newTargetChannel.ch != TS3Channels::CHANNEL_NOT_CHILD_OF_ROOT);
 				bool blLastChannelMoveManual = (currentChannel != targetChannel);
 				bool blTargetChannelChanged = (newTargetChannel != targetChannel);
 
@@ -238,17 +253,17 @@ void callback(FSUIPCWrapper::SimComData data)
 				{
 					std::ostringstream ostr;
 
-					decodeChannel(ostr, "    Current", currentChannel);
+					decodeChannel(ostr, "    Current", currentChannel.ch);
 					ostr << " | ";
-					decodeChannel(ostr, "Adjusted", adjustedCurrentChannel);
+					decodeChannel(ostr, "Adjusted", adjustedCurrentChannel.ch);
 					ostr << " | ";
-					decodeChannel(ostr, "Root", rootChannel);
+					decodeChannel(ostr, "Root", rootChannel.ch);
 					ostr << " | ";
-					decodeChannel(ostr, "Adjusted Root", adjustedRootChannel);
+					decodeChannel(ostr, "Adjusted Root", adjustedRootChannel.ch);
 					ostr << " | ";
-					decodeChannel(ostr, "New Target", newTargetChannel);
+					decodeChannel(ostr, "New Target", newTargetChannel.ch);
 					ostr << " | ";
-					decodeChannel(ostr, "Last Target", targetChannel);
+					decodeChannel(ostr, "Last Target", targetChannel.ch);
 					ostr << " | ";
 					ostr << "TargetUnderCurrentRoot: " << blTargetUnderCurrentRoot << " | ";
 					ostr << "TunedToRecognisedFrequency: " << blTunedToRecognisedFrequency << " | ";
@@ -276,11 +291,11 @@ void callback(FSUIPCWrapper::SimComData data)
 							// or the adjusted current channgel...
 							if (cfg->getUntuned())
 							{
-								newTargetChannel = cfg->getUntunedChannel();
+								newTargetChannel.ch = cfg->getUntunedChannel();
 							}
 							else
 							{
-								newTargetChannel = adjustedCurrentChannel;
+								newTargetChannel.ch = adjustedCurrentChannel.ch;
 							}
 						}
 
@@ -291,13 +306,13 @@ void callback(FSUIPCWrapper::SimComData data)
 						if (newTargetChannel != currentChannel && blTargetChannelInTS)
 						{
 							// ..request a move to the target channel
-							ts3Functions.requestClientMove(serverConnectionHandlerID, myTS3ID, newTargetChannel, "", callbackReturnCode);
+							ts3Functions.requestClientMove(serverConnectionHandlerID, myTS3ID, newTargetChannel.ch, "", callbackReturnCode);
 
 							// and if extended logging is enabled, record that we've requested the move.
 							if (blExtendedLoggingEnabled)
 							{
 								std::ostringstream ostr;
-								ostr << "    Requested Move To: " << newTargetChannel;
+								ostr << "    Requested Move To: " << newTargetChannel.ch;
 								ts3Functions.logMessage(ostr.str().c_str(), LogLevel::LogLevel_DEBUG, "BFSGSimCom", serverConnectionHandlerID);
 							}
 						}
@@ -307,7 +322,7 @@ void callback(FSUIPCWrapper::SimComData data)
 							if (blExtendedLoggingEnabled)
 							{
 								std::ostringstream ostr;
-								ostr << "    Did not request move to: " << newTargetChannel;
+								ostr << "    Did not request move to: " << newTargetChannel.ch;
 								ts3Functions.logMessage(ostr.str().c_str(), LogLevel::LogLevel_DEBUG, "BFSGSimCom", serverConnectionHandlerID);
 							}
 						}
@@ -318,8 +333,9 @@ void callback(FSUIPCWrapper::SimComData data)
 				
 				else
 				{
-					// otherwise, the target channel is unchanged
-					targetChannel = targetChannel; // hopefully this gets optimised out!
+					// otherwise, the target channel is unchanged - but data in it may not be...
+					if (targetChannel.ch = newTargetChannel.ch)
+						targetChannel = newTargetChannel;
 				}
 			}
 			else
@@ -406,18 +422,37 @@ void loadChannel(uint64 serverConnectionHandlerID, uint64 channel, uint64 parent
     }
 
     // For each channel in the list, get the name of the channel and its parent, and add it to the channel list.
+	//unsigned int xx = ts3Functions.requestChannelDescription(serverConnectionHandlerID, channel, callbackReturnCode);
     ts3Functions.getChannelVariableAsString(serverConnectionHandlerID, channel, CHANNEL_NAME, &cName);
     ts3Functions.getChannelVariableAsString(serverConnectionHandlerID, channel, CHANNEL_TOPIC, &cTopic);
-    ts3Functions.getChannelVariableAsString(serverConnectionHandlerID, channel, CHANNEL_DESCRIPTION, &cDesc);
-    ts3Functions.getChannelVariableAsUInt64(serverConnectionHandlerID, channel, CHANNEL_ORDER, &order);
+	ts3Functions.getChannelVariableAsString(serverConnectionHandlerID, channel, CHANNEL_DESCRIPTION, &cDesc);
+	ts3Functions.getChannelVariableAsUInt64(serverConnectionHandlerID, channel, CHANNEL_ORDER, &order);
     ts3Channels->addOrUpdateChannel(strComment, cName, cTopic, cDesc, channel, parent, order);
 
     // Not forgetting to free up the memory we've used for the channel name.
-    ts3Functions.freeMemory(cName);
+	ts3Functions.freeMemory(cName);
     ts3Functions.freeMemory(cTopic);
     ts3Functions.freeMemory(cDesc);
 
     ts3Functions.logMessage(strComment.c_str(), LogLevel::LogLevel_INFO, "BFSGSimCom", serverConnectionHandlerID);
+}
+
+void loadChannelDescription(uint64 serverConnectionHandlerID, uint64 channel)
+{
+	char* cDesc;
+
+	string strComment;
+
+	// Then request that the channel description be updated
+	//unsigned int recode = ts3Functions.requestChannelDescription(serverConnectionHandlerID, channel, callbackReturnCode);
+
+	ts3Functions.getChannelVariableAsString(serverConnectionHandlerID, channel, CHANNEL_DESCRIPTION, &cDesc);
+	ts3Channels->updateChannelDescription(strComment, channel, cDesc);
+
+	// Not forgetting to free up the memory we've used...
+	ts3Functions.freeMemory(cDesc);
+
+	ts3Functions.logMessage(strComment.c_str(), LogLevel::LogLevel_INFO, "BFSGSimCom", serverConnectionHandlerID);
 }
 
 // Load ALL channels on a given server connection.
@@ -429,7 +464,9 @@ void loadChannels(uint64 serverConnectionHandlerID)
     {
         for (int i = 0; channelList[i] != NULL; i++)
         {
-            loadChannel(serverConnectionHandlerID, channelList[i]);
+//            loadChannel(serverConnectionHandlerID, channelList[i]);
+			channelUpdates.emplace(serverConnectionHandlerID, channelList[i]);
+			ts3Functions.requestChannelDescription(serverConnectionHandlerID, channelList[i], callbackReturnCode);
         }
 
         // And not forgetting to free up the memory we've used for the channel list.
@@ -472,7 +509,7 @@ int ts3plugin_init() {
         {
             if (ts3Functions.getClientID(serverConnectionHandlerID, &myTS3ID) == ERROR_ok)
             {
-                ts3Functions.getChannelOfClient(serverConnectionHandlerID, myTS3ID, &currentChannel);
+                ts3Functions.getChannelOfClient(serverConnectionHandlerID, myTS3ID, &currentChannel.ch);
             }
         }
     }
@@ -597,21 +634,39 @@ const char* ts3plugin_infoTitle() {
  */
 void ts3plugin_infoData(uint64 serverConnectionHandlerID, uint64 id, enum PluginItemType type, char** data) {
 
-    char* strConnected = "";
-    char* strMode = "";
-    char* strUntuned = "";
-    char* strCom = "";
-    char* strFormat = "";
+	bool blAdvancedInfo = true;
+
+    //char* strConnected = "";
+    //char* strMode = "";
+    //char* strUntuned = "";
+    //char* strCom = "";
+	//char* strInOutRange = "";
+	const char* strStation = "";
+
+	string strCGreen = "#006400";
+	string strCRed = "#ff0000";
+
+	//string strConnected = "";
+	string strMode = "";
+	string strUntuned = "";
+	string strCom = "";
+	//string strInOutRange = "";
+	//const char* strStation = "";
+
+	//string strFormat = "";
 
     double dCom1 = 0.0f;
     double dCom1s = 0.0f;
     double dCom2 = 0.0f;
     double dCom2s = 0.0f;
+	double dRange = 0.0f;
 
     // Save this in case we need to do it adhoc...
     infoDataType = type;
     infoDataId = id;
 
+	ostringstream ostr;
+	
     // Must be allocated in the plugin
     *data = (char*)malloc(INFODATA_BUFSIZE * sizeof(char));  /* Must be allocated in the plugin! */
 
@@ -621,69 +676,141 @@ void ts3plugin_infoData(uint64 serverConnectionHandlerID, uint64 id, enum Plugin
 
         if (connected)
         {
-            strConnected = "Connected to Sim.";
+			ostr << "[color=" << strCGreen << "]Connected to Sim.[/color]\n\nMode: ";
+
+            //strConnected = "Connected to Sim.";
+			strMode = "[color=";
 
             Config::ConfigMode mode = cfg->getMode();
             switch (mode)
             {
             case Config::CONFIG_DISABLED:
-                strMode = "Disabled";
+                strMode += strCRed + "]Disabled";
                 break;
             case Config::CONFIG_MANUAL:
-                strMode = "Enabled but not locked";
+				strMode += strCGreen + "]Enabled";
+				if (blAdvancedInfo) strMode += " but not locked";
                 break;
             case Config::CONFIG_AUTO:
-                if (targetChannel == 0)
-                    strMode = strMode = "Enabled and locked but to invalid channel";
-                else
-                    strMode = "Enabled and locked";
+				if (targetChannel == 0)
+				{
+					strMode += strCGreen + "]Enabled";
+					if (blAdvancedInfo) strMode += " and locked but to invalid channel";
+				}
+				else
+				{
+					strMode += strCGreen + "]Enabled";
+					if (blAdvancedInfo) strMode += " and locked";
+				}
                 break;
             default:
-                strMode = "";
+                strMode += strCRed + "]";
             }
+
+			ostr << strMode << "[/color]";
 
             if (mode != Config::CONFIG_DISABLED)
             {
-                strUntuned = (cfg->getUntuned()) ? "" : "not ";
-                strFormat = "%s\n\nMode: %s, %smoving with unrecognised freq.\n\n%s radio selected.\n\nCom 1 Freq:%6.2f\nCom 2 Freq:%6.2f\nCom 1 Stby:%6.2f\nCom 2 Stby:%6.2f";
+				if (blAdvancedInfo)
+				{
+					ostr << ", [color=" << ((cfg->getUntuned()) ? strCGreen + "]" : strCRed + "]not ") << "moving with unrecognised freq[/color]";
+					ostr << ", [color=" << ((cfg->getConsiderRange()) ? strCGreen + "]" : strCRed + "]not ") << "considering station range[/color]";
+					if (cfg->getConsiderRange() && cfg->getUntuned())
+						ostr << ", [color=" << ((cfg->getOutOfRangeUntuned()) ? strCGreen + "]" : strCRed + "]not ") << "treating out of range station as untuned[/color]";
+					ostr << ".";
+				}
+
+				//strUntuned = (cfg->getUntuned()) ? "" : "not ";
+
+                //strFormat = "%s\n\nMode: %s, %smoving with unrecognised freq.\n\n%s radio selected.\n\nCom 1 Freq:%6.2f\nCom 2 Freq:%6.2f\nCom 1 Stby:%6.2f\nCom 2 Stby:%6.2f";
 
                 switch (simComData.selectedCom)
                 {
                 case FSUIPCWrapper::Com1:
-                    strCom = "COM1";
+                    strCom = "Com1";
                     break;
                 case FSUIPCWrapper::Com2:
-                    strCom = "COM2";
+                    strCom = "Com2";
                     break;
+				case FSUIPCWrapper::None:
+					strCom = "No";
+					break;
                 default:
                     strCom = "Unrecognised";
                     break;
                 }
 
+				ostr << std::fixed << setprecision(2) << "\n\n[b]" << strCom << "[/b] radio selected.\n";
+
+				if (targetChannel.ch != TS3Channels::CHANNEL_ID_NOT_FOUND && targetChannel.ch != TS3Channels::CHANNEL_NOT_CHILD_OF_ROOT)
+				{
+					strStation = targetChannel.id.c_str();
+
+					if (strncmp(strStation, "", 10))
+					{
+						dRange = targetChannel.range;
+						//strInOutRange = (targetChannel.in_range) ? "In" : "Out of";
+						//strFormat += "\n\n%8.1fnm from %s. %s range.";
+					}
+				}
+
+				string strCom1Col = (simComData.selectedCom == FSUIPCWrapper::Com1) ? strCGreen : strCRed;
+				string strCom2Col = (simComData.selectedCom == FSUIPCWrapper::Com2) ? strCGreen : strCRed;
+
                 dCom1 = 0.01 * simComData.iCom1Freq;
-                dCom1s = 0.01 * simComData.iCom1Sby;
-                dCom2 = 0.01 * simComData.iCom2Freq;
-                dCom2s = 0.01 * simComData.iCom2Sby;
+				ostr << "\n[b][color=" << strCom1Col << "]Com 1 Freq: " << std::setprecision(2) << dCom1;
+				if (simComData.selectedCom == FSUIPCWrapper::Com1 && strncmp(strStation, "", 10))
+				{
+					ostr << " - " << strStation;
+					if (dRange < 10800.0)
+						ostr << " @ " << std::setprecision(1) << dRange << "nm";
+				}
+				ostr << "[/color][/b]";
+
+				dCom2 = 0.01 * simComData.iCom2Freq;
+				ostr << "\n[b][color=" << strCom2Col << "]Com 2 Freq: " << std::setprecision(2) << dCom2;
+				if (simComData.selectedCom == FSUIPCWrapper::Com2 && strncmp(strStation, "", 10))
+				{
+					ostr << " - " << strStation;
+					if (dRange < 10800.0)
+						ostr << " @ " << std::setprecision(1) << dRange << "nm";
+				}
+				ostr << "[/color][/b]";
+
+				dCom1s = 0.01 * simComData.iCom1Sby;
+				ostr << "\n[color=" << strCom1Col << "]Com 1 Stby: " << std::setprecision(2) << dCom1s << "[/color]";
+				
+				dCom2s = 0.01 * simComData.iCom2Sby;
+				ostr << "\n[color=" << strCom2Col << "]Com 2 Stby: " << std::setprecision(2) << dCom2s << "[/color]";
             }
             else
             {
-                strFormat = "%s\n\nMode: %s";
+                //strFormat = "%s\n\nMode: %s";
             }
         }
         else
         {
-            strConnected = "Not connected to Sim.";
-            strFormat = "%s";
+			ostr << "[color=" << strCRed << "]Not connected to Sim.[/color]";
+            //strConnected = "Not connected to Sim.";
+            //strFormat = "%s";
         }
 
-        snprintf(
-            *data,
-            INFODATA_BUFSIZE,
-            strFormat,
-            strConnected, strMode, strUntuned, strCom, dCom1, dCom2, dCom1s, dCom2s
-            );
+		snprintf(
+			*data,
+			INFODATA_BUFSIZE,
+			"%s",
+			ostr.str().c_str()
+		);
 
-    }
+		//snprintf(
+		//	*data,
+		//	INFODATA_BUFSIZE,
+		//	strFormat.c_str(),
+		//	strConnected, strMode, strUntuned, strCom, dCom1, dCom2, dCom1s, dCom2s, dRange, strStation, strInOutRange
+		//);
+
+
+	}
 }
 
 /* Required to release the memory for parameter "data" allocated in ts3plugin_infoData and ts3plugin_initMenus */
@@ -870,9 +997,21 @@ void ts3plugin_onChannelMoveEvent(uint64 serverConnectionHandlerID, uint64 chann
 
 void ts3plugin_onUpdateChannelEditedEvent(uint64 serverConnectionHandlerID, uint64 channelID, anyID invokerID, const char* invokerName, const char* invokerUniqueIdentifier)
 {
-    loadChannel(serverConnectionHandlerID, channelID);
+	// ... request the channel description information.
+	channelUpdates.emplace(serverConnectionHandlerID, channelID);
+	ts3Functions.requestChannelDescription(serverConnectionHandlerID, channelID, callbackReturnCode);
 }
 
+void ts3plugin_onUpdateChannelEvent(uint64 serverConnectionHandlerID, uint64 channelID)
+{
+	pair<uint64, uint64> sc(serverConnectionHandlerID, channelID);
+
+	if (channelUpdates.find(sc) != channelUpdates.end())
+	{
+		channelUpdates.erase(sc);
+		loadChannel(serverConnectionHandlerID, channelID);
+	}
+}
 
 void ts3plugin_onConnectStatusChangeEvent(uint64 serverConnectionHandlerID, int newStatus, unsigned int errorNumber) {
 
@@ -906,7 +1045,7 @@ void ts3plugin_onConnectStatusChangeEvent(uint64 serverConnectionHandlerID, int 
 
 		// Find out our ID, and which channel we're presently in
         ts3Functions.getClientID(serverConnectionHandlerID, &myTS3ID);
-		ts3Functions.getChannelOfClient(serverConnectionHandlerID, myTS3ID, &currentChannel);
+		ts3Functions.getChannelOfClient(serverConnectionHandlerID, myTS3ID, &currentChannel.ch);
 
 		// Assume that our last target channel is were we started.
 		targetChannel = currentChannel;
@@ -953,12 +1092,12 @@ void ts3plugin_onClientMoveEvent(uint64 serverConnectionHandlerID, anyID clientI
 
 			//If we're here, then we want to be moving back to where we were before the move.
 
-			if (newChannelID != targetChannel)
+			if (newChannelID != targetChannel.ch)
 			{
 				// If the new channel is different to the last recorded target, then request a move back
 				// to where we're supposed to be.
 				debugMessage = "Requesting reutrn to";
-				ts3Functions.requestClientMove(serverConnectionHandlerID, clientID, targetChannel, "", NULL);
+				ts3Functions.requestClientMove(serverConnectionHandlerID, clientID, targetChannel.ch, "", NULL);
 			}
 			else
 			{
@@ -969,7 +1108,7 @@ void ts3plugin_onClientMoveEvent(uint64 serverConnectionHandlerID, anyID clientI
 			if (blExtendedLoggingEnabled)
 			{
 				std::ostringstream ostr;
-				ostr << "Move Event: Client has moved to " << newChannelID << " | " << debugMessage << " channel " << targetChannel;
+				ostr << "Move Event: Client has moved to " << newChannelID << " | " << debugMessage << " channel " << targetChannel.ch;
 				ts3Functions.logMessage(ostr.str().c_str(), LogLevel::LogLevel_DEBUG, "BFSGSimCom", serverConnectionHandlerID);
 			}
 			
@@ -988,7 +1127,14 @@ void ts3plugin_onClientMoveEvent(uint64 serverConnectionHandlerID, anyID clientI
 			
 			// If we've not been intercepted for any of the reasons above, then accept the channel move and update
 			// our local record of where we are.
-			currentChannel = newChannelID;
+			if (newChannelID == targetChannel.ch)
+			{
+				currentChannel = targetChannel;
+			}
+			else
+			{
+				currentChannel = newChannelID;
+			}
         }
 
 	}
@@ -1091,3 +1237,4 @@ void ts3plugin_onServerUpdatedEvent(uint64 serverConnectionHandlerID)
 {
     ts3Functions.requestInfoUpdate(serverConnectionHandlerID, infoDataType, infoDataId);
 }
+
