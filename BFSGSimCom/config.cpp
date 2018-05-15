@@ -156,7 +156,14 @@ void Config::setUntuned(bool untuned)
 
     untunedChanged();
     saveSettings();
-}   
+}
+
+void Config::setInfoDetailed(bool infoDetailed)
+{
+	cbInfoDetailed->setChecked(infoDetailed);
+	blInfoDetailed = infoDetailed;
+	saveSettings();
+}
 
 Config::Config(TS3Channels& tch)
 {
@@ -176,6 +183,10 @@ Config::Config(TS3Channels& tch)
     chList = &tch;
 
     vector<TS3Channels::ChannelInfo> channels;
+
+	// Restore the detailed information checkbox
+	blInfoDetailed = settings.value("info/detailed").toBool();
+	cbInfoDetailed->setChecked(blInfoDetailed);
 
     // Restore selected channel IDs
     iRoot = settings.value("channel/root", 0 /*TS3Channels::CHANNEL_ID_NOT_FOUND*/).toULongLong();
@@ -228,6 +239,10 @@ void Config::saveSettings()
 {
     //CONF_OBJ(cfg);
     QSettings settings;
+
+	// Save the state of the detailed information pane option
+	blInfoDetailed = cbInfoDetailed->isChecked();
+	settings.setValue("info/detailed", blInfoDetailed);
 
     bool blD;
     bool blM;

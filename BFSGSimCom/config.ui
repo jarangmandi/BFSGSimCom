@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>391</width>
-    <height>592</height>
+    <height>656</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -20,7 +20,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>550</y>
+     <y>620</y>
      <width>371</width>
      <height>31</height>
     </rect>
@@ -36,7 +36,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>10</y>
+     <y>70</y>
      <width>371</width>
      <height>281</height>
     </rect>
@@ -177,7 +177,7 @@
      </font>
     </property>
     <property name="text">
-     <string>Do not move to a station that is "out of range"</string>
+     <string>Do not move to a station that is &quot;out of range&quot;</string>
     </property>
    </widget>
    <widget class="QCheckBox" name="cbManualModeOnStart">
@@ -204,7 +204,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>300</y>
+     <y>360</y>
      <width>371</width>
      <height>251</height>
     </rect>
@@ -324,9 +324,48 @@
     </property>
    </widget>
   </widget>
+  <widget class="QGroupBox" name="groupBox">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>10</y>
+     <width>371</width>
+     <height>51</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="title">
+    <string>Information Pane</string>
+   </property>
+   <widget class="QCheckBox" name="cbInfoDetailed">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>20</y>
+      <width>351</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <weight>50</weight>
+      <bold>false</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>Detailed data display</string>
+    </property>
+   </widget>
+  </widget>
   <zorder>gbUntuned</zorder>
   <zorder>buttonBox</zorder>
   <zorder>gbChannelControl</zorder>
+  <zorder>groupBox</zorder>
  </widget>
  <tabstops>
   <tabstop>rbDisabled</tabstop>

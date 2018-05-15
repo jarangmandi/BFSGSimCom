@@ -634,28 +634,18 @@ const char* ts3plugin_infoTitle() {
  */
 void ts3plugin_infoData(uint64 serverConnectionHandlerID, uint64 id, enum PluginItemType type, char** data) {
 
-	bool blAdvancedInfo = true;
+	bool blAdvancedInfo = cfg->getInfoDetailed();
 
-    //char* strConnected = "";
-    //char* strMode = "";
-    //char* strUntuned = "";
-    //char* strCom = "";
-	//char* strInOutRange = "";
 	const char* strStation = "";
 
-	string strCGreen = "#006400";
-	string strCRed = "#ff0000";
+	const string strCGreen = "#006400";
+	const string strCRed = "#ff0000";
 
-	//string strConnected = "";
 	string strMode = "";
 	string strUntuned = "";
 	string strCom = "";
-	//string strInOutRange = "";
-	//const char* strStation = "";
 
-	//string strFormat = "";
-
-    double dCom1 = 0.0f;
+	double dCom1 = 0.0f;
     double dCom1s = 0.0f;
     double dCom2 = 0.0f;
     double dCom2s = 0.0f;
@@ -673,12 +663,12 @@ void ts3plugin_infoData(uint64 serverConnectionHandlerID, uint64 id, enum Plugin
     if (*data != NULL)
     {
         bool connected = fsuipc->isConnected();
+		bool detailed = cfg->getInfoDetailed();
 
         if (connected)
         {
-			ostr << "[color=" << strCGreen << "]Connected to Sim.[/color]\n\nMode: ";
+			ostr << std::fixed << "[color=" << strCGreen << "]Connected to Sim.[/color]\n\nMode: ";
 
-            //strConnected = "Connected to Sim.";
 			strMode = "[color=";
 
             Config::ConfigMode mode = cfg->getMode();
@@ -692,15 +682,18 @@ void ts3plugin_infoData(uint64 serverConnectionHandlerID, uint64 id, enum Plugin
 				if (blAdvancedInfo) strMode += " but not locked";
                 break;
             case Config::CONFIG_AUTO:
-				if (targetChannel == 0)
+				if (blAdvancedInfo)
 				{
-					strMode += strCGreen + "]Enabled";
-					if (blAdvancedInfo) strMode += " and locked but to invalid channel";
+					strMode += strCGreen + "]Enabled and locked";
+
+					if (targetChannel == 0)
+					{
+						strMode += "  but to invalid channel";
+					}
 				}
 				else
 				{
-					strMode += strCGreen + "]Enabled";
-					if (blAdvancedInfo) strMode += " and locked";
+					strMode += strCGreen + "]Auto";
 				}
                 break;
             default:
@@ -709,7 +702,7 @@ void ts3plugin_infoData(uint64 serverConnectionHandlerID, uint64 id, enum Plugin
 
 			ostr << strMode << "[/color]";
 
-            if (mode != Config::CONFIG_DISABLED)
+			if (mode != Config::CONFIG_DISABLED)
             {
 				if (blAdvancedInfo)
 				{
@@ -718,29 +711,25 @@ void ts3plugin_infoData(uint64 serverConnectionHandlerID, uint64 id, enum Plugin
 					if (cfg->getConsiderRange() && cfg->getUntuned())
 						ostr << ", [color=" << ((cfg->getOutOfRangeUntuned()) ? strCGreen + "]" : strCRed + "]not ") << "treating out of range station as untuned[/color]";
 					ostr << ".";
+
+					switch (simComData.selectedCom)
+					{
+					case FSUIPCWrapper::Com1:
+						strCom = "Com1";
+						break;
+					case FSUIPCWrapper::Com2:
+						strCom = "Com2";
+						break;
+					case FSUIPCWrapper::None:
+						strCom = "No";
+						break;
+					default:
+						strCom = "Unrecognised";
+						break;
+					}
+
+					ostr << setprecision(2) << "\n\n[b]" << strCom << "[/b] radio selected.\n";
 				}
-
-				//strUntuned = (cfg->getUntuned()) ? "" : "not ";
-
-                //strFormat = "%s\n\nMode: %s, %smoving with unrecognised freq.\n\n%s radio selected.\n\nCom 1 Freq:%6.2f\nCom 2 Freq:%6.2f\nCom 1 Stby:%6.2f\nCom 2 Stby:%6.2f";
-
-                switch (simComData.selectedCom)
-                {
-                case FSUIPCWrapper::Com1:
-                    strCom = "Com1";
-                    break;
-                case FSUIPCWrapper::Com2:
-                    strCom = "Com2";
-                    break;
-				case FSUIPCWrapper::None:
-					strCom = "No";
-					break;
-                default:
-                    strCom = "Unrecognised";
-                    break;
-                }
-
-				ostr << std::fixed << setprecision(2) << "\n\n[b]" << strCom << "[/b] radio selected.\n";
 
 				if (targetChannel.ch != TS3Channels::CHANNEL_ID_NOT_FOUND && targetChannel.ch != TS3Channels::CHANNEL_NOT_CHILD_OF_ROOT)
 				{
@@ -749,8 +738,6 @@ void ts3plugin_infoData(uint64 serverConnectionHandlerID, uint64 id, enum Plugin
 					if (strncmp(strStation, "", 10))
 					{
 						dRange = targetChannel.range;
-						//strInOutRange = (targetChannel.in_range) ? "In" : "Out of";
-						//strFormat += "\n\n%8.1fnm from %s. %s range.";
 					}
 				}
 
@@ -777,22 +764,22 @@ void ts3plugin_infoData(uint64 serverConnectionHandlerID, uint64 id, enum Plugin
 				}
 				ostr << "[/color][/b]";
 
-				dCom1s = 0.01 * simComData.iCom1Sby;
-				ostr << "\n[color=" << strCom1Col << "]Com 1 Stby: " << std::setprecision(2) << dCom1s << "[/color]";
-				
-				dCom2s = 0.01 * simComData.iCom2Sby;
-				ostr << "\n[color=" << strCom2Col << "]Com 2 Stby: " << std::setprecision(2) << dCom2s << "[/color]";
+				if (blAdvancedInfo)
+				{
+					dCom1s = 0.01 * simComData.iCom1Sby;
+					ostr << "\n[color=" << strCom1Col << "]Com 1 Stby: " << std::setprecision(2) << dCom1s << "[/color]";
+
+					dCom2s = 0.01 * simComData.iCom2Sby;
+					ostr << "\n[color=" << strCom2Col << "]Com 2 Stby: " << std::setprecision(2) << dCom2s << "[/color]";
+				}
             }
             else
             {
-                //strFormat = "%s\n\nMode: %s";
             }
         }
         else
         {
 			ostr << "[color=" << strCRed << "]Not connected to Sim.[/color]";
-            //strConnected = "Not connected to Sim.";
-            //strFormat = "%s";
         }
 
 		snprintf(
@@ -859,7 +846,9 @@ enum {
     MENU_ID_SIMCOM_MODE_MANUAL,
     MENU_ID_SIMCOM_MODE_AUTO,
 	MENU_ID_SIMCOM_DEBUG_ON,
-	MENU_ID_SIMCOM_DEBUG_OFF
+	MENU_ID_SIMCOM_DEBUG_OFF,
+	MENU_ID_SIMCOM_INFO_DETAIL_ON,
+	MENU_ID_SIMCOM_INFO_DETAIL_OFF
 };
 
 /*
@@ -886,10 +875,15 @@ void ts3plugin_initMenus(struct PluginMenuItem*** menuItems, char** menuIcon) {
      * e.g. for "test_plugin.dll", icon "1.png" is loaded from <TeamSpeak 3 Client install dir>\plugins\test_plugin\1.png
      */
 
-    BEGIN_CREATE_MENUS(8);  /* IMPORTANT: Number of menu items must be correct! */
+	bool blInfoDetailed = cfg->getInfoDetailed();
+
+    BEGIN_CREATE_MENUS(11);  /* IMPORTANT: Number of menu items must be correct! */
     CREATE_MENU_ITEM(PLUGIN_MENU_TYPE_GLOBAL, MENU_ID_SIMCOM_CONFIGURE, "Configure", "");
     CREATE_MENU_ITEM(PLUGIN_MENU_TYPE_GLOBAL, MENU_ID_DUMMY, "------------------", "");
-    CREATE_MENU_ITEM(PLUGIN_MENU_TYPE_GLOBAL, MENU_ID_SIMCOM_MODE_DISABLE, "Mode - Disable", "");
+	CREATE_MENU_ITEM(PLUGIN_MENU_TYPE_GLOBAL, MENU_ID_SIMCOM_INFO_DETAIL_ON, "Enable Detailed Information", "");
+	CREATE_MENU_ITEM(PLUGIN_MENU_TYPE_GLOBAL, MENU_ID_SIMCOM_INFO_DETAIL_OFF, "Disable Detailed Information", "");
+	CREATE_MENU_ITEM(PLUGIN_MENU_TYPE_GLOBAL, MENU_ID_DUMMY, "------------------", "");
+	CREATE_MENU_ITEM(PLUGIN_MENU_TYPE_GLOBAL, MENU_ID_SIMCOM_MODE_DISABLE, "Mode - Disable", "");
     CREATE_MENU_ITEM(PLUGIN_MENU_TYPE_GLOBAL, MENU_ID_SIMCOM_MODE_MANUAL, "Mode - Manual", "");
     CREATE_MENU_ITEM(PLUGIN_MENU_TYPE_GLOBAL, MENU_ID_SIMCOM_MODE_AUTO, "Mode - Auto", "");
 	CREATE_MENU_ITEM(PLUGIN_MENU_TYPE_GLOBAL, MENU_ID_DUMMY, "------------------", "");
@@ -902,6 +896,9 @@ void ts3plugin_initMenus(struct PluginMenuItem*** menuItems, char** menuIcon) {
 
 	ts3Functions.setPluginMenuEnabled(pluginID, MENU_ID_SIMCOM_DEBUG_ON, blExtendedLoggingEnabled ? 0 : 1);
 	ts3Functions.setPluginMenuEnabled(pluginID, MENU_ID_SIMCOM_DEBUG_OFF, blExtendedLoggingEnabled ? 1 : 0);
+
+	ts3Functions.setPluginMenuEnabled(pluginID, MENU_ID_SIMCOM_INFO_DETAIL_ON, blInfoDetailed ? 0 : 1);
+	ts3Functions.setPluginMenuEnabled(pluginID, MENU_ID_SIMCOM_INFO_DETAIL_OFF, blInfoDetailed ? 1 : 0);
 
     /*
      * Specify an optional icon for the plugin. This icon is used for the plugins submenu within context and main menus
@@ -947,10 +944,12 @@ void ts3plugin_initHotkeys(struct PluginHotkey*** hotkeys) {
     /* Register hotkeys giving a keyword and a description.
      * The keyword will be later passed to ts3plugin_onHotkeyEvent to identify which hotkey was triggered.
      * The description is shown in the clients hotkey dialog. */
-    BEGIN_CREATE_HOTKEYS(3);  /* Create 3 hotkeys. Size must be correct for allocating memory. */
+    BEGIN_CREATE_HOTKEYS(5);  /* Create 3 hotkeys. Size must be correct for allocating memory. */
     CREATE_HOTKEY("BFSGSimCom_Off", "BFSGSimCom - Disabled");
     CREATE_HOTKEY("BFSGSimCom_Man", "BFSGSimCom - Manual");
     CREATE_HOTKEY("BFSGSimCom_Aut", "BFSGSimCom - Automatic");
+	CREATE_HOTKEY("BFSGSimCom_Detail", "BFSGSimCom - Detailed Information On");
+	CREATE_HOTKEY("BFSGSimCom_NoDetail", "BFSGSimCom - Detailed Information Off");
     END_CREATE_HOTKEYS;
 
     /* The client will call ts3plugin_freeMemory to release all allocated memory */
@@ -1170,7 +1169,10 @@ int ts3plugin_onServerErrorEvent(uint64 serverConnectionHandlerID, const char* e
  */
 void ts3plugin_onMenuItemEvent(uint64 serverConnectionHandlerID, enum PluginMenuType type, int menuItemID, uint64 selectedItemID) {
     //    printf("PLUGIN: onMenuItemEvent: serverConnectionHandlerID=%llu, type=%d, menuItemID=%d, selectedItemID=%llu\n", (long long unsigned int)serverConnectionHandlerID, type, menuItemID, (long long unsigned int)selectedItemID);
-    switch (type) {
+
+	bool blInfoDetailed = cfg->getInfoDetailed();
+	
+	switch (type) {
     case PLUGIN_MENU_TYPE_GLOBAL:
         /* Global menu item was triggered. selectedItemID is unused and set to zero. */
         switch (menuItemID) {
@@ -1197,12 +1199,23 @@ void ts3plugin_onMenuItemEvent(uint64 serverConnectionHandlerID, enum PluginMenu
 		case MENU_ID_SIMCOM_DEBUG_OFF:
 			blExtendedLoggingEnabled = false;
 			break;
+		case MENU_ID_SIMCOM_INFO_DETAIL_ON:
+			blInfoDetailed = true;
+			cfg->setInfoDetailed(true);
+			break;
+		case MENU_ID_SIMCOM_INFO_DETAIL_OFF:
+			blInfoDetailed = false;
+			cfg->setInfoDetailed(false);
+			break;
 		default:
             break;
         }
 
 		ts3Functions.setPluginMenuEnabled(pluginID, MENU_ID_SIMCOM_DEBUG_ON, blExtendedLoggingEnabled ? 0 : 1);
 		ts3Functions.setPluginMenuEnabled(pluginID, MENU_ID_SIMCOM_DEBUG_OFF, blExtendedLoggingEnabled ? 1 : 0);
+
+		ts3Functions.setPluginMenuEnabled(pluginID, MENU_ID_SIMCOM_INFO_DETAIL_ON, blInfoDetailed ? 0 : 1);
+		ts3Functions.setPluginMenuEnabled(pluginID, MENU_ID_SIMCOM_INFO_DETAIL_OFF, blInfoDetailed ? 1 : 0);
 
         ts3Functions.requestServerVariables(ts3Functions.getCurrentServerConnectionHandlerID());
         break;
@@ -1229,6 +1242,18 @@ void ts3plugin_onHotkeyEvent(const char* keyword) {
     {
 		handleModeChange(Config::ConfigMode::CONFIG_AUTO);
     }
+	else if (strKeyword == "BFSGSimCom_Detail")
+	{
+		cfg->setInfoDetailed(true);
+		ts3Functions.setPluginMenuEnabled(pluginID, MENU_ID_SIMCOM_INFO_DETAIL_ON, 0);
+		ts3Functions.setPluginMenuEnabled(pluginID, MENU_ID_SIMCOM_INFO_DETAIL_OFF, 1);
+	}
+	else if (strKeyword == "BFSGSimCom_NoDetail")
+	{
+		cfg->setInfoDetailed(false);
+		ts3Functions.setPluginMenuEnabled(pluginID, MENU_ID_SIMCOM_INFO_DETAIL_ON, 1);
+		ts3Functions.setPluginMenuEnabled(pluginID, MENU_ID_SIMCOM_INFO_DETAIL_OFF, 0);
+	}
 
     ts3Functions.requestServerVariables(ts3Functions.getCurrentServerConnectionHandlerID());
 }
