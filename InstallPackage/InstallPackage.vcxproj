@@ -37,6 +37,18 @@
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Copying Airport Frequency Data</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)$(Platform)\$(Configuration)\%(Identity)</Outputs>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </AdditionalInputs>
+      <TreatOutputAsContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </TreatOutputAsContent>
+      <TreatOutputAsContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </TreatOutputAsContent>
     </CustomBuild>
     <CustomBuild Include="airports.csv">
       <FileType>Document</FileType>
@@ -60,6 +72,22 @@
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Copying Airport Data</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Copying Airport Data</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Copying Airport Data</Message>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</LinkObjects>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkObjects>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </AdditionalInputs>
+      <TreatOutputAsContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </TreatOutputAsContent>
+      <TreatOutputAsContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </TreatOutputAsContent>
     </CustomBuild>
     <CustomBuild Include="make_plugin.bat">
       <FileType>Document</FileType>
@@ -79,10 +107,14 @@
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Copying Plugin Build Script</Message>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)$(Platform)\$(Configuration)\BFSGSimCom.dll;$(SolutionDir)$(Platform)\$(Configuration)\SQLite.sql;%(AdditionalInputs)</AdditionalInputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)$(Platform)\$(Configuration)\BFSGSimCom.dll;$(SolutionDir)$(Platform)\$(Configuration)\SQLite.sql;%(AdditionalInputs)</AdditionalInputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)$(Platform)\$(Configuration)\BFSGSimCom.dll;$(SolutionDir)$(Platform)\$(Configuration)\SQLite.sql;%(AdditionalInputs)</AdditionalInputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)$(Platform)\$(Configuration)\BFSGSimCom.dll;$(SolutionDir)$(Platform)\$(Configuration)\SQLite.sql;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include="package32.ini">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
@@ -104,6 +136,14 @@
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkObjects>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include="package64.ini">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
@@ -125,6 +165,14 @@
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Copying TS3 Plugin package.ini</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Copying TS3 Plugin package.ini</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Copying TS3 Plugin package.ini</Message>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </AdditionalInputs>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
@@ -142,6 +190,20 @@
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Copying SQLite Script</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)$(Platform)\$(Configuration)\%(Identity)</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)$(Platform)\$(Configuration)\%(Identity)</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</LinkObjects>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkObjects>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </AdditionalInputs>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
     </CustomBuild>
   </ItemGroup>
   <PropertyGroup Label="Globals">
@@ -196,27 +258,31 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <TargetExt>.ts3_plugin</TargetExt>
-    <TargetName>BFSGSimCom64</TargetName>
+    <TargetName>BFSGSimCom_win64</TargetName>
     <ExtensionsToDeleteOnClean>*.db;*.sql;*.csv;$(ExtensionsToDeleteOnClean)</ExtensionsToDeleteOnClean>
+    <CustomBuildAfterTargets>Build</CustomBuildAfterTargets>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <TargetName>BFSGSimCom32</TargetName>
+    <TargetName>BFSGSimCom_win32</TargetName>
     <TargetExt>.ts3_plugin</TargetExt>
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\</IntDir>
     <ExtensionsToDeleteOnClean>*.db;*.sql;*.csv;$(ExtensionsToDeleteOnClean)</ExtensionsToDeleteOnClean>
+    <CustomBuildAfterTargets>Build</CustomBuildAfterTargets>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <TargetName>BFSGSimCom32</TargetName>
+    <TargetName>BFSGSimCom_win32</TargetName>
     <TargetExt>.ts3_plugin</TargetExt>
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\</IntDir>
     <ExtensionsToDeleteOnClean>*.db;*.sql;*.csv;$(ExtensionsToDeleteOnClean)</ExtensionsToDeleteOnClean>
+    <CustomBuildAfterTargets>Build</CustomBuildAfterTargets>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <TargetName>BFSGSimCom64</TargetName>
+    <TargetName>BFSGSimCom_win64</TargetName>
     <TargetExt>.ts3_plugin</TargetExt>
     <ExtensionsToDeleteOnClean>*.db;*.sql;*.csv;$(ExtensionsToDeleteOnClean)</ExtensionsToDeleteOnClean>
+    <CustomBuildAfterTargets>Build</CustomBuildAfterTargets>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -228,9 +294,24 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
-      <Command>"$(SolutionDir)$(Platform)\$(Configuration)\make_plugin.bat" "$(OutDir)\" BFSGSimCom win32</Command>
-      <Message>Building Install Package</Message>
+      <Command>
+      </Command>
+      <Message>
+      </Message>
     </PostBuildEvent>
+    <CustomBuildStep>
+      <Command>"$(SolutionDir)$(Platform)\$(Configuration)\make_plugin.bat" "$(OutDir)\" BFSGSimCom win32</Command>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Message>Building Install Package</Message>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Outputs>$(SolutionDir)$(Platform)\$(Configuration)\BFSGSimCom_win32.ts3_plugin</Outputs>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Inputs>$(SolutionDir)$(Platform)\$(Configuration)\BFSGSimCom.db;$(SolutionDir)$(Platform)\$(Configuration)\BFSGSimCom.dll;$(SolutionDir)$(Platform)\$(Configuration)\airports.csv;$(SolutionDir)$(Platform)\$(Configuration)\airport-frequencies.csv;$(SolutionDir)$(Platform)\$(Configuration)\SQLite.sql;$(SolutionDir)$(Platform)\$(Configuration)\make_plugin.bat;$(SolutionDir)$(Platform)\$(Configuration)\sqlite3.exe;%(AdditionalInputs)</Inputs>
+      <TreatOutputAsContent>true</TreatOutputAsContent>
+    </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -242,9 +323,18 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
+      <Command>
+      </Command>
+      <Message>
+      </Message>
+    </PostBuildEvent>
+    <CustomBuildStep>
       <Command>"$(SolutionDir)$(Platform)\$(Configuration)\make_plugin.bat" "$(OutDir)\" BFSGSimCom win64</Command>
       <Message>Building Install Package</Message>
-    </PostBuildEvent>
+      <Outputs>$(SolutionDir)$(Platform)\$(Configuration)\BFSGSimCom_win64.ts3_plugin</Outputs>
+      <Inputs>$(SolutionDir)$(Platform)\$(Configuration)\BFSGSimCom.dll;$(SolutionDir)$(Platform)\$(Configuration)\SQLite.sql;$(SolutionDir)$(Platform)\$(Configuration)\make_plugin.bat;$(SolutionDir)$(Platform)\$(Configuration)\sqlite3.exe;%(AdditionalInputs)</Inputs>
+      <TreatOutputAsContent>true</TreatOutputAsContent>
+    </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -260,9 +350,18 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
     <PostBuildEvent>
+      <Command>
+      </Command>
+      <Message>
+      </Message>
+    </PostBuildEvent>
+    <CustomBuildStep>
       <Command>"$(SolutionDir)$(Platform)\$(Configuration)\make_plugin.bat" "$(OutDir)\" BFSGSimCom win32</Command>
       <Message>Building Install Package</Message>
-    </PostBuildEvent>
+      <Outputs>$(SolutionDir)$(Platform)\$(Configuration)\BFSGSimCom_win32.ts3_plugin</Outputs>
+      <Inputs>$(SolutionDir)$(Platform)\$(Configuration)\BFSGSimCom.db;$(SolutionDir)$(Platform)\$(Configuration)\BFSGSimCom.dll;$(SolutionDir)$(Platform)\$(Configuration)\airports.csv;$(SolutionDir)$(Platform)\$(Configuration)\airport-frequencies.csv;$(SolutionDir)$(Platform)\$(Configuration)\SQLite.sql;$(SolutionDir)$(Platform)\$(Configuration)\make_plugin.bat;$(SolutionDir)$(Platform)\$(Configuration)\sqlite3.exe;%(AdditionalInputs)</Inputs>
+      <TreatOutputAsContent>true</TreatOutputAsContent>
+    </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -278,9 +377,18 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
     <PostBuildEvent>
+      <Command>
+      </Command>
+      <Message>
+      </Message>
+    </PostBuildEvent>
+    <CustomBuildStep>
       <Command>"$(SolutionDir)$(Platform)\$(Configuration)\make_plugin.bat" "$(OutDir)\" BFSGSimCom win64</Command>
       <Message>Building Install Package</Message>
-    </PostBuildEvent>
+      <Outputs>$(SolutionDir)$(Platform)\$(Configuration)\BFSGSimCom_win64.ts3_plugin</Outputs>
+      <Inputs>$(SolutionDir)$(Platform)\$(Configuration)\BFSGSimCom.dll;$(SolutionDir)$(Platform)\$(Configuration)\SQLite.sql;$(SolutionDir)$(Platform)\$(Configuration)\make_plugin.bat;$(SolutionDir)$(Platform)\$(Configuration)\sqlite3.exe;%(AdditionalInputs)</Inputs>
+      <TreatOutputAsContent>true</TreatOutputAsContent>
+    </CustomBuildStep>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

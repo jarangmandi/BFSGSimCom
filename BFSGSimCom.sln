@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.23107.0
+# Visual Studio 15
+VisualStudioVersion = 15.0.27703.2000
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BFSGSimCom", "BFSGSimCom\BFSGSimCom.vcxproj", "{757728E5-6C32-4DB9-9E89-9EF98A7C6436}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -81,5 +81,8 @@ Global
 		{BB84A669-9AA7-4787-92C7-CAEC86EB8A0B} = {C534B212-E1D8-490F-B35B-D707E05FD846}
 		{A37F8652-9733-426A-9BB4-A12CE7A0F3FC} = {C534B212-E1D8-490F-B35B-D707E05FD846}
 		{05BF8054-C14E-42DB-9721-DF87C208BF40} = {EE17625A-7406-42A4-B058-2A64015A96BD}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {77834CD9-0338-4062-BC5C-30DBB05F9075}
 	EndGlobalSection
 EndGlobal

@@ -174,12 +174,13 @@ Config::Config(TS3Channels& tch)
     bool blD;
     bool blM;
     bool blA;
-	QSettings settings;
 
 	chList = &tch;
 
     QSettings::setDefaultFormat(QSettings::IniFormat);
-    setupUi(this);
+	QSettings settings;
+
+	setupUi(this);
 
 	// Restore the detailed information checkbox
 	blInfoDetailed = settings.value("info/detailed").toBool();

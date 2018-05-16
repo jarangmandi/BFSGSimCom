@@ -19,6 +19,9 @@
     <Filter Include="x64">
       <UniqueIdentifier>{c34fd1aa-6985-4fa8-850b-ca87a46e6aa1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Generated File">
+      <UniqueIdentifier>{4098bbeb-e8f9-4f4b-ac94-3f6d086ea420}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="package32.ini">
@@ -27,7 +30,6 @@
     <CustomBuild Include="make_plugin.bat">
       <Filter>Source Files</Filter>
     </CustomBuild>
-    <CustomBuild Include="airport-frequencies.csv" />
     <CustomBuild Include="airports.csv" />
     <CustomBuild Include="package64.ini">
       <Filter>x64</Filter>
@@ -35,5 +37,6 @@
     <CustomBuild Include="SQLite.sql">
       <Filter>Source Files</Filter>
     </CustomBuild>
+    <CustomBuild Include="airport-frequencies.csv" />
   </ItemGroup>
 </Project>
