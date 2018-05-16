@@ -53,6 +53,8 @@ TS3Channels* ts3Channels = NULL;
 FSUIPCWrapper::SimComData simComData;
 Config* cfg;
 
+bool initialising = true;
+
 bool blConnectedToTeamspeak = false;
 bool blExtendedLoggingEnabled = false;
 anyID myTS3ID;
@@ -522,10 +524,10 @@ int ts3plugin_init() {
 	ts3Channels = new TS3Channels();
 
 	// Initialise the plugin configuration dialog
-    cfg = new Config(*ts3Channels);
+	cfg = new Config(*ts3Channels);
 	lastMode = cfg->getMode();
 
-    // Load channel data from the server connection. This needs to be done before
+	// Load channel data from the server connection. This needs to be done before
 	// we start looking at tuned channels once the simulator connection is started.
     loadChannels(serverConnectionHandlerID);
 
@@ -541,6 +543,9 @@ int ts3plugin_init() {
 			retValue = 1;
 		}
     }
+
+	// Update the information display on load
+	ts3Functions.requestInfoUpdate(serverConnectionHandlerID, infoDataType, infoDataId);
 
     return retValue;  /* 0 = success, 1 = failure, -2 = failure but client will not show a "failed to load" warning */
 
@@ -700,18 +705,40 @@ void ts3plugin_infoData(uint64 serverConnectionHandlerID, uint64 id, enum Plugin
                 strMode += strCRed + "]";
             }
 
+			// Only build the "root" information when initialisation is complete, when
+			// we want advanced info and the plugin isn't disabled.
+			if (mode != Config::CONFIG_DISABLED && blAdvancedInfo && !initialising) strMode += " with root \"" + cfg->getRootChannelName() + "\"";
+
 			ostr << strMode << "[/color]";
 
+			// END OF TOP LEVEL MODE INFORMATION
+
+			// START OF OPERATIONAL INFORMATION
+
+			// Only required if the state is not Disabled
 			if (mode != Config::CONFIG_DISABLED)
             {
+				// Advanced info includes a detailed description of how the plugin will behave
+				// as a result of the selections made in the Configuration dialog
 				if (blAdvancedInfo)
 				{
-					ostr << ", [color=" << ((cfg->getUntuned()) ? strCGreen + "]" : strCRed + "]not ") << "moving with unrecognised freq[/color]";
+					string strUntuned = "";
+					bool blUntuned = cfg->getUntuned();
+
+					if (blUntuned & !initialising)
+					{
+						strUntuned = "to \"";
+						strUntuned += cfg->getUntunedChannelName();
+						strUntuned += "\" ";
+					}
+
+					ostr << ", [color=" << ((blUntuned) ? strCGreen + "]" : strCRed + "]not ") << "moving " << strUntuned << "with unmatched freq[/color]";
 					ostr << ", [color=" << ((cfg->getConsiderRange()) ? strCGreen + "]" : strCRed + "]not ") << "considering station range[/color]";
-					if (cfg->getConsiderRange() && cfg->getUntuned())
-						ostr << ", [color=" << ((cfg->getOutOfRangeUntuned()) ? strCGreen + "]" : strCRed + "]not ") << "treating out of range station as untuned[/color]";
+					if (cfg->getConsiderRange() && blUntuned)
+						ostr << ", [color=" << ((cfg->getOutOfRangeUntuned()) ? strCGreen + "]" : strCRed + "]not ") << "treating out of range station as unmatched[/color]";
 					ostr << ".";
 
+					// Advanced mode also tells about the cockpit radio selection
 					switch (simComData.selectedCom)
 					{
 					case FSUIPCWrapper::Com1:
@@ -724,13 +751,15 @@ void ts3plugin_infoData(uint64 serverConnectionHandlerID, uint64 id, enum Plugin
 						strCom = "No";
 						break;
 					default:
+						// Required because some aircraft allow multiple Com selections!
 						strCom = "Unrecognised";
 						break;
 					}
 
-					ostr << setprecision(2) << "\n\n[b]" << strCom << "[/b] radio selected.\n";
+					ostr << "\n\n[b]" << strCom << "[/b] radio selected.\n";
 				}
 
+				// Get the range to the tuned station if it's there to be got.
 				if (targetChannel.ch != TS3Channels::CHANNEL_ID_NOT_FOUND && targetChannel.ch != TS3Channels::CHANNEL_NOT_CHILD_OF_ROOT)
 				{
 					strStation = targetChannel.id.c_str();
@@ -741,9 +770,11 @@ void ts3plugin_infoData(uint64 serverConnectionHandlerID, uint64 id, enum Plugin
 					}
 				}
 
+				// Colour of information depends on whether it's selected or not.
 				string strCom1Col = (simComData.selectedCom == FSUIPCWrapper::Com1) ? strCGreen : strCRed;
 				string strCom2Col = (simComData.selectedCom == FSUIPCWrapper::Com2) ? strCGreen : strCRed;
 
+				// Com1 Information - frequency, tuned station and range
                 dCom1 = 0.01 * simComData.iCom1Freq;
 				ostr << "\n[b][color=" << strCom1Col << "]Com 1 Freq: " << std::setprecision(2) << dCom1;
 				if (simComData.selectedCom == FSUIPCWrapper::Com1 && strncmp(strStation, "", 10))
@@ -754,6 +785,7 @@ void ts3plugin_infoData(uint64 serverConnectionHandlerID, uint64 id, enum Plugin
 				}
 				ostr << "[/color][/b]";
 
+				// Com2 Information - frequency, tuned station and range
 				dCom2 = 0.01 * simComData.iCom2Freq;
 				ostr << "\n[b][color=" << strCom2Col << "]Com 2 Freq: " << std::setprecision(2) << dCom2;
 				if (simComData.selectedCom == FSUIPCWrapper::Com2 && strncmp(strStation, "", 10))
@@ -764,6 +796,7 @@ void ts3plugin_infoData(uint64 serverConnectionHandlerID, uint64 id, enum Plugin
 				}
 				ostr << "[/color][/b]";
 
+				// Standby radio frequencies only in the advanced info data
 				if (blAdvancedInfo)
 				{
 					dCom1s = 0.01 * simComData.iCom1Sby;
@@ -1005,10 +1038,22 @@ void ts3plugin_onUpdateChannelEvent(uint64 serverConnectionHandlerID, uint64 cha
 {
 	pair<uint64, uint64> sc(serverConnectionHandlerID, channelID);
 
+	// if we're expecting the channel update (we should be!)
 	if (channelUpdates.find(sc) != channelUpdates.end())
 	{
+		// Remove it from the list of those we're waiting for and load it up.
 		channelUpdates.erase(sc);
 		loadChannel(serverConnectionHandlerID, channelID);
+
+		// This code handles the initial load and requests display of the information
+		// pane when it's complete... Need to wait until all channel updates have
+		// been received to populate the channel list for information display
+		if (initialising && channelUpdates.empty())
+		{
+			initialising = false;
+			cfg->populateChannelList();
+			ts3Functions.requestServerVariables(serverConnectionHandlerID);
+		}
 	}
 }
 

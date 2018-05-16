@@ -109,17 +109,21 @@ void Config::addChannelList(QTreeWidget* parent, vector<TS3Channels::ChannelInfo
     }
 }
 
+void Config::populateChannelList(void)
+{
+	vector<TS3Channels::ChannelInfo> channels;
+
+	// Populate the root channel view...
+	// As we do this, the untuned channel view should be automatically populated!
+	channels = chList->getChannelList();
+	addChannelList(treeParentChannel, channels, iRoot);
+	treeParentChannel->resizeColumnToContents(0);
+	treeParentChannel->resizeColumnToContents(1);
+}
+
 int Config::exec(void)
 {
-    vector<TS3Channels::ChannelInfo> channels;
-
-    // Populate the root channel view...
-    // As we do this, the untuned channel view should be automatically populated!
-    channels = chList->getChannelList();
-    addChannelList(treeParentChannel, channels, iRoot);
-    treeParentChannel->resizeColumnToContents(0);
-    treeParentChannel->resizeColumnToContents(1);
-
+	populateChannelList();
     return QDialog::exec();
 }
 
@@ -170,19 +174,12 @@ Config::Config(TS3Channels& tch)
     bool blD;
     bool blM;
     bool blA;
+	QSettings settings;
 
-    //QCoreApplication::setOrganizationName("BFSG");
-    //QCoreApplication::setApplicationName("BFSGSimCom");
+	chList = &tch;
+
     QSettings::setDefaultFormat(QSettings::IniFormat);
-
     setupUi(this);
-
-    QSettings settings;
-    
-
-    chList = &tch;
-
-    vector<TS3Channels::ChannelInfo> channels;
 
 	// Restore the detailed information checkbox
 	blInfoDetailed = settings.value("info/detailed").toBool();
@@ -225,9 +222,6 @@ Config::Config(TS3Channels& tch)
     if (blM) mode = CONFIG_MANUAL;
     else if (blA) mode = CONFIG_AUTO;
     modeChanged();
-
-    // No longer initialising...
-    initialising = false;
 }
 
 Config::~Config()
@@ -309,9 +303,10 @@ void Config::reject()
 }
 
 // Returns the ID (from the second column) of the selected channel
-uint64 Config::getSelectedChannelId(QTreeWidget* parent)
+tuple<uint64, string> Config::getSelectedChannelId(QTreeWidget* parent)
 {
-	uint64 iChannel = 0; // TS3Channels::CHANNEL_ID_NOT_FOUND;
+	uint64 iChannel = 0;
+	string strChannel = "";
 
     // Get the list of seleted items (there should be 0 or 1).
     QList<QTreeWidgetItem*> t = parent->selectedItems();
@@ -319,11 +314,14 @@ uint64 Config::getSelectedChannelId(QTreeWidget* parent)
     {
         // Get the item, then the text, then an integer.
         QTreeWidgetItem* qtwi = t.at(0);
-        QString channel = qtwi->text(1);
-        iChannel = channel.toLongLong();
+        QString channelID = qtwi->text(1);
+		QString channelName = qtwi->text(0);
+
+        iChannel = channelID.toLongLong();
+		strChannel = ::string(channelName.toUtf8().constData());
     }
 
-    return iChannel;
+    return ::make_tuple(iChannel, strChannel);
 }
 
 // Invoked when a new channel is selected in the root channel tree.
@@ -332,7 +330,8 @@ void Config::newRoot()
     vector<TS3Channels::ChannelInfo> channels;
 
     // Get the root channel (which is the selected channel in the real root widget.
-    iRoot = getSelectedChannelId(treeParentChannel);
+	tuple<uint64, string> chInfo = getSelectedChannelId(treeParentChannel);
+    ::tie(iRoot, strRoot) = chInfo;
 
     // If we've selected a new channel
     if (iRoot != TS3Channels::CHANNEL_ID_NOT_FOUND)
@@ -347,7 +346,8 @@ void Config::newRoot()
 // Invoked when the selected "untuned" channel is changed.
 void Config::newUntuned()
 {
-    iUntuned = getSelectedChannelId(treeUntunedChannel);
+	tuple<uint64, string> chInfo = getSelectedChannelId(treeUntunedChannel);
+	::tie(iUntuned, strUntuned) = chInfo;
 }
 
 // Forces a resize of the column(s) that make up the tree so that everything is visible.
