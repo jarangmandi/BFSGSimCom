@@ -45,9 +45,17 @@ void FSUIPCWrapper::workerThread(void)
     int64_t simLongitude;
 
     int counter = 0;
+
+	bool firstPass = true;
+
+	bool firstDisconnectedPass = true;
+	bool firstConnectedPass = true;
     
     while (cRun)
     {
+		DWORD dwResult;
+		checkConnection(&dwResult);
+
         FSUIPC_Read(0x034E, 2, &simCom1);
         FSUIPC_Read(0x3118, 2, &simCom2);
         FSUIPC_Read(0x311A, 2, &simCom1s);
@@ -123,14 +131,37 @@ void FSUIPCWrapper::workerThread(void)
 				counter = 0;
 			}
 
-            if (blComChanged || blPosChange || blOtherChanged)
+            if (blComChanged || blPosChange || blOtherChanged || firstConnectedPass )
             {
                 if (callback != NULL)
                 {
                     (*callback)(getSimComData(blComChanged, blPosChange, blOtherChanged));
                 }
+
+				firstConnectedPass = false;
             }
+
+			firstDisconnectedPass = true;
+
         }
+		else
+		{
+			if (firstDisconnectedPass)
+			{
+				if (callback != NULL)
+				{
+					(*callback)(getSimComData(false, false, false));
+				}
+
+				firstDisconnectedPass = false;
+			}
+
+			::FSUIPC_Close();
+			cFSUIPCConnected = false;
+
+			firstConnectedPass = true;
+
+		}
 
 		// Fetch data from the simulator every 10th of a second
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -151,7 +182,7 @@ FSUIPCWrapper::SimComData FSUIPCWrapper::getSimComData(bool blComChanged, bool b
     // This is a kluge because XPUIPC doesn't report the correct channel and the config file that comes with it doesn't seem to work as advertised.
     // Look for a FSUIPC_Version with an most significant half word of 0x50000000 - who knows what will happen when FSUIPC catches up
     if ((FSUIPC_Version & 0xffff0000) == 0x50000000)
-        simcomdata.selectedCom = ComRadio(((cSelectedCom & 0x40) ? Com1 : None) + ((cSelectedCom & 0x80) ? Com2 : None));
+        simcomdata.selectedCom = ComRadio(((cSelectedCom & 0x80) ? None : Com1) + ((cSelectedCom & 0x40) ? None : Com2));
     else
         simcomdata.selectedCom = ComRadio(((cSelectedCom & 0x80) ? Com1 : None) + ((cSelectedCom & 0x40) ? Com2 : None));
 
@@ -205,8 +236,8 @@ BOOL FSUIPCWrapper::FSUIPC_Read(DWORD dwOffset, DWORD dwSize, void* pDest)
     BOOL retValue = 0;
     DWORD dwResult = FSUIPC_ERR_OK;
 
-    if (checkConnection(&dwResult))
-    {
+//    if (checkConnection(&dwResult))
+//    {
         try
         {
             retValue = ::FSUIPC_Read(dwOffset, dwSize, pDest, &dwResult);
@@ -215,7 +246,7 @@ BOOL FSUIPCWrapper::FSUIPC_Read(DWORD dwOffset, DWORD dwSize, void* pDest)
         {
             retValue = FALSE;
         }
-    }
+//    }
 
     cFSUIPCConnected = (dwResult == FSUIPC_ERR_OK);
 
@@ -227,8 +258,8 @@ BOOL FSUIPCWrapper::FSUIPC_Write(DWORD dwOffset, DWORD dwSize, void* pSrc)
     BOOL retValue = 0;
     DWORD dwResult;
 
-    if (checkConnection(&dwResult))
-    {
+//    if (checkConnection(&dwResult))
+//    {
         try
         {
             retValue = ::FSUIPC_Write(dwOffset, dwSize, pSrc, &dwResult);
@@ -237,7 +268,7 @@ BOOL FSUIPCWrapper::FSUIPC_Write(DWORD dwOffset, DWORD dwSize, void* pSrc)
         {
             retValue = FALSE;
         }
-    }
+//    }
 
     cFSUIPCConnected = (dwResult != FSUIPC_ERR_NOTOPEN);
 
@@ -249,8 +280,8 @@ BOOL FSUIPCWrapper::FSUIPC_Process()
     BOOL retValue = 0;
     DWORD dwResult = FSUIPC_ERR_NOTOPEN;
 
-    if (checkConnection(&dwResult))
-    {
+//    if (checkConnection(&dwResult))
+//    {
         try
         {
             retValue = ::FSUIPC_Process(&dwResult);
@@ -259,7 +290,7 @@ BOOL FSUIPCWrapper::FSUIPC_Process()
         {
             retValue = FALSE;
         }
-    }
+//    }
 
     cFSUIPCConnected = (dwResult == FSUIPC_ERR_OK);
 

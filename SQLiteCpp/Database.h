@@ -12,13 +12,18 @@
 
 #include <SQLiteCpp/Column.h>
 
-#include <string>
+#include <string.h>
 
 // Forward declarations to avoid inclusion of <sqlite3.h> in a header
 struct sqlite3;
 struct sqlite3_context;
+
+#ifndef SQLITE_USE_LEGACY_STRUCT // Since SQLITE 3.19 (used by default since SQLiteCpp 2.1.0)
+typedef struct sqlite3_value sqlite3_value;
+#else // Before SQLite 3.19 (legacy struct forward declaration can be activated with CMake SQLITECPP_LEGACY_STRUCT var)
 struct Mem;
 typedef struct Mem sqlite3_value;
+#endif
 
 
 namespace SQLite
@@ -122,7 +127,7 @@ public:
      *
      * @warning assert in case of error
      */
-    virtual ~Database() noexcept; // nothrow
+    ~Database();
 
     /**
      * @brief Set a busy handler that sleeps for a specified amount of time when a table is locked.
@@ -137,7 +142,7 @@ public:
      *
      * @throw SQLite::Exception in case of error
      */
-    void setBusyTimeout(const int aBusyTimeoutMs) noexcept; // nothrow
+    void setBusyTimeout(const int aBusyTimeoutMs);
 
     /**
      * @brief Shortcut to execute one or multiple statements without results.
@@ -368,6 +373,51 @@ public:
      * @throw SQLite::Exception in case of error
      */
     void loadExtension(const char* apExtensionName, const char* apEntryPointName);
+
+    /**
+    * @brief Set the key for the current sqlite database instance.
+    *
+    *  This is the equivalent of the sqlite3_key call and should thus be called 
+    *  directly after opening the database. 
+    *  Open encrypted database -> call db.key("secret") -> database ready
+    *
+    * @param[in] aKey   Key to decode/encode the database
+    *
+    * @throw SQLite::Exception in case of error
+    */
+    void key(const std::string& aKey) const;
+
+    /**
+    * @brief Reset the key for the current sqlite database instance.
+    *
+    *  This is the equivalent of the sqlite3_rekey call and should thus be called
+    *  after the database has been opened with a valid key. To decrypt a
+    *  database, call this method with an empty string.
+    *  Open normal database -> call db.rekey("secret") -> encrypted database, database ready
+    *  Open encrypted database -> call db.key("secret") -> call db.rekey("newsecret") -> change key, database ready
+    *  Open encrypted database -> call db.key("secret") -> call db.rekey("") -> decrypted database, database ready
+    *
+    * @param[in] aNewKey   New key to encode the database
+    *
+    * @throw SQLite::Exception in case of error
+    */
+    void rekey(const std::string& aNewKey) const;
+
+    /**
+    * @brief Test if a file contains an unencrypted database.
+    *
+    *  This is a simple test that reads the first bytes of a database file and 
+    *  compares them to the standard header for unencrypted databases. If the 
+    *  header does not match the standard string, we assume that we have an 
+    *  encrypted file. 
+    *
+    * @param[in] aFilename path/uri to a file
+    *
+    * @return true if the database has the standard header.
+    *
+    * @throw SQLite::Exception in case of error
+    */
+    static bool isUnencrypted(const std::string& aFilename);
 
 private:
     /// @{ Database must be non-copyable
