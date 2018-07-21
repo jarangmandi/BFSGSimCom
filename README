@@ -7,6 +7,27 @@ Release History
 v0.10.0 - 2017-04-28
 --------------------
 
+Fixes
+
+#27 - Information window doesn't update on sim disconnect
+#29 - Plugin overwrites TS program name in "Help/About"
+
+
+Enhancements
+
+#3  - Information window - additional information and colour added to BFSGSimCom data in TS3 window
+#28 - Additional station types required - OPS and AFIS stations now recognised (with 50nm distance).
+#30 - Updated SQLite - to version 3.23.1
+#31 - Updated Airport Frequency Data - to state as at 20180721
+#32 - Updated SQLiteCpp library - to version 2.2.0
+#33 - Add "advanced" option to BFSGSimCom information display in TS window
+#34 - Frequency database content - unrecognised station types now removed from database to reduce install size
+#36 - Add display of "Root" channel and "Untuned" channed to BFSGSimCom information display in TS3 window.
+
+
+v0.10.0 - 2017-04-28
+--------------------
+
 Enhancements
 
 #20 - Multiple frequencies for one TeamSpeak Channel.
