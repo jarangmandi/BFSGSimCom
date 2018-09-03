@@ -4,7 +4,15 @@ A TS3 plugin that supports changing channels through tuning of flight simulator 
 Release History
 ===============
 
-v0.10.0 - 2017-04-28
+v0.11.1 - 2018-09-03
+--------------------
+
+Fixes
+
+#38 - Plugin no longer retains settings between TS3 invocations.
+
+
+v0.11.0 - 2018-07-21
 --------------------
 
 Fixes
