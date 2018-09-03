@@ -174,11 +174,14 @@ Config::Config(TS3Channels& tch)
     bool blD;
     bool blM;
     bool blA;
+
+	// The set default format line needs to be first because it defines the behaviour of the
+	// QSettings constructor...
+	QSettings::setDefaultFormat(QSettings::IniFormat);
 	QSettings settings;
 
 	chList = &tch;
 
-    QSettings::setDefaultFormat(QSettings::IniFormat);
     setupUi(this);
 
 	// Restore the detailed information checkbox
