@@ -29,19 +29,28 @@ public:
         bool blComChanged;
         bool blPosChanged;
 		bool blOtherChanged;
+		bool bl833Capable;
     };
 
 private:
     static bool cFSUIPCConnected;
     static bool cRun;
-    WORD cCom1Freq;
-    WORD cCom1Sby;
-    WORD cCom2Freq;
-    WORD cCom2Sby;
+
+	bool simIs833Capable;
+	bool simIsXPlane;
+
+    DWORD cCom1Freq;
+    DWORD cCom1Sby;
+    DWORD cCom2Freq;
+    DWORD cCom2Sby;
     BYTE cSelectedCom;
     WORD cWoW;
 	DWORD cLatitude;
 	DWORD cLongitude;
+	DWORD cCom1Freq833;
+	DWORD cCom1Sby833;
+	DWORD cCom2Freq833;
+	DWORD cCom2Sby833;
 	double cLat;
 	double cLon;
 

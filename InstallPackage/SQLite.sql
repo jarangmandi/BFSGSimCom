@@ -6,8 +6,7 @@ drop table if exists airports;
 .import airports.csv t_airports
 .import airport-frequencies.csv t_airportfrequencies
 
-create table airportfrequencies as select cast(id as bigint) as id, cast(airport_ref as bigint) as airport_ref, type, cast(frequency_mhz * 100 as int) as frequency from t_airportfrequencies;
-delete from airportfrequencies where type not in ('GND','CLD','RCO','CTAF','TWR','RDO','ATF','AWOS','AFIS','ATIS','APP','ARR','DEP','CNTR');
+create table airportfrequencies as select cast(id as bigint) as id, cast(airport_ref as bigint) as airport_ref, type, cast(frequency_mhz * 1000 as int) as frequency from t_airportfrequencies;
 delete from airportfrequencies where type not in ('GND','CLD','RCO','CTAF','TWR','RDO','ATF','AWOS','AFIS','ATIS','APP','ARR','DEP','CNTR');
 create index iairportfrequencies_airportref on airportfrequencies(airport_ref);
 

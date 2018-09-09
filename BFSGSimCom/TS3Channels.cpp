@@ -58,6 +58,7 @@ int TS3Channels::initDatabase()
 	static const string aInitDatabase = \
 		"DROP TABLE IF EXISTS channels;" \
 		"DROP TABLE IF EXISTS closure;" \
+		"DROP TABLE IF EXISTS channelFrequency;" \
 		"CREATE TABLE IF NOT EXISTS channels(" \
 		"   channelId UNSIGNED BIG INT PRIMARY KEY NOT NULL, "  \
 		"   latitude DOUBLE, " \
@@ -79,7 +80,8 @@ int TS3Channels::initDatabase()
 		"create table if not exists channelFrequency(" \
 		"   channel UNSIGNED BIG INT NOT NULL," \
 		"   frequency INT," \
-		"   PRIMARY KEY (channel, frequency)," \
+		"   freq833 INT," \
+		"   PRIMARY KEY (channel, frequency, freq833)," \
 		"   FOREIGN KEY (channel) REFERENCES channels (channelId)"
 		");" \
 		"create unique index if not exists closureprntchld on closure(parent, child, depth);" \
@@ -108,77 +110,86 @@ int TS3Channels::initDatabase()
 }
 
 
-uint16_t TS3Channels::getFrequencyFromString(string str1)
-{
-    const vector<string> strs = { str1 };
-    return getFrequencyFromStrings(strs);
-}
-
-
-uint16_t TS3Channels::getFrequencyFromStrings(string str1, string str2, string str3)
-{
-    const vector<string> strs = { str1, str2, str3 };
-    return getFrequencyFromStrings(strs);
-}
-
-
-uint16_t TS3Channels::getFrequencyFromStrings(const vector<string> &strs)
-{
-    // A valid frequency is three digits (of which the first is a "1", and the second is a "1", a "2" or a "3"), a decimal point,
-    // and then two more digits, the last of which is a "0", a "2", a "5" or a "7".
-    static regex r("1[123]\\d\\.\\d[0257]");
-
-    smatch matchedFrequency;
-    uint16_t frequency = 0;
-
-    for (string str : strs)
-    {
-        // Look for a frequency in the string we were passed.
-        if (std::regex_search(str, matchedFrequency, r)) {
-            string str = matchedFrequency.str();
-            frequency = uint16_t(100 * std::stod(matchedFrequency.str()) + 0.5);
-            break;
-        }
-    }
-
-    return frequency;
-}
-
-vector<uint16_t> TS3Channels::getFrequenciesFromString(string str1)
+vector<tuple<uint32_t, bool>> TS3Channels::getFrequenciesFromString(string str1)
 {
 	const vector<string> strs = { str1 };
 	return getFrequenciesFromStrings(strs);
 }
 
 
-vector<uint16_t> TS3Channels::getFrequenciesFromStrings(string str1, string str2, string str3)
+vector<tuple<uint32_t, bool>> TS3Channels::getFrequenciesFromStrings(string str1, string str2, string str3)
 {
 	const vector<string> strs = { str1, str2, str3 };
 	return getFrequenciesFromStrings(strs);
 }
 
 
-vector<uint16_t> TS3Channels::getFrequenciesFromStrings(const vector<string> &strs)
+vector<tuple<uint32_t, bool>> TS3Channels::getFrequenciesFromStrings(const vector<string> &strs)
 {
-	// A valid frequency is three digits (of which the first is a "1", and the second is a "1", a "2" or a "3"), a decimal point,
-	// and then two more digits, the last of which is a "0", a "2", a "5" or a "7".
-	static regex r("1[123]\\d\\.\\d[0257]");
+	// A valid frequency is quite complicated!.
+	// This first one also matches nav frequencies for when ATIS is transmitted on them. Future enhancement!
+	//static regex r("(1((?:(?:(?:0[89])|(?:1[0-7]))\\.[0-9][05]?0?)|(?:(?:1[89]|2[0-9]|3[0-6])\\.(?:[0-9](?:(?:(?:(?:0|1|3|4|5|6|8|9)0)|(?:(?:0|1|2|3|5|6|7|8)5)|[0257]))))))\\s*");
+	static regex r("(1(?:(?:(?:1[89]|2[0-9]|3[0-6])\\.(?:[0-9](?:(?:((?:(?:0|1|3|4|5|6|8|9)0)|(?:(?:0|1|2|3|5|6|7|8)5))|([0257])))))))\\s*");
 
 	smatch matchedFrequency;
-	vector<uint16_t> frequency;
+	vector<tuple<uint32_t, bool>> frequency;
 
+	// Intermediate lists of discovered frequencies
+	vector<uint32_t> freq25;
+	vector<uint32_t> freq25or833;
+	vector<uint32_t> freq833;
+	
 	//Iterating through each string in the vector we were sent.
 	for (string str : strs)
 	{
 		// Look for all frequencies in the string.
 		while (std::regex_search(str, matchedFrequency, r)) {
-			frequency.push_back( uint16_t(100 * std::stod(matchedFrequency.str()) + 0.5) );
+
+			string freq_str = matchedFrequency[1].str();
+			uint32_t freq = uint32_t(1000 * std::stod(freq_str) + 0.5);
+
+			// Categorise the frequency we found...
+			// If there are only two DP, then it's 25 only = for now.
+			if (matchedFrequency[3].str().length() > 0)
+			{
+				// If the last digit is a 2 or a 7, then it should be 25 or 75 really.
+				if (matchedFrequency[3].str() == "2" || matchedFrequency[3].str() == "7") freq += 5;
+				freq25.push_back(freq);
+			}
+			// If modulo 25 leaves a remainder, then it has to be a spec for an 833 frequency
+			else if (freq % 25)
+			{
+				freq833.push_back(freq);
+			}
+			// Otherwise, it could be a spec for either...
+			else
+			{
+				freq25or833.push_back(freq);
+			}
+
+			// Recover the unmatched portion of the string and do it again.
 			str = matchedFrequency.suffix().str();
 		}
 
+		// The frequencies in the 25 list are always good for 25 only sims
+		// They're also good for 833 capable sims if there are no either or 833 only frequencies
+		for (uint32_t f : freq25) frequency.push_back(::make_tuple(f, false));
+		if (freq25or833.size()==0 && freq833.size()==0) for (uint32_t f : freq25) frequency.push_back(::make_tuple(f, true));
+
+		// The frequencies in the either list are always good for 833 capable sims.
+		// They're also good for 25 only sims if there are no 25 only frequencies.
+		for (uint32_t f : freq25or833) frequency.push_back(::make_tuple(f, true));
+		if (freq25.size()==0) for (uint32_t f : freq25or833) frequency.push_back(::make_tuple(f, false));
+
+		// The frequencies in the 833 list are only any use for 833 capable sims.
+		for (uint32_t f : freq833) frequency.push_back(::make_tuple(f, true));
+
 		// If we found frequencies in the string we've just looked at then
 		// don't look at any more.
-		if (frequency.size() > 0) break;
+		if (frequency.size() > 0)
+		{
+			break;
+		}
 	}
 
 	return frequency;
@@ -256,14 +267,14 @@ tuple<double, double> TS3Channels::getLatLonFromStrings(const vector<string>& st
     return retVal;
 }
 
-string TS3Channels::concatFreqs(const vector<uint16_t>& freqs)
+string TS3Channels::concatFreqs(const vector<tuple<uint32_t, bool>>& freqs)
 {
 	stringstream retValue;
 
-	for (uint16_t freq : freqs)
+	for (tuple<uint32_t, bool> freq : freqs)
 	{
 		if (retValue.tellp() > 0) retValue << ", ";
-		retValue << freq;
+		retValue << get<0>(freq) << "/" << get<1>(freq);
 	}
 
 	return retValue.str();
@@ -273,9 +284,9 @@ string TS3Channels::concatFreqs(const vector<uint16_t>& freqs)
 
 // Define queries here - they get resolved at compile time...
 const string TS3Channels::aAddInsertChannelFrequency = \
-"insert into channelFrequency(channel, frequency)" \
+"insert into channelFrequency(channel, frequency, freq833)" \
 "values" \
-"(:channel, :frequency)" \
+"(:channel, :frequency, :freq833)" \
 ";" \
 "";
 
@@ -312,7 +323,7 @@ uint16_t TS3Channels::addOrUpdateChannel(string& strC, string cName, string cTop
     bool blLatLonFromDb = false;
 
     string ident = "";
-    vector<uint16_t> frequencies;
+    vector<tuple<uint32_t, bool>> frequencies;
     tuple<double, double> latlon;
 
     // First, delete the channel from the list
@@ -368,12 +379,29 @@ uint16_t TS3Channels::addOrUpdateChannel(string& strC, string cName, string cTop
         else
             range = 10800.0;
 
-        if (!blFreqFromTS)
+        // If the user hasn't provided the frequencies, then...
+		if (!blFreqFromTS)
         {
 			// Prepare a list of valid frequencies from all returned stations
 			for (ICAOData::Station st : station)
 			{
-				if (st.frequency >= 11000 && st.frequency <= 13999) frequencies.push_back(st.frequency);
+				// freq50 is looking at transmission of ATIS on a NAV frequency - a future enhancement!
+				//bool freq50 = false;
+				bool freq25 = false;
+				bool freq833 = false;
+
+				// First, is it a valid comms frequency
+				if (st.frequency >= 118000 && st.frequency < 137000)
+				{
+					//freq50 = st.frequency % 50 == 0;
+					freq25 = st.frequency % 25 == 0;
+					freq833 = st.frequency % 5 == 0 && st.frequency % 50 != 20 && st.frequency % 50 != 45;
+
+					// Database frequencies are real world therefore if they can be tuned by a 25Khz radio record that,
+					// and if they can also be tuned by a 833Khz radio, record that too.
+					if (freq25) frequencies.push_back(::make_tuple(st.frequency, false));
+					if (freq833) frequencies.push_back(::make_tuple(st.frequency, true));
+				}
 			}
             blFreqFromDb = true;
         }
@@ -416,11 +444,20 @@ uint16_t TS3Channels::addOrUpdateChannel(string& strC, string cName, string cTop
         aChannelStmt.exec();
 
 		// Add all of the frequencies into the channel frequency table.
-		for (uint16_t frequency : frequencies)
+		for (::tuple<uint32_t, bool> frequency : frequencies)
 		{
 			SQLite::Statement aChannelFrequencyStmt(mChanDb, aAddInsertChannelFrequency);
 			aChannelFrequencyStmt.bind(":channel", sqlite3_int64(channelID));
-			(frequency) ? aChannelFrequencyStmt.bind(":frequency", frequency) : aChannelFrequencyStmt.bind(":frequency");
+			if (::get<0>(frequency))
+			{
+				aChannelFrequencyStmt.bind(":frequency", ::get<0>(frequency));
+				aChannelFrequencyStmt.bind(":freq833", ::get<1>(frequency));
+			}
+			else
+			{
+				aChannelFrequencyStmt.bind(":frequency");
+				aChannelFrequencyStmt.bind(":freq833");
+			}
 
 			try
 			{
@@ -622,7 +659,7 @@ const string TS3Channels::aGetChannelFromFreqCurrPrnt = \
 "with stations as( " \
 "select down.child as channel, up.depth + down.depth as distance, down.depth as removed from " \
 "(select * from closure where child = :current and parent in(select child from closure where parent = :root)) as up, " \
-"(select * from closure as c inner join channelFrequency as cf on c.child = cf.channel and frequency = :frequency) as down " \
+"(select * from closure as c inner join channelFrequency as cf on c.child = cf.channel and frequency = :frequency and freq833 = :freq833) as down " \
 "where " \
 "up.parent = down.parent " \
 "order by up.depth + down.depth, down.depth desc " \
@@ -680,7 +717,7 @@ bool TS3Channels::StationInfo::operator==(const TS3Channels::StationInfo& rhs) c
 	return this->ch == rhs.ch;
 }
 
-TS3Channels::StationInfo TS3Channels::getChannelID(uint16_t frequency, uint64 current, uint64 root, bool blConsiderRange, bool blOutOfRangeUntuned, double aLat, double aLon)
+TS3Channels::StationInfo TS3Channels::getChannelID(uint32_t frequency, uint64 current, uint64 root, bool blConsiderRange, bool blOutOfRangeUntuned, bool bl833Capable, double aLat, double aLon)
 {
     // Define this here - it gets resolved at compile time...
     // Default scenario is that we don't find a result
@@ -699,6 +736,7 @@ TS3Channels::StationInfo TS3Channels::getChannelID(uint16_t frequency, uint64 cu
 
         // Bind the variables
         aStmt.bind(":frequency", frequency);
+		aStmt.bind(":freq833", bl833Capable);
         aStmt.bind(":current", sqlite3_int64(current));
         aStmt.bind(":root", sqlite3_int64(root));
         aStmt.bind(":lat", aLat);
@@ -745,11 +783,11 @@ TS3Channels::StationInfo TS3Channels::getChannelID(uint16_t frequency, uint64 cu
 }
 
 // Returns the ID of the channel corresponding to a frequency provided as a double.
-TS3Channels::StationInfo TS3Channels::getChannelID(double frequency, uint64 current, uint64 root, bool blConsiderRange, bool blOutOfRangeUntuned, double aLat, double aLon)
+TS3Channels::StationInfo TS3Channels::getChannelID(double frequency, uint64 current, uint64 root, bool blConsiderRange, bool blOutOfRangeUntuned, bool bl833capable, double aLat, double aLon)
 {
     // Need to get the rounding right
     // Try 128.300 to see why this is needed!
-    return getChannelID(uint16_t(0.1 * round(1000 * frequency)), current, root, blConsiderRange, blOutOfRangeUntuned, aLat, aLon);
+    return getChannelID(uint32_t(0.1 * round(1000 * frequency)), current, root, blConsiderRange, blOutOfRangeUntuned, bl833capable, aLat, aLon);
 }
 
 

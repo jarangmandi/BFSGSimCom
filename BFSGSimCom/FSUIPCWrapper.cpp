@@ -8,121 +8,176 @@
 bool FSUIPCWrapper::cFSUIPCConnected = false;
 bool FSUIPCWrapper::cRun = false;
 
-FSUIPCWrapper::FSUIPCWrapper(void (*cb)(SimComData))
+FSUIPCWrapper::FSUIPCWrapper(void(*cb)(SimComData))
 {
-    DWORD dwResult;
+	DWORD dwResult;
 
-    checkConnection(&dwResult);
-    callback = cb;
+	checkConnection(&dwResult);
+	callback = cb;
 }
 
 void FSUIPCWrapper::start(void)
 {
-    cRun = true;
+	cRun = true;
 
-    t1 = new std::thread(&FSUIPCWrapper::workerThread, FSUIPCWrapper(callback));
+	t1 = new std::thread(&FSUIPCWrapper::workerThread, FSUIPCWrapper(callback));
 }
 
 void FSUIPCWrapper::stop(void)
 {
-    cRun = false;
+	cRun = false;
 
-    // There's no harm in calling this whether FSUIPC is open or not.
-    ::FSUIPC_Close();
+	// There's no harm in calling this whether FSUIPC is open or not.
+	::FSUIPC_Close();
 
-    if (t1 != NULL) t1->join();
+	if (t1 != NULL) t1->join();
 }
 
 void FSUIPCWrapper::workerThread(void)
 {
-    WORD simCom1;
-    WORD simCom1s;
-    WORD simCom2;
-    WORD simCom2s;
-    BYTE simRadSw;
-    WORD simOnGnd;
-    int64_t simLatitude;
-    int64_t simLongitude;
+	WORD simCom1;
+	WORD simCom1s;
+	WORD simCom2;
+	WORD simCom2s;
+	BYTE simRadSw;
+	WORD simOnGnd;
+	int64_t simLatitude;
+	int64_t simLongitude;
 
-    int counter = 0;
+	DWORD simCom1_833;
+	DWORD simCom2_833;
+	DWORD simCom1s_833;
+	DWORD simCom2s_833;
+
+	int counter = 0;
 
 	bool firstPass = true;
 
 	bool firstDisconnectedPass = true;
 	bool firstConnectedPass = true;
-    
-    while (cRun)
-    {
+
+	while (cRun)
+	{
 		DWORD dwResult;
 		checkConnection(&dwResult);
 
-        FSUIPC_Read(0x034E, 2, &simCom1);
-        FSUIPC_Read(0x3118, 2, &simCom2);
-        FSUIPC_Read(0x311A, 2, &simCom1s);
-        FSUIPC_Read(0x311C, 2, &simCom2s);
-        FSUIPC_Read(0x3122, 1, &simRadSw);
-        FSUIPC_Read(0x0366, 2, &simOnGnd);
-        FSUIPC_Read(0x0560, 8, &simLatitude);
-        FSUIPC_Read(0x0568, 8, &simLongitude);
+		simIsXPlane = (FSUIPC_FS_Version == 8) && (FSUIPC_Version & 0xffff0000) == 0x50000000;
+		simIs833Capable = simIsXPlane;
 
-        if (FSUIPC_Process())
-        {
-            bool blComChanged = false;
-            bool blPosChange = false;
-            
+		FSUIPC_Read(0x034E, 2, &simCom1);
+		FSUIPC_Read(0x3118, 2, &simCom2);
+		FSUIPC_Read(0x311A, 2, &simCom1s);
+		FSUIPC_Read(0x311C, 2, &simCom2s);
+		FSUIPC_Read(0x3122, 1, &simRadSw);
+		FSUIPC_Read(0x0366, 2, &simOnGnd);
+		FSUIPC_Read(0x0560, 8, &simLatitude);
+		FSUIPC_Read(0x0568, 8, &simLongitude);
+
+		FSUIPC_Read(0x05c4, 4, &simCom1_833);
+		FSUIPC_Read(0x05c8, 4, &simCom2_833);
+		FSUIPC_Read(0x05cc, 4, &simCom1s_833);
+		FSUIPC_Read(0x05d0, 4, &simCom2s_833);
+
+		if (FSUIPC_Process())
+		{
+			bool blComChanged = false;
+			bool blPosChange = false;
+
 			bool blOtherChanged = false;
 
-            currentLat = double(simLatitude);
-            currentLat *= 90.0 / (10001750.0 * 65536.0 * 65536.0);
-            currentLon = double(simLongitude);
-            currentLon *= 360.0 / (65536.0 * 65536.0 * 65536.0 * 65536.0);
+			currentLat = double(simLatitude);
+			currentLat *= 90.0 / (10001750.0 * 65536.0 * 65536.0);
+			currentLon = double(simLongitude);
+			currentLon *= 360.0 / (65536.0 * 65536.0 * 65536.0 * 65536.0);
 
-            if (simCom1 != cCom1Freq)
-            {
-                blComChanged = true;
-                cCom1Freq = simCom1;
-            }
+			// ALways 25KHz for the time being
+			if (!simIs833Capable)
+			{
+				if (simCom1 != cCom1Freq)
+				{
+					blComChanged = true;
+					cCom1Freq = simCom1;
+				}
 
-            if (simCom1s != cCom1Sby)
-            {
-                blComChanged = true;
-                cCom1Sby = simCom1s;
-            }
+				if (simCom1s != cCom1Sby)
+				{
+					blComChanged = true;
+					cCom1Sby = simCom1s;
+				}
 
-            if (simCom2 != cCom2Freq)
-            {
-                blComChanged = true;
-                cCom2Freq = simCom2;
-            }
+				if (simCom2 != cCom2Freq)
+				{
+					blComChanged = true;
+					cCom2Freq = simCom2;
+				}
 
-            if (simCom2s != cCom2Sby)
-            {
-                blComChanged = true;
-                cCom2Sby = simCom2s;
-            }
+				if (simCom2s != cCom2Sby)
+				{
+					blComChanged = true;
+					cCom2Sby = simCom2s;
+				}
 
-            if (simRadSw != cSelectedCom)
-            {
-                blComChanged = true;
-                cSelectedCom = simRadSw;
-            }
+				// Save 833 values in case the configuration changes
+				cCom1Freq833 = simCom1_833;
+				cCom1Sby833 = simCom1s_833;
+				cCom2Freq833 = simCom2_833;
+				cCom2Sby833 = simCom2s_833;
+			}
+			else
+			{
+				if (simCom1_833 != cCom1Freq833)
+				{
+					blComChanged = true;
+					cCom1Freq833 = simCom1_833;
+				}
 
-            if (simOnGnd != cWoW)
-            {
-                blOtherChanged = true;
-                cWoW = simOnGnd;
-            }
+				if (simCom1s_833 != cCom1Sby833)
+				{
+					blComChanged = true;
+					cCom1Sby833 = simCom1s_833;
+				}
+
+				if (simCom2_833 != cCom2Freq833)
+				{
+					blComChanged = true;
+					cCom2Freq833 = simCom2_833;
+				}
+
+				if (simCom2s_833 != cCom2Sby833)
+				{
+					blComChanged = true;
+					cCom2Sby833 = simCom2s_833;
+				}
+
+				// Save the 25KHz values in case the switch changes
+				cCom1Freq = simCom1;
+				cCom1Sby = simCom1s;
+				cCom2Freq = simCom2;
+				cCom2Sby = simCom2s;
+			}
+
+			if (simRadSw != cSelectedCom)
+			{
+				blComChanged = true;
+				cSelectedCom = simRadSw;
+			}
+
+			if (simOnGnd != cWoW)
+			{
+				blOtherChanged = true;
+				cWoW = simOnGnd;
+			}
 
 			// This is set to fire if we've moved more than 0.5nm from where we were the last time it fired,
 			if (TS3Channels::getDistanceBetweenLatLonInNm(currentLat, currentLon, cLat, cLon) > 0.5)
-            {
-                blPosChange = true;
+			{
+				blPosChange = true;
 
 				// Reset counter and save the last position
 				counter = 0;
 				cLat = currentLat;
 				cLon = currentLon;
-            }
+			}
 
 			// This makes sure we go through the callback at least every 10 seconds - is it redundant now?
 			if (++counter >= 100)
@@ -131,19 +186,19 @@ void FSUIPCWrapper::workerThread(void)
 				counter = 0;
 			}
 
-            if (blComChanged || blPosChange || blOtherChanged || firstConnectedPass )
-            {
-                if (callback != NULL)
-                {
-                    (*callback)(getSimComData(blComChanged, blPosChange, blOtherChanged));
-                }
+			if (blComChanged || blPosChange || blOtherChanged || firstConnectedPass)
+			{
+				if (callback != NULL)
+				{
+					(*callback)(getSimComData(blComChanged, blPosChange, blOtherChanged));
+				}
 
 				firstConnectedPass = false;
-            }
+			}
 
 			firstDisconnectedPass = true;
 
-        }
+		}
 		else
 		{
 			if (firstDisconnectedPass)
@@ -164,42 +219,63 @@ void FSUIPCWrapper::workerThread(void)
 		}
 
 		// Fetch data from the simulator every 10th of a second
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-    }
+	}
 };
 
 
 FSUIPCWrapper::SimComData FSUIPCWrapper::getSimComData(bool blComChanged, bool blPosChange, bool blOtherChanged) {
-    
-    SimComData simcomdata;
 
-    simcomdata.iCom1Freq = 10000 + 1000 * ((cCom1Freq & 0xf000) >> 12) + 100 * ((cCom1Freq & 0x0f00) >> 8) + 10 * ((cCom1Freq & 0x00f0) >> 4) + (cCom1Freq & 0x000f);
-    simcomdata.iCom1Sby = 10000 + 1000 * ((cCom1Sby & 0xf000) >> 12) + 100 * ((cCom1Sby & 0x0f00) >> 8) + 10 * ((cCom1Sby & 0x00f0) >> 4) + (cCom1Sby & 0x000f);
-    simcomdata.iCom2Freq = 10000 + 1000 * ((cCom2Freq & 0xf000) >> 12) + 100 * ((cCom2Freq & 0x0f00) >> 8) + 10 * ((cCom2Freq & 0x00f0) >> 4) + (cCom2Freq & 0x000f);
-    simcomdata.iCom2Sby = 10000 + 1000 * ((cCom2Sby & 0xf000) >> 12) + 100 * ((cCom2Sby & 0x0f00) >> 8) + 10 * ((cCom2Sby & 0x00f0) >> 4) + (cCom2Sby & 0x000f);
+	SimComData simcomdata;
 
-    // This is a kluge because XPUIPC doesn't report the correct channel and the config file that comes with it doesn't seem to work as advertised.
-    // Look for a FSUIPC_Version with an most significant half word of 0x50000000 - who knows what will happen when FSUIPC catches up
-    if ((FSUIPC_Version & 0xffff0000) == 0x50000000)
-        simcomdata.selectedCom = ComRadio(((cSelectedCom & 0x80) ? None : Com1) + ((cSelectedCom & 0x40) ? None : Com2));
-    else
-        simcomdata.selectedCom = ComRadio(((cSelectedCom & 0x80) ? Com1 : None) + ((cSelectedCom & 0x40) ? Com2 : None));
+	// Depending if we're working on a 25KHz only radio (true) or an 8.333KHz radio (false)...
+	if (!simIs833Capable)
+	{
+		simcomdata.iCom1Freq = 100000 + 10000 * ((cCom1Freq & 0xf000) >> 12) + 1000 * ((cCom1Freq & 0x0f00) >> 8) + 100 * ((cCom1Freq & 0x00f0) >> 4) + 10 * (cCom1Freq & 0x000f);
+		simcomdata.iCom1Sby = 100000 + 10000 * ((cCom1Sby & 0xf000) >> 12) + 1000 * ((cCom1Sby & 0x0f00) >> 8) + 100 * ((cCom1Sby & 0x00f0) >> 4) + 10 * (cCom1Sby & 0x000f);
+		simcomdata.iCom2Freq = 100000 + 10000 * ((cCom2Freq & 0xf000) >> 12) + 1000 * ((cCom2Freq & 0x0f00) >> 8) + 100 * ((cCom2Freq & 0x00f0) >> 4) + 10 * (cCom2Freq & 0x000f);
+		simcomdata.iCom2Sby = 100000 + 10000 * ((cCom2Sby & 0xf000) >> 12) + 1000 * ((cCom2Sby & 0x0f00) >> 8) + 100 * ((cCom2Sby & 0x00f0) >> 4) + 10 * (cCom2Sby & 0x000f);
 
-    simcomdata.blComChanged = blComChanged;
+		// If it's a 25KHz frequency, then we might need to add the last digit.
+		if (simcomdata.iCom1Freq % 50 == 20) simcomdata.iCom1Freq += 5;
+		if (simcomdata.iCom1Sby % 50 == 20) simcomdata.iCom1Sby += 5;
+		if (simcomdata.iCom2Freq % 50 == 20) simcomdata.iCom2Freq += 5;
+		if (simcomdata.iCom2Sby % 50 == 20) simcomdata.iCom2Sby += 5;
+	}
+	else
+	{
+		// No fancy stuff here (yet) - just pull the latest values.
+		simcomdata.iCom1Freq = (int)(0.001 * cCom1Freq833);
+		simcomdata.iCom1Sby = (int)(0.001 * cCom1Sby833);
+		simcomdata.iCom2Freq = (int)(0.001 * cCom2Freq833);
+		simcomdata.iCom2Sby = (int)(0.001 * cCom2Sby833);
+	}
 
-    // Required for reporting...
-    simcomdata.blWoW = (cWoW != 0);
+	// This is a kluge because XPUIPC doesn't report the correct channel and the config file that comes with it doesn't seem to work as advertised.
+	// Look for a FSUIPC_Version with an most significant half word of 0x50000000 AND an FS Version of 8 (FSX).
+	// FSUIPC 5 is specific to P3D which has an FS version of 10.
+	if (simIsXPlane)
+		simcomdata.selectedCom = ComRadio(((cSelectedCom & 0x80) ? None : Com1) + ((cSelectedCom & 0x40) ? None : Com2));
+	else
+		simcomdata.selectedCom = ComRadio(((cSelectedCom & 0x80) ? Com1 : None) + ((cSelectedCom & 0x40) ? Com2 : None));
 
-    // And finally, report the aircraft position.
-    simcomdata.dLat = currentLat;
-    simcomdata.dLon = currentLon;
+	simcomdata.blComChanged = blComChanged;
 
-    simcomdata.blPosChanged = blPosChange;
+	// Required for reporting...
+	simcomdata.blWoW = (cWoW != 0);
+
+	// And finally, report the aircraft position.
+	simcomdata.dLat = currentLat;
+	simcomdata.dLon = currentLon;
+
+	simcomdata.blPosChanged = blPosChange;
 
 	simcomdata.blOtherChanged = blOtherChanged;
 
-    return simcomdata;
+	simcomdata.bl833Capable = simIs833Capable;
+
+	return simcomdata;
 };
 
 
@@ -207,110 +283,110 @@ FSUIPCWrapper::SimComData FSUIPCWrapper::getSimComData(bool blComChanged, bool b
 // Check connection returns TRUE if connected, and FALSE if not...
 BOOL FSUIPCWrapper::checkConnection(DWORD* pdwResult)
 {
-    BOOL retValue = 0;
+	BOOL retValue = 0;
 
-    if (!cFSUIPCConnected)
-    {
-        try
-        {
-            retValue = ::FSUIPC_Open(SIM_ANY, pdwResult);
-            cFSUIPCConnected = (retValue != FALSE) || (*pdwResult == FSUIPC_ERR_OPEN);
-        }
-        catch (...)
-        {
-            retValue = FALSE;
-            cFSUIPCConnected = false;
-        }
-    }
-    else
-    {
-        retValue = TRUE;
-    }
+	if (!cFSUIPCConnected)
+	{
+		try
+		{
+			retValue = ::FSUIPC_Open(SIM_ANY, pdwResult);
+			cFSUIPCConnected = (retValue != FALSE) || (*pdwResult == FSUIPC_ERR_OPEN);
+		}
+		catch (...)
+		{
+			retValue = FALSE;
+			cFSUIPCConnected = false;
+		}
+	}
+	else
+	{
+		retValue = TRUE;
+	}
 
-    return retValue;
+	return retValue;
 }
 
 
 BOOL FSUIPCWrapper::FSUIPC_Read(DWORD dwOffset, DWORD dwSize, void* pDest)
 {
-    BOOL retValue = 0;
-    DWORD dwResult = FSUIPC_ERR_OK;
+	BOOL retValue = 0;
+	DWORD dwResult = FSUIPC_ERR_OK;
 
-//    if (checkConnection(&dwResult))
-//    {
-        try
-        {
-            retValue = ::FSUIPC_Read(dwOffset, dwSize, pDest, &dwResult);
-        }
-        catch (...)
-        {
-            retValue = FALSE;
-        }
-//    }
+	//    if (checkConnection(&dwResult))
+	//    {
+	try
+	{
+		retValue = ::FSUIPC_Read(dwOffset, dwSize, pDest, &dwResult);
+	}
+	catch (...)
+	{
+		retValue = FALSE;
+	}
+	//    }
 
-    cFSUIPCConnected = (dwResult == FSUIPC_ERR_OK);
+	cFSUIPCConnected = (dwResult == FSUIPC_ERR_OK);
 
-    return retValue;
+	return retValue;
 }
 
 BOOL FSUIPCWrapper::FSUIPC_Write(DWORD dwOffset, DWORD dwSize, void* pSrc)
 {
-    BOOL retValue = 0;
-    DWORD dwResult;
+	BOOL retValue = 0;
+	DWORD dwResult;
 
-//    if (checkConnection(&dwResult))
-//    {
-        try
-        {
-            retValue = ::FSUIPC_Write(dwOffset, dwSize, pSrc, &dwResult);
-        }
-        catch (...)
-        {
-            retValue = FALSE;
-        }
-//    }
+	//    if (checkConnection(&dwResult))
+	//    {
+	try
+	{
+		retValue = ::FSUIPC_Write(dwOffset, dwSize, pSrc, &dwResult);
+	}
+	catch (...)
+	{
+		retValue = FALSE;
+	}
+	//    }
 
-    cFSUIPCConnected = (dwResult != FSUIPC_ERR_NOTOPEN);
+	cFSUIPCConnected = (dwResult != FSUIPC_ERR_NOTOPEN);
 
-    return retValue;
+	return retValue;
 }
 
 BOOL FSUIPCWrapper::FSUIPC_Process()
 {
-    BOOL retValue = 0;
-    DWORD dwResult = FSUIPC_ERR_NOTOPEN;
+	BOOL retValue = 0;
+	DWORD dwResult = FSUIPC_ERR_NOTOPEN;
 
-//    if (checkConnection(&dwResult))
-//    {
-        try
-        {
-            retValue = ::FSUIPC_Process(&dwResult);
-        }
-        catch (...)
-        {
-            retValue = FALSE;
-        }
-//    }
+	//    if (checkConnection(&dwResult))
+	//    {
+	try
+	{
+		retValue = ::FSUIPC_Process(&dwResult);
+	}
+	catch (...)
+	{
+		retValue = FALSE;
+	}
+	//    }
 
-    cFSUIPCConnected = (dwResult == FSUIPC_ERR_OK);
+	cFSUIPCConnected = (dwResult == FSUIPC_ERR_OK);
 
-    return retValue;
+	return retValue;
 }
 
 std::string FSUIPCWrapper::toString(FSUIPCWrapper::SimComData simComData)
 {
-    std::ostringstream ostr;
+	std::ostringstream ostr;
 
 	ostr << "ComChanged : " << simComData.blComChanged;
 	ostr << " | Switches: " << simComData.selectedCom;
 	ostr << " | Com1: " << simComData.iCom1Freq << " / " << simComData.iCom1Sby;
-    ostr << " | Com2: " << simComData.iCom2Freq << " / " << simComData.iCom2Sby;
+	ostr << " | Com2: " << simComData.iCom2Freq << " / " << simComData.iCom2Sby;
 	ostr << " | PosChanged : " << simComData.blPosChanged;
 	ostr << " | Lat: " << simComData.dLat;
 	ostr << " | Lon: " << simComData.dLon;
 	ostr << " | WoW: " << simComData.blWoW;
 
-    return ostr.str();
+	return ostr.str();
 }
 
 

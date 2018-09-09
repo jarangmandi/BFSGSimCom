@@ -168,7 +168,7 @@ void callback(FSUIPCWrapper::SimComData data)
         }
         else
         {
-			uint16_t frequency;
+			uint32_t frequency;
 
 			TS3Channels::StationInfo newTargetChannel;
 
@@ -242,6 +242,7 @@ void callback(FSUIPCWrapper::SimComData data)
 					adjustedRootChannel.ch,
 					cfg->getConsiderRange(),
 					cfg->getOutOfRangeUntuned(),
+					data.bl833Capable,
 					data.dLat,
 					data.dLon
 				);
@@ -382,7 +383,7 @@ const char* ts3plugin_name() {
 
 /* Plugin version */
 const char* ts3plugin_version() {
-    return "0.11.1";
+    return "0.12.0b";
 }
 
 /* Plugin API version. Must be the same as the clients API major version, else the plugin fails to load. */
@@ -673,7 +674,7 @@ void ts3plugin_infoData(uint64 serverConnectionHandlerID, uint64 id, enum Plugin
         if (connected)
         {
 			ostr << std::fixed << "[color=" << strCGreen << "]Connected to Sim.[/color]\n\nMode: ";
-
+			
 			strMode = "[color=";
 
             Config::ConfigMode mode = cfg->getMode();
@@ -752,7 +753,7 @@ void ts3plugin_infoData(uint64 serverConnectionHandlerID, uint64 id, enum Plugin
 						break;
 					default:
 						// Required because some aircraft allow multiple Com selections!
-						strCom = "Unrecognised";
+						strCom = "Unrecognised / More than one";
 						break;
 					}
 
@@ -774,9 +775,12 @@ void ts3plugin_infoData(uint64 serverConnectionHandlerID, uint64 id, enum Plugin
 				string strCom1Col = (simComData.selectedCom == FSUIPCWrapper::Com1) ? strCGreen : strCRed;
 				string strCom2Col = (simComData.selectedCom == FSUIPCWrapper::Com2) ? strCGreen : strCRed;
 
+				// Precision of frequency display
+				int precision = 2 + ((simComData.bl833Capable) ? 1 : 0);
+
 				// Com1 Information - frequency, tuned station and range
-                dCom1 = 0.01 * simComData.iCom1Freq;
-				ostr << "\n[b][color=" << strCom1Col << "]Com 1 Freq: " << std::setprecision(2) << dCom1;
+                dCom1 = 0.001 * simComData.iCom1Freq;
+				ostr << "\n[b][color=" << strCom1Col << "]Com 1 Freq: " << std::setprecision(precision) << dCom1;
 				if (simComData.selectedCom == FSUIPCWrapper::Com1 && strncmp(strStation, "", 10))
 				{
 					ostr << " - " << strStation;
@@ -786,8 +790,8 @@ void ts3plugin_infoData(uint64 serverConnectionHandlerID, uint64 id, enum Plugin
 				ostr << "[/color][/b]";
 
 				// Com2 Information - frequency, tuned station and range
-				dCom2 = 0.01 * simComData.iCom2Freq;
-				ostr << "\n[b][color=" << strCom2Col << "]Com 2 Freq: " << std::setprecision(2) << dCom2;
+				dCom2 = 0.001 * simComData.iCom2Freq;
+				ostr << "\n[b][color=" << strCom2Col << "]Com 2 Freq: " << std::setprecision(precision) << dCom2;
 				if (simComData.selectedCom == FSUIPCWrapper::Com2 && strncmp(strStation, "", 10))
 				{
 					ostr << " - " << strStation;
@@ -799,11 +803,11 @@ void ts3plugin_infoData(uint64 serverConnectionHandlerID, uint64 id, enum Plugin
 				// Standby radio frequencies only in the advanced info data
 				if (blAdvancedInfo)
 				{
-					dCom1s = 0.01 * simComData.iCom1Sby;
-					ostr << "\n[color=" << strCom1Col << "]Com 1 Stby: " << std::setprecision(2) << dCom1s << "[/color]";
+					dCom1s = 0.001 * simComData.iCom1Sby;
+					ostr << "\n[color=" << strCom1Col << "]Com 1 Stby: " << std::setprecision(precision) << dCom1s << "[/color]";
 
-					dCom2s = 0.01 * simComData.iCom2Sby;
-					ostr << "\n[color=" << strCom2Col << "]Com 2 Stby: " << std::setprecision(2) << dCom2s << "[/color]";
+					dCom2s = 0.001 * simComData.iCom2Sby;
+					ostr << "\n[color=" << strCom2Col << "]Com 2 Stby: " << std::setprecision(precision) << dCom2s << "[/color]";
 				}
             }
             else

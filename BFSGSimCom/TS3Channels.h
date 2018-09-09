@@ -41,19 +41,16 @@ private:
 
     int initDatabase(void);
 
-    uint16_t getFrequencyFromString(string);
-    uint16_t getFrequencyFromStrings(string, string, string);
-    uint16_t getFrequencyFromStrings(const vector<string>&);
-	vector<uint16_t> getFrequenciesFromString(string);
-	vector<uint16_t> getFrequenciesFromStrings(string, string, string);
-	vector<uint16_t> getFrequenciesFromStrings(const vector<string>&);
+	vector<tuple<uint32_t, bool>> getFrequenciesFromString(string);
+	vector<tuple<uint32_t, bool>> getFrequenciesFromStrings(string, string, string);
+	vector<tuple<uint32_t, bool>> getFrequenciesFromStrings(const vector<string>&);
 	string TS3Channels::getAirportIdentFromString(string);
     string TS3Channels::getAirportIdentFromStrings(string, string, string);
     string TS3Channels::getAirportIdentFromStrings(const vector<string>&);
     tuple<double, double> TS3Channels::getLatLonFromString(string);
     tuple<double, double> TS3Channels::getLatLonFromStrings(string, string, string);
     tuple<double, double> TS3Channels::getLatLonFromStrings(const vector<string>&);
-	string TS3Channels::concatFreqs(const vector<uint16_t>& freqs);
+	string TS3Channels::concatFreqs(const vector<tuple<uint32_t, bool>>& freqs);
 
 public:
     struct ChannelInfo
@@ -95,8 +92,8 @@ public:
     void deleteAllChannels(void);
     uint16_t addOrUpdateChannel(string& str, string, string, string, uint64, uint64 parentChannel = 0, uint64 order = 0);
 	int updateChannelDescription(string& str, uint64, string);
-	TS3Channels::StationInfo getChannelID(uint16_t frequency, uint64 current = 0, uint64 root = 0, bool blConsiderRange = false, bool blOutOfRangeUntuned = false, double lat = -999.9, double lon = -999.0);
-	TS3Channels::StationInfo getChannelID(double frequency, uint64 current = 0, uint64 root = 0, bool blConsiderRange = false, bool blOutOfRangeUntuned = false, double lat = -999.9, double lon = -999.0);
+	TS3Channels::StationInfo getChannelID(uint32_t frequency, uint64 current = 0, uint64 root = 0, bool blConsiderRange = false, bool blOutOfRangeUntuned = false, bool bl833capable = false, double lat = -999.9, double lon = -999.0);
+	TS3Channels::StationInfo getChannelID(double frequency, uint64 current = 0, uint64 root = 0, bool blConsiderRange = false, bool blOutOfRangeUntuned = false, bool bl833capable = false, double lat = -999.9, double lon = -999.0);
 	bool TS3Channels::channelIsUnderRoot(uint64 current, uint64 root);
 
     vector<ChannelInfo> getChannelList(uint64 root = 0);
