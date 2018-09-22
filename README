@@ -4,6 +4,14 @@ A TS3 plugin that supports changing channels through tuning of flight simulator 
 Release History
 ===============
 
+v0.12.0 - 2018-09-22
+--------------------
+
+Enhancements
+
+#39  - Need to start recognising "intermediate" (8.33KHz) frequencies.
+
+
 v0.11.1 - 2018-09-03
 --------------------
 
