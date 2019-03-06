@@ -38,7 +38,6 @@ struct TS3Functions ts3Functions;
 
 #ifdef _WIN32
 #define _strcpy(dest, destSize, src) strcpy_s(dest, destSize, src)
-#define snprintf sprintf_s
 #else
 #define _strcpy(dest, destSize, src) { strncpy(dest, src, destSize-1); (dest)[destSize-1] = '\0'; }
 #endif
@@ -383,7 +382,7 @@ const char* ts3plugin_name() {
 
 /* Plugin version */
 const char* ts3plugin_version() {
-    return "0.12.0";
+    return "0.13.0b";
 }
 
 /* Plugin API version. Must be the same as the clients API major version, else the plugin fails to load. */
@@ -819,8 +818,9 @@ void ts3plugin_infoData(uint64 serverConnectionHandlerID, uint64 id, enum Plugin
 			ostr << "[color=" << strCRed << "]Not connected to Sim.[/color]";
         }
 
-		snprintf(
+		_snprintf_s(
 			*data,
+			INFODATA_BUFSIZE,
 			INFODATA_BUFSIZE,
 			"%s",
 			ostr.str().c_str()

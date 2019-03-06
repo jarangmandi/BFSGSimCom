@@ -216,6 +216,7 @@
     <ClInclude Include="..\SQLiteCpp\SQLiteCpp.h" />
     <ClInclude Include="..\SQLiteCpp\Statement.h" />
     <ClInclude Include="..\SQLiteCpp\Transaction.h" />
+    <ClInclude Include="..\SQLiteCpp\Utils.h" />
     <ClInclude Include="..\SQLiteCpp\VariadicBind.h" />
     <ClInclude Include="BFSGSimCom.h" />
     <CustomBuild Include="config.h">

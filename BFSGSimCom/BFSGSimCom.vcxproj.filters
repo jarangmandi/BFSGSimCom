@@ -87,6 +87,9 @@
     <ClInclude Include="..\SQLiteCpp\VariadicBind.h">
       <Filter>SQLiteCpp</Filter>
     </ClInclude>
+    <ClInclude Include="..\SQLiteCpp\Utils.h">
+      <Filter>SQLiteCpp</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="config.h">
