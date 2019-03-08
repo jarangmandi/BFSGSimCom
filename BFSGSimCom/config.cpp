@@ -11,8 +11,8 @@
  * ini file location: %APPDATA%\TS3Client
  */
 
-//#define CONF_FILE				"BFSGSimCom" // ini file
-//#define CONF_APP				"TS3Client"   // application folder
+#define CONF_ORG				"BFSG" // ini file
+#define CONF_APP				"BFSGSimCom"   // application folder
 //#define CONF_OBJ(x)			QSettings x(QSettings::IniFormat, QSettings::UserScope, CONF_APP, CONF_FILE);
 
 // Utility function to generate the string list required to populate a QTreeViewWidget
@@ -177,8 +177,7 @@ Config::Config(TS3Channels& tch)
 
 	// The set default format line needs to be first because it defines the behaviour of the
 	// QSettings constructor...
-	QSettings::setDefaultFormat(QSettings::IniFormat);
-	QSettings settings;
+	QSettings settings(QSettings::Format::IniFormat, QSettings::Scope::UserScope, QString(CONF_ORG), QString(CONF_APP));
 
 	chList = &tch;
 
@@ -234,8 +233,7 @@ Config::~Config()
 
 void Config::saveSettings()
 {
-    //CONF_OBJ(cfg);
-    QSettings settings;
+	QSettings settings(QSettings::Format::IniFormat, QSettings::Scope::UserScope, QString(CONF_ORG), QString(CONF_APP));
 
 	// Save the state of the detailed information pane option
 	blInfoDetailed = cbInfoDetailed->isChecked();
