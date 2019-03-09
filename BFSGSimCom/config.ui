@@ -120,7 +120,7 @@
      </font>
     </property>
     <property name="text">
-     <string>Automove on COM retune - do not allow manual channel changes</string>
+     <string>Automatic - move on retune - no manual channel changes</string>
     </property>
    </widget>
    <widget class="QRadioButton" name="rbDisabled">
@@ -139,7 +139,7 @@
      </font>
     </property>
     <property name="text">
-     <string>Don't automove based on simulator COM tuning at all</string>
+     <string>Disabled - Don't automove based on simulator tuning at all</string>
     </property>
    </widget>
    <widget class="QRadioButton" name="rbEasyMode">
@@ -158,7 +158,7 @@
      </font>
     </property>
     <property name="text">
-     <string>Automove on COM retune - allow manual channel change too</string>
+     <string>Semi-automatic - move on retune - manual channel changes too</string>
     </property>
    </widget>
    <widget class="QCheckBox" name="cbConsiderRange">
