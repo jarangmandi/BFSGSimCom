@@ -457,10 +457,27 @@ void loadChannelDescription(uint64 serverConnectionHandlerID, uint64 channel)
 	ts3Functions.logMessage(strComment.c_str(), LogLevel::LogLevel_INFO, "BFSGSimCom", serverConnectionHandlerID);
 }
 
+void updateServerName()
+{
+	uint64 serverConnectionHandlerID;
+
+	serverConnectionHandlerID = ts3Functions.getCurrentServerConnectionHandlerID();
+
+	// Update the Root channel name to be that of the TS server.
+	char* result;
+	if (ts3Functions.getServerVariableAsString(serverConnectionHandlerID, VIRTUALSERVER_NAME, &result) == ERROR_ok)
+	{
+		ts3Channels->updateRootChannelName(result);
+		ts3Functions.freeMemory(result);
+	}
+}
+
 // Load ALL channels on a given server connection.
 void loadChannels(uint64 serverConnectionHandlerID)
 {
     uint64* channelList;
+
+	updateServerName();
 
     if (ts3Functions.getChannelList(serverConnectionHandlerID, &channelList) == ERROR_ok)
     {
@@ -477,7 +494,6 @@ void loadChannels(uint64 serverConnectionHandlerID)
 
 //    ts3Functions.requestServerVariables(serverConnectionHandlerID);
 }
-
 
 
 /*

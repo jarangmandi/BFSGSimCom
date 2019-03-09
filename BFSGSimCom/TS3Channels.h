@@ -31,6 +31,7 @@ private:
     static const string aChannelIsParentOfChild;
     static const string aInitChannelList;
     static const string aGetChannelList;
+	static const string aUpdateRootChannelName;
 
     // Ordering of these two is important... it defines what order they're initialized in by the constructor.
     string mChanDbFileName;
@@ -95,6 +96,7 @@ public:
 	TS3Channels::StationInfo getChannelID(uint32_t frequency, uint64 current = 0, uint64 root = 0, bool blConsiderRange = false, bool blOutOfRangeUntuned = false, bool bl833capable = false, double lat = -999.9, double lon = -999.0);
 	TS3Channels::StationInfo getChannelID(double frequency, uint64 current = 0, uint64 root = 0, bool blConsiderRange = false, bool blOutOfRangeUntuned = false, bool bl833capable = false, double lat = -999.9, double lon = -999.0);
 	bool TS3Channels::channelIsUnderRoot(uint64 current, uint64 root);
+	void updateRootChannelName(string);
 
     vector<ChannelInfo> getChannelList(uint64 root = 0);
 

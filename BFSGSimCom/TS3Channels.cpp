@@ -864,6 +864,31 @@ vector<TS3Channels::ChannelInfo> TS3Channels::getChannelList(uint64 root)
     return retValue;
 }
 
+const string TS3Channels::aUpdateRootChannelName = \
+"update channels set name = :rootChannelName where channelId = 0;" \
+"";
+
+void TS3Channels::updateRootChannelName(string str)
+{
+	try
+	{
+		SQLite::Statement aStmt(mChanDb, aUpdateRootChannelName);
+
+		// Bind the variables
+		aStmt.bind(":rootChannelName", str);
+
+		aStmt.exec();
+	}
+	catch (SQLite::Exception& e)
+	{
+		e;
+	}
+	catch (exception& e)
+	{
+		e;
+	}
+}
+
 #define DEG2RAD(degrees) (degrees * 0.01745327) // degrees * pi over 180
 
 void TS3Channels::distanceFunc(sqlite3_context *context, int argc, sqlite3_value **argv)
