@@ -34,8 +34,8 @@ public:
     bool getConsiderRange(void) { return blConsiderRange; };
     void setUntuned(bool bl);
 	void setInfoDetailed(bool bl);
-    uint64 getRootChannel(void) { return (iRoot == 0) ? TS3Channels::CHANNEL_ID_NOT_FOUND : iRoot; };
-    uint64 getUntunedChannel(void) { return (iUntuned == 0) ? TS3Channels::CHANNEL_ID_NOT_FOUND : iUntuned; };
+    uint64 getRootChannel(void) { return iRoot; };
+    uint64 getUntunedChannel(void) { return iUntuned; };
 	string getRootChannelName(void) { return strRoot; };
 	string getUntunedChannelName(void) { return strUntuned; };
 	void populateChannelList(void);

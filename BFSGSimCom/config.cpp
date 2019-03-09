@@ -188,8 +188,8 @@ Config::Config(TS3Channels& tch)
 	cbInfoDetailed->setChecked(blInfoDetailed);
 
     // Restore selected channel IDs
-    iRoot = settings.value("channel/root", 0 /*TS3Channels::CHANNEL_ID_NOT_FOUND*/).toULongLong();
-    iUntuned = settings.value("channel/untuned", 0 /*TS3Channels::CHANNEL_ID_NOT_FOUND*/).toULongLong();
+    iRoot = settings.value("channel/root", TS3Channels::CHANNEL_ID_NOT_FOUND).toULongLong();
+    iUntuned = settings.value("channel/untuned", TS3Channels::CHANNEL_ID_NOT_FOUND).toULongLong();
 
     blUntuned = settings.value("untuned/move").toBool();
     blOutOfRangeUntuned = settings.value("untuned/range").toBool();
