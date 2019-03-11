@@ -40,6 +40,12 @@
     <ClCompile Include="..\SQLiteCpp\Exception.cpp">
       <Filter>SQLiteCpp</Filter>
     </ClCompile>
+    <ClCompile Include="RangeWrapper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MetaDataUtils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="TS3Channels.h">
@@ -89,6 +95,12 @@
     </ClInclude>
     <ClInclude Include="..\SQLiteCpp\Utils.h">
       <Filter>SQLiteCpp</Filter>
+    </ClInclude>
+    <ClInclude Include="RangeWrapper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MetaDataUtils.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

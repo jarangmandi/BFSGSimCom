@@ -215,6 +215,13 @@ Config::Config(TS3Channels& tch)
     blConsiderRange = settings.value("mode/considerRange").toBool();
     cbConsiderRange->setChecked(blConsiderRange);
 
+	blRangeEffects = settings.value("range/effects").toBool();
+	cbRangeEffects->setChecked(blRangeEffects);
+
+	blPlayStatic = settings.value("range/static").toBool();
+	cbPlayStatic->setChecked(blPlayStatic);
+
+	
     if (!(rbDisabled->isChecked() || rbEasyMode->isChecked() || rbExpertMode->isChecked()))
     {
         rbDisabled->setChecked(true);
@@ -263,6 +270,13 @@ void Config::saveSettings()
 	// Save the state of the "Consider Range" checkbox
 	blConsiderRange = cbConsiderRange->isChecked();
 	settings.setValue("mode/considerRange", blConsiderRange);
+
+	// Save the state of the "range effects" options
+	blRangeEffects = cbRangeEffects->isChecked();
+	settings.setValue("range/effects", blRangeEffects);
+
+	blPlayStatic = cbPlayStatic->isChecked();
+	settings.setValue("range/static", blPlayStatic);
 
 	// Save the state of the "untuned" buttons.
     blUntuned = rbUntunedMove->isChecked();

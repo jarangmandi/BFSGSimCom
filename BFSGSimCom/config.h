@@ -32,6 +32,8 @@ public:
     bool getUntuned(void) { return blUntuned; };
     bool getOutOfRangeUntuned(void) { return blOutOfRangeUntuned; };
     bool getConsiderRange(void) { return blConsiderRange; };
+	bool getRangeEffects(void) { return blRangeEffects; };
+	bool getPlayStatic(void) { return blPlayStatic; };
     void setUntuned(bool bl);
 	void setInfoDetailed(bool bl);
     uint64 getRootChannel(void) { return iRoot; };
@@ -55,6 +57,8 @@ private:
 	bool blInfoDetailed;
     bool blUntuned;
     bool blConsiderRange;
+	bool blRangeEffects;
+	bool blPlayStatic;
     bool blOutOfRangeUntuned;
 	bool blRestartInManualMode;
     uint64 iRoot;

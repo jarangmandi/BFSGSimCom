@@ -205,6 +205,8 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="ICAOData.cpp" />
+    <ClCompile Include="MetaDataUtils.cpp" />
+    <ClCompile Include="RangeWrapper.cpp" />
     <ClCompile Include="TS3Channels.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -251,6 +253,8 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="ICAOData.h" />
+    <ClInclude Include="MetaDataUtils.h" />
+    <ClInclude Include="RangeWrapper.h" />
     <ClInclude Include="TS3Channels.h" />
   </ItemGroup>
   <ItemGroup>
@@ -268,6 +272,7 @@
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(QTDIR64)\bin\uic.exe -o "%(DefiningProjectDirectory)\GeneratedFiles\$(Platform)\ui_%(Filename).h" "%(FullPath)"</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">UIC'ing %(Filename)%(Extension) into ui_%(Filename).h</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(DefiningProjectDirectory)\GeneratedFiles\$(Platform)\ui_%(Filename).h;%(Outputs)</Outputs>
+      <SubType>Designer</SubType>
     </CustomBuild>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

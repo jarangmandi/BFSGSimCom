@@ -30,6 +30,7 @@
 #include "BFSGSimCom.h"
 
 #include "FSUIPCWrapper.h"
+#include "RangeWrapper.h"
 #include "TS3Channels.h"
 
 #include "config.h"
@@ -48,6 +49,7 @@ static char* callbackReturnCode = NULL;
 char pluginPath[PATH_BUFSIZE];
 
 static FSUIPCWrapper* fsuipc = NULL;
+static RangeWrapper* range = NULL;
 TS3Channels* ts3Channels = NULL;
 FSUIPCWrapper::SimComData simComData;
 Config* cfg;
@@ -346,6 +348,13 @@ void callback(FSUIPCWrapper::SimComData data)
 				targetChannel = targetChannel; // hopefully this gets optimised out!
 			}
 		}
+
+		// Send our position to other clients...
+		// TODO - make it friendly to other plugins - all it does at the moment is overwite what's there.
+		std::ostringstream pStr;
+		pStr << std::setprecision(10) << data.dLat << " " << data.dLon;
+		ts3Functions.setClientSelfVariableAsString(serverConnectionHandlerID, CLIENT_META_DATA, pStr.str().c_str());
+		ts3Functions.flushClientSelfUpdates(serverConnectionHandlerID, callbackReturnCode);
     }
     else
 	{
@@ -354,7 +363,7 @@ void callback(FSUIPCWrapper::SimComData data)
 
     // This is a frig to avoid trying to update client data from an unrelated thread. What we're waiting for is
     // for the onServerUpdatedEvent to fire so we can safely request the info update.
-    ts3Functions.requestServerVariables(serverConnectionHandlerID);
+	ts3Functions.requestServerVariables(serverConnectionHandlerID);
 }
 
 
@@ -560,6 +569,18 @@ int ts3plugin_init() {
 		}
     }
 
+	if (range == NULL)
+	{
+		if (range = new RangeWrapper(ts3Functions, cfg))
+		{
+			range->start();
+		}
+		else
+		{
+			retValue = 1;
+		}
+	}
+
 	// Update the information display on load
 	ts3Functions.requestInfoUpdate(serverConnectionHandlerID, infoDataType, infoDataId);
 
@@ -579,6 +600,13 @@ void ts3plugin_shutdown() {
         fsuipc->stop();
         delete fsuipc;
     }
+
+	// Close down the range calculation thread
+	if (range)
+	{
+		range->stop();
+		delete range;
+	}
 
     // Close down the settings dialog
     if (cfg)
@@ -824,6 +852,12 @@ void ts3plugin_infoData(uint64 serverConnectionHandlerID, uint64 id, enum Plugin
 					dCom2s = 0.001 * simComData.iCom2Sby;
 					ostr << "\n[color=" << strCom2Col << "]Com 2 Stby: " << std::setprecision(precision) << dCom2s << "[/color]";
 				}
+
+				// Temporary (?) code to display our current position.
+				char* positionString;
+				ts3Functions.getClientSelfVariableAsString(serverConnectionHandlerID, CLIENT_META_DATA, &positionString);
+				ostr << "\n\nPosition: " << positionString;
+				ts3Functions.freeMemory(positionString);
             }
             else
             {
