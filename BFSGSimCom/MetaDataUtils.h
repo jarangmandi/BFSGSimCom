@@ -12,7 +12,7 @@ public:
 	static std::string getMetaDataString(std::string);
 	static std::string setMetaDataString(std::string, std::string);
 
-	const static std::string tag;
+	static const std::string tag;
 	static std::regex search;
 
 };

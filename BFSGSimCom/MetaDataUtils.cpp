@@ -14,7 +14,7 @@ MetaDataUtils::~MetaDataUtils()
 {
 }
 
-std::string tag = "BFSGSimCom";
+const std::string MetaDataUtils::tag = "BFSGSimCom";
 
 std::regex MetaDataUtils::search = [] {
 	std::ostringstream o;
@@ -24,7 +24,7 @@ std::regex MetaDataUtils::search = [] {
 
 std::string MetaDataUtils::getMetaDataString(std::string data)
 {
-	std::string retValue = NULL;
+	std::string retValue = "";
 	std::smatch m;
 	
 	if (std::regex_search(data, m, search))
@@ -50,7 +50,7 @@ std::string MetaDataUtils::setMetaDataString(std::string insert, std::string dat
 	{
 		const std::string &temp = o.str();
 		o.seekp(0);
-		o << "\n" << temp;
+		o << data << "\n" << temp;
 		retValue = o.str();
 	}
 
