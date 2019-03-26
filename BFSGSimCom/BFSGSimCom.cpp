@@ -32,6 +32,7 @@
 #include "FSUIPCWrapper.h"
 #include "RangeWrapper.h"
 #include "TS3Channels.h"
+#include "MetaDataUtils.h"
 
 #include "config.h"
 
@@ -350,11 +351,21 @@ void callback(FSUIPCWrapper::SimComData data)
 		}
 
 		// Send our position to other clients...
-		// TODO - make it friendly to other plugins - all it does at the moment is overwite what's there.
-		std::ostringstream pStr;
-		pStr << std::setprecision(10) << data.dLat << " " << data.dLon;
-		ts3Functions.setClientSelfVariableAsString(serverConnectionHandlerID, CLIENT_META_DATA, pStr.str().c_str());
-		ts3Functions.flushClientSelfUpdates(serverConnectionHandlerID, callbackReturnCode);
+		char* currentMetaData;
+			
+		//if (ts3Functions.getClientSelfVariableAsString(serverConnectionHandlerID, CLIENT_META_DATA, &currentMetaData))
+		//{
+		//	std::ostringstream content;
+		//	content << std::setprecision(10) << data.dLat << "|" << data.dLon;
+
+		//	std::string newMetaData = MetaDataUtils::setMetaDataString(content.str(), currentMetaData);
+
+		//	ts3Functions.setClientSelfVariableAsString(serverConnectionHandlerID, CLIENT_META_DATA, newMetaData.c_str());
+		//	ts3Functions.flushClientSelfUpdates(serverConnectionHandlerID, callbackReturnCode);
+
+		//	ts3Functions.freeMemory(currentMetaData);
+		//}
+
     }
     else
 	{
