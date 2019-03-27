@@ -351,20 +351,28 @@ void callback(FSUIPCWrapper::SimComData data)
 		}
 
 		// Send our position to other clients...
-		char* currentMetaData;
+		char* currentMetaDataC = NULL;
 			
-		//if (ts3Functions.getClientSelfVariableAsString(serverConnectionHandlerID, CLIENT_META_DATA, &currentMetaData))
-		//{
-		//	std::ostringstream content;
-		//	content << std::setprecision(10) << data.dLat << "|" << data.dLon;
+		std::ostringstream content;
+		std::string currentMetaData;
+		std::string newMetaData;
 
-		//	std::string newMetaData = MetaDataUtils::setMetaDataString(content.str(), currentMetaData);
+		content << std::setprecision(10) << data.dLat << "|" << data.dLon;
 
-		//	ts3Functions.setClientSelfVariableAsString(serverConnectionHandlerID, CLIENT_META_DATA, newMetaData.c_str());
-		//	ts3Functions.flushClientSelfUpdates(serverConnectionHandlerID, callbackReturnCode);
+		if (ts3Functions.getClientSelfVariableAsString(serverConnectionHandlerID, CLIENT_META_DATA, &currentMetaDataC) == ERROR_ok)
+		{
+			currentMetaData = currentMetaDataC;
+			ts3Functions.freeMemory(currentMetaDataC);
+		}
+		else
+		{
+			currentMetaData = "";
+		}
 
-		//	ts3Functions.freeMemory(currentMetaData);
-		//}
+		newMetaData = MetaDataUtils::setMetaDataString(content.str(), currentMetaData);
+
+		ts3Functions.setClientSelfVariableAsString(serverConnectionHandlerID, CLIENT_META_DATA, newMetaData.c_str());
+		ts3Functions.flushClientSelfUpdates(serverConnectionHandlerID, callbackReturnCode);
 
     }
     else
