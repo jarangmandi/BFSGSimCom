@@ -10,11 +10,12 @@ int main()
 {
     std::cout << "Hello World!\n";
 
-	std::string input = "This is a <BFSGSimCom>Test</BFSGSimCom> test";
-	std::string input2 = "This is a <BFSGSimCom1>Test</BFSGSimCom1> test.";
-	std::string captured = MetaDataUtils::getMetaDataString(input);
+	std::string input = "Other stuff";
 
-	std::string modified = MetaDataUtils::setMetaDataString("Completely Done", input2);
+	std::string modified1 = MetaDataUtils::setMetaDataString("Test", input);
+	std::string modified2 = MetaDataUtils::setMetaDataString("Test", modified1);
+	std::string modified3 = MetaDataUtils::setMetaDataString("Just Started", modified2);
+	std::string modified4 = MetaDataUtils::setMetaDataString("Completely Done", modified3);
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu

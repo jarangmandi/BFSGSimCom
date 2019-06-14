@@ -44,19 +44,20 @@ std::string MetaDataUtils::setMetaDataString(std::string insert, std::string dat
 	o << "<" << tag << ">" << insert << "</" << tag << ">";
 	subst = o.str();
 
-	if (data.length() == 0)
-	{
-		retValue = subst;
-	}
-	else
-	{
-		retValue = std::regex_replace(data, search, subst);
+	retValue = std::regex_replace(data, search, subst);
 
-		if (retValue == data)
+	// If the "modified" string hasn't changed
+	if (retValue == data)
+	{
+		// If the original string doesn't contain the search string...
+		if (getMetaDataString(data) == "")
 		{
+			// ... append the substitution string
 			const std::string &temp = o.str();
 			o.seekp(0);
-			o << data << "\n" << temp;
+			o << data;
+			if (data.length() != 0) o << "\n";
+			o << temp;
 			retValue = o.str();
 		}
 	}

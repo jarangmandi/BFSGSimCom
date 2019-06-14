@@ -4,6 +4,7 @@
 
 #include "config.h"
 #include "RangeWrapper.h"
+#include "teamspeak/public_errors.h"
 
 bool RangeWrapper::cRun = false;
 
@@ -34,39 +35,47 @@ void RangeWrapper::worker(void)
 
 	anyID myId;
 	uint64 myChannel;
-	anyID* clients;
+	anyID* clients = NULL;
 
-	unsigned int result;
+	int i = 0x7f;
+	bool result;
 
 	while (cRun)
 	{
-		if (cfg->getRangeEffects())
+		if (!(i = (i + 1) & 0x7f))
 		{
-			// Work out who I am, which channel I'm in, then get a list of clients in the channel;
-			result = ts3Functions.getClientID(serverConnectionHandlerID, &myId);
-			result = ts3Functions.getChannelOfClient(serverConnectionHandlerID, myId, &myChannel);
-			result = ts3Functions.getChannelClientList(serverConnectionHandlerID, myChannel, &clients);
-
-			// Iterate through the list of clients that we've recovered
-			for (anyID* clientIterator = clients; *clientIterator != NULL; clientIterator++)
+			if (cfg->getRangeEffects())
 			{
-				// Only want to look at other people
-				if (*clientIterator != myId)
-				{
-					char* clientPosition;
-					ts3Functions.getClientVariableAsString(serverConnectionHandlerID, *clientIterator, CLIENT_META_DATA, &clientPosition);
+				// Work out who I am, which channel I'm in, then get a list of clients in the channel;
+				result =
+					(ts3Functions.getClientID(serverConnectionHandlerID, &myId) == ERROR_ok) &&
+					(ts3Functions.getChannelOfClient(serverConnectionHandlerID, myId, &myChannel) == ERROR_ok) &&
+					(ts3Functions.getChannelClientList(serverConnectionHandlerID, myChannel, &clients) == ERROR_ok);
 
-					ts3Functions.freeMemory(clientPosition);
+				if (result)
+				{
+					// Iterate through the list of clients that we've recovered
+					for (anyID* clientIterator = clients; *clientIterator != NULL; clientIterator++)
+					{
+						// Only want to look at other people
+						if (*clientIterator != myId)
+						{
+							char* clientPosition;
+							ts3Functions.getClientVariableAsString(serverConnectionHandlerID, *clientIterator, CLIENT_META_DATA, &clientPosition);
+
+							ts3Functions.freeMemory(clientPosition);
+						}
+					}
+
 				}
+
+				// Free the memory used up by the client list.
+				if (clients != NULL) ts3Functions.freeMemory(clients);
 			}
 
-			// Free the memory used up by the client list.
-			ts3Functions.freeMemory(clients);
+			// Fetch data from the simulator every 100 milliseconds
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		}
-
-		// Fetch data from the simulator every 10 seconds
-		std::this_thread::sleep_for(std::chrono::milliseconds(10000));
-
 	}
 };
 
