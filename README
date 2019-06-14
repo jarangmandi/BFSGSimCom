@@ -4,6 +4,24 @@ A TS3 plugin that supports changing channels through tuning of flight simulator 
 Release History
 ===============
 
+v0.13.0 - 2019-06-14
+--------------------
+
+Fixes
+
+#42 - Doesn't move when all frequencies are channels (not subchannels)
+#45 - Settings file location
+
+
+Enhancements
+
+#41 - Update to SQLite
+#43 - The configuration dialog can be misleading when it says "root"
+#44 - Latest version of SQLiteCpp is 2.3
+#48 - "Manual" mode should be "Semi-automatic"
+#49 - Warning C4091 in shlobj.h
+
+
 v0.12.0 - 2018-09-22
 --------------------
 
