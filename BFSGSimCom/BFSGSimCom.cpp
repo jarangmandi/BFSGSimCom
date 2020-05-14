@@ -61,7 +61,7 @@ TS3Channels::StationInfo targetChannel(TS3Channels::CHANNEL_ID_NOT_FOUND);
 TS3Channels::StationInfo currentChannel;
 Config::ConfigMode lastMode;
 
-PluginItemType infoDataType = PluginItemType(0);
+PluginItemType infoDataType = PluginItemType::PLUGIN_SERVER;
 uint64 infoDataId = 0;
 
 QMessageBox qMsg;
@@ -302,7 +302,7 @@ void callback(FSUIPCWrapper::SimComData data)
 						}
 
 						// Work out whether the target channel is a valid TS channel
-						bool blTargetChannelInTS = (newTargetChannel != TS3Channels::CHANNEL_ID_NOT_FOUND) && (newTargetChannel != TS3Channels::CHANNEL_ROOT);
+						bool blTargetChannelInTS = (newTargetChannel.ch != TS3Channels::CHANNEL_ID_NOT_FOUND) && (newTargetChannel.ch != TS3Channels::CHANNEL_ROOT);
 
 						// If the target is not the current channel, and the target is a valid TS channel, then...
 						if (newTargetChannel != currentChannel && blTargetChannelInTS)
@@ -476,19 +476,26 @@ void updateServerName()
 void loadChannels(uint64 serverConnectionHandlerID)
 {
     uint64* channelList;
+	std::list<int> listOfChannels;
 
 	updateServerName();
 
     if (ts3Functions.getChannelList(serverConnectionHandlerID, &channelList) == ERROR_ok)
     {
-        for (int i = 0; channelList[i] != NULL; i++)
-        {
-//            loadChannel(serverConnectionHandlerID, channelList[i]);
-			channelUpdates.emplace(serverConnectionHandlerID, channelList[i]);
-			ts3Functions.requestChannelDescription(serverConnectionHandlerID, channelList[i], callbackReturnCode);
-        }
+		for (int i = 0; channelList[i] != NULL; i++)
+		{
+			listOfChannels.push_back(channelList[i]);
+		}
 
-        // And not forgetting to free up the memory we've used for the channel list.
+		listOfChannels.sort();
+
+		for (int channel : listOfChannels)
+		{
+			channelUpdates.emplace(serverConnectionHandlerID, channel);
+			ts3Functions.requestChannelDescription(serverConnectionHandlerID, channel, callbackReturnCode);
+		}
+
+		// And not forgetting to free up the memory we've used for the channel list.
         ts3Functions.freeMemory(channelList);
     }
 
