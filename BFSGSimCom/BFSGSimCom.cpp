@@ -472,11 +472,27 @@ void updateServerName()
 	}
 }
 
+
+// Recurse through the channel list looking for all children of the parent
+void recurseChannelList(std::list<std::pair<uint64, uint64>>& listOfChannels, uint64 serverConnectionHandlerID, uint64 parent)
+{
+	for (std::pair<uint64,uint64> channel : listOfChannels)
+	{
+		if (channel.second == parent)
+		{
+			channelUpdates.emplace(serverConnectionHandlerID, channel.first);
+			ts3Functions.requestChannelDescription(serverConnectionHandlerID, channel.first, callbackReturnCode);
+
+			recurseChannelList(listOfChannels, serverConnectionHandlerID, channel.first);
+		}
+	}
+}
+
 // Load ALL channels on a given server connection.
 void loadChannels(uint64 serverConnectionHandlerID)
 {
     uint64* channelList;
-	std::list<int> listOfChannels;
+	std::list<std::pair<uint64,uint64>> listOfChannels;
 
 	updateServerName();
 
@@ -484,16 +500,12 @@ void loadChannels(uint64 serverConnectionHandlerID)
     {
 		for (int i = 0; channelList[i] != NULL; i++)
 		{
-			listOfChannels.push_back(channelList[i]);
+			uint64 parent;
+			ts3Functions.getParentChannelOfChannel(serverConnectionHandlerID, channelList[i], &parent);
+			listOfChannels.push_back(std::make_pair(channelList[i],parent));
 		}
 
-		listOfChannels.sort();
-
-		for (int channel : listOfChannels)
-		{
-			channelUpdates.emplace(serverConnectionHandlerID, channel);
-			ts3Functions.requestChannelDescription(serverConnectionHandlerID, channel, callbackReturnCode);
-		}
+		recurseChannelList(listOfChannels, serverConnectionHandlerID, 0);
 
 		// And not forgetting to free up the memory we've used for the channel list.
         ts3Functions.freeMemory(channelList);
