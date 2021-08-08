@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28010.2016
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31424.327
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BFSGSimCom", "BFSGSimCom\BFSGSimCom.vcxproj", "{757728E5-6C32-4DB9-9E89-9EF98A7C6436}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -17,6 +17,9 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "External Tools", "External Tools", "{EE17625A-7406-42A4-B058-2A64015A96BD}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SQLiteShell", "SQLiteShell\SQLiteShell.vcxproj", "{05BF8054-C14E-42DB-9721-DF87C208BF40}"
+	ProjectSection(ProjectDependencies) = postProject
+		{A37F8652-9733-426A-9BB4-A12CE7A0F3FC} = {A37F8652-9733-426A-9BB4-A12CE7A0F3FC}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "InstallPackage", "InstallPackage\InstallPackage.vcxproj", "{A0F56F3D-71F4-4E01-B772-7862567659A8}"
 	ProjectSection(ProjectDependencies) = postProject
