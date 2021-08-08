@@ -38,6 +38,7 @@ private:
 
 	bool simIs833Capable;
 	bool simIsXPlane;
+    bool simIsMSFS;
 
     DWORD cCom1Freq;
     DWORD cCom1Sby;

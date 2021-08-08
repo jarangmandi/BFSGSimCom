@@ -13,6 +13,9 @@
 #define SIM_FSX		8
 #define SIM_ESP		9
 #define SIM_P3D	    10
+#define SIM_FSX64	11
+#define SIM_P3D64	12
+#define SIM_MSFS	13
 
 // Error numbers
 #define FSUIPC_ERR_OK		0

@@ -61,8 +61,9 @@ void FSUIPCWrapper::workerThread(void)
 		DWORD dwResult;
 		checkConnection(&dwResult);
 
-		simIsXPlane = (FSUIPC_FS_Version == 8) && (FSUIPC_Version & 0xffff0000) == 0x50000000;
-		simIs833Capable = simIsXPlane;
+		simIsXPlane = (FSUIPC_FS_Version == SIM_FSX) && (FSUIPC_Version & 0xf0000000) == 0x50000000;
+		simIsMSFS = (FSUIPC_FS_Version == SIM_MSFS) && (FSUIPC_Version & 0xf0000000) == 0x70000000;
+		simIs833Capable = simIsXPlane || simIsMSFS;
 
 		FSUIPC_Read(0x034E, 2, &simCom1);
 		FSUIPC_Read(0x3118, 2, &simCom2);
