@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>391</width>
-    <height>656</height>
+    <height>718</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -20,7 +20,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>620</y>
+     <y>680</y>
      <width>371</width>
      <height>31</height>
     </rect>
@@ -324,7 +324,7 @@
     </property>
    </widget>
   </widget>
-  <widget class="QGroupBox" name="groupBox">
+  <widget class="QGroupBox" name="gbInformation">
    <property name="geometry">
     <rect>
      <x>10</x>
@@ -362,10 +362,87 @@
     </property>
    </widget>
   </widget>
+  <widget class="QGroupBox" name="gb833Handling">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>620</y>
+     <width>371</width>
+     <height>51</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="title">
+    <string>8.33kHz Channel Spacing</string>
+   </property>
+   <widget class="QRadioButton" name="rb833Default">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>20</y>
+      <width>141</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <weight>50</weight>
+      <bold>false</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>Let BFSGSimCom decide</string>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="rb833Force25">
+    <property name="geometry">
+     <rect>
+      <x>165</x>
+      <y>20</y>
+      <width>82</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <weight>50</weight>
+      <bold>false</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>Force 25kHz</string>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="rb833Force833">
+    <property name="geometry">
+     <rect>
+      <x>270</x>
+      <y>20</y>
+      <width>91</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <weight>50</weight>
+      <bold>false</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>Force 8.33kHz spacing</string>
+    </property>
+   </widget>
+  </widget>
   <zorder>gbUntuned</zorder>
   <zorder>buttonBox</zorder>
   <zorder>gbChannelControl</zorder>
-  <zorder>groupBox</zorder>
+  <zorder>gbInformation</zorder>
+  <zorder>gb833Handling</zorder>
  </widget>
  <tabstops>
   <tabstop>rbDisabled</tabstop>

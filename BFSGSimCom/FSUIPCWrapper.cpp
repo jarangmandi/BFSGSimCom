@@ -8,19 +8,20 @@
 bool FSUIPCWrapper::cFSUIPCConnected = false;
 bool FSUIPCWrapper::cRun = false;
 
-FSUIPCWrapper::FSUIPCWrapper(void(*cb)(SimComData))
+FSUIPCWrapper::FSUIPCWrapper(void(*cb)(SimComData), SimComConfig* scc)
 {
 	DWORD dwResult;
 
 	checkConnection(&dwResult);
 	callback = cb;
+	simComConfig = scc;
 }
 
 void FSUIPCWrapper::start(void)
 {
 	cRun = true;
 
-	t1 = new std::thread(&FSUIPCWrapper::workerThread, FSUIPCWrapper(callback));
+	t1 = new std::thread(&FSUIPCWrapper::workerThread, FSUIPCWrapper(callback, simComConfig));
 }
 
 void FSUIPCWrapper::stop(void)
@@ -39,6 +40,8 @@ void FSUIPCWrapper::workerThread(void)
 	WORD simCom1s;
 	WORD simCom2;
 	WORD simCom2s;
+	BYTE simCom1833;
+	BYTE simCom2833;
 	BYTE simRadSw;
 	WORD simOnGnd;
 	int64_t simLatitude;
@@ -61,10 +64,6 @@ void FSUIPCWrapper::workerThread(void)
 		DWORD dwResult;
 		checkConnection(&dwResult);
 
-		simIsXPlane = (FSUIPC_FS_Version == SIM_FSX) && (FSUIPC_Version & 0xf0000000) == 0x50000000;
-		simIsMSFS = (FSUIPC_FS_Version == SIM_MSFS) && (FSUIPC_Version & 0xf0000000) == 0x70000000;
-		simIs833Capable = simIsXPlane || simIsMSFS;
-
 		FSUIPC_Read(0x034E, 2, &simCom1);
 		FSUIPC_Read(0x3118, 2, &simCom2);
 		FSUIPC_Read(0x311A, 2, &simCom1s);
@@ -73,6 +72,9 @@ void FSUIPCWrapper::workerThread(void)
 		FSUIPC_Read(0x0366, 2, &simOnGnd);
 		FSUIPC_Read(0x0560, 8, &simLatitude);
 		FSUIPC_Read(0x0568, 8, &simLongitude);
+
+		FSUIPC_Read(0x0B47, 1, &simCom1833);
+		FSUIPC_Read(0x0B48, 1, &simCom2833);
 
 		FSUIPC_Read(0x05c4, 4, &simCom1_833);
 		FSUIPC_Read(0x05c8, 4, &simCom2_833);
@@ -91,40 +93,13 @@ void FSUIPCWrapper::workerThread(void)
 			currentLon = double(simLongitude);
 			currentLon *= 360.0 / (65536.0 * 65536.0 * 65536.0 * 65536.0);
 
-			// ALways 25KHz for the time being
-			if (!simIs833Capable)
-			{
-				if (simCom1 != cCom1Freq)
-				{
-					blComChanged = true;
-					cCom1Freq = simCom1;
-				}
+			simIsXPlane = (FSUIPC_FS_Version == SIM_FSX) && (FSUIPC_Version & 0xf0000000) == 0x50000000;
+			simIsMSFS = (FSUIPC_FS_Version == SIM_MSFS) && (FSUIPC_Version & 0xf0000000) == 0x70000000;
 
-				if (simCom1s != cCom1Sby)
-				{
-					blComChanged = true;
-					cCom1Sby = simCom1s;
-				}
+			simCom1Is833 = (simIsXPlane || simCom1833 || simComConfig->blForce833) && !simComConfig->blForce25;
+			simCom2Is833 = (simIsXPlane || simCom2833 || simComConfig->blForce833) && !simComConfig->blForce25;
 
-				if (simCom2 != cCom2Freq)
-				{
-					blComChanged = true;
-					cCom2Freq = simCom2;
-				}
-
-				if (simCom2s != cCom2Sby)
-				{
-					blComChanged = true;
-					cCom2Sby = simCom2s;
-				}
-
-				// Save 833 values in case the configuration changes
-				cCom1Freq833 = simCom1_833;
-				cCom1Sby833 = simCom1s_833;
-				cCom2Freq833 = simCom2_833;
-				cCom2Sby833 = simCom2s_833;
-			}
-			else
+			if (simCom1Is833)
 			{
 				if (simCom1_833 != cCom1Freq833)
 				{
@@ -138,6 +113,31 @@ void FSUIPCWrapper::workerThread(void)
 					cCom1Sby833 = simCom1s_833;
 				}
 
+				// Force a refresh if the 833 configuration changes
+				cCom1Freq = 0xFFFFFFFF;
+				cCom1Sby = 0xFFFFFFFF;
+			}
+			else
+			{
+				if (simCom1 != cCom1Freq)
+				{
+					blComChanged = true;
+					cCom1Freq = simCom1;
+				}
+
+				if (simCom1s != cCom1Sby)
+				{
+					blComChanged = true;
+					cCom1Sby = simCom1s;
+				}
+
+				// Force a refresh if the 833 configuration changes
+				cCom1Freq833 = 0xFFFFFFFF;
+				cCom1Sby833 = 0xFFFFFFFF;
+			}
+
+			if (simCom2Is833)
+			{
 				if (simCom2_833 != cCom2Freq833)
 				{
 					blComChanged = true;
@@ -150,12 +150,36 @@ void FSUIPCWrapper::workerThread(void)
 					cCom2Sby833 = simCom2s_833;
 				}
 
-				// Save the 25KHz values in case the switch changes
-				cCom1Freq = simCom1;
-				cCom1Sby = simCom1s;
-				cCom2Freq = simCom2;
-				cCom2Sby = simCom2s;
+				// Force a refresh if the 833 configuration changes
+				cCom2Freq = 0xFFFFFFFF;
+				cCom2Sby = 0xFFFFFFFF;
 			}
+			else
+			{
+				if (simCom2 != cCom2Freq)
+				{
+					blComChanged = true;
+					cCom2Freq = simCom2;
+				}
+
+				if (simCom2s != cCom2Sby)
+				{
+					blComChanged = true;
+					cCom2Sby = simCom2s;
+				}
+
+				// Force a refresh if the 833 configuration changes
+				cCom2Freq833 = 0xFFFFFFFF;
+				cCom2Sby833 = 0xFFFFFFFF;
+			}
+
+			if (cCom1Is833 != simCom1833 || cCom2Is833 != simCom2833)
+			{
+				blComChanged = true;
+			}
+
+			cCom1Is833 = simCom1833;
+			cCom2Is833 = simCom2833;
 
 			if (simRadSw != cSelectedCom)
 			{
@@ -231,28 +255,37 @@ FSUIPCWrapper::SimComData FSUIPCWrapper::getSimComData(bool blComChanged, bool b
 	SimComData simcomdata;
 
 	// Depending if we're working on a 25KHz only radio (true) or an 8.333KHz radio (false)...
-	if (!simIs833Capable)
-	{
-		simcomdata.iCom1Freq = 100000 + 10000 * ((cCom1Freq & 0xf000) >> 12) + 1000 * ((cCom1Freq & 0x0f00) >> 8) + 100 * ((cCom1Freq & 0x00f0) >> 4) + 10 * (cCom1Freq & 0x000f);
-		simcomdata.iCom1Sby = 100000 + 10000 * ((cCom1Sby & 0xf000) >> 12) + 1000 * ((cCom1Sby & 0x0f00) >> 8) + 100 * ((cCom1Sby & 0x00f0) >> 4) + 10 * (cCom1Sby & 0x000f);
-		simcomdata.iCom2Freq = 100000 + 10000 * ((cCom2Freq & 0xf000) >> 12) + 1000 * ((cCom2Freq & 0x0f00) >> 8) + 100 * ((cCom2Freq & 0x00f0) >> 4) + 10 * (cCom2Freq & 0x000f);
-		simcomdata.iCom2Sby = 100000 + 10000 * ((cCom2Sby & 0xf000) >> 12) + 1000 * ((cCom2Sby & 0x0f00) >> 8) + 100 * ((cCom2Sby & 0x00f0) >> 4) + 10 * (cCom2Sby & 0x000f);
-
-		// If it's a 25KHz frequency, then we might need to add the last digit.
-		if (simcomdata.iCom1Freq % 50 == 20) simcomdata.iCom1Freq += 5;
-		if (simcomdata.iCom1Sby % 50 == 20) simcomdata.iCom1Sby += 5;
-		if (simcomdata.iCom2Freq % 50 == 20) simcomdata.iCom2Freq += 5;
-		if (simcomdata.iCom2Sby % 50 == 20) simcomdata.iCom2Sby += 5;
-	}
-	else
+	if (simCom1Is833)
 	{
 		// No fancy stuff here (yet) - just pull the latest values.
 		simcomdata.iCom1Freq = (int)(0.001 * cCom1Freq833);
 		simcomdata.iCom1Sby = (int)(0.001 * cCom1Sby833);
+	}
+	else
+	{
+		simcomdata.iCom1Freq = 100000 + 10000 * ((cCom1Freq & 0xf000) >> 12) + 1000 * ((cCom1Freq & 0x0f00) >> 8) + 100 * ((cCom1Freq & 0x00f0) >> 4) + 10 * (cCom1Freq & 0x000f);
+		simcomdata.iCom1Sby = 100000 + 10000 * ((cCom1Sby & 0xf000) >> 12) + 1000 * ((cCom1Sby & 0x0f00) >> 8) + 100 * ((cCom1Sby & 0x00f0) >> 4) + 10 * (cCom1Sby & 0x000f);
+
+		// If it's a 25KHz frequency, then we might need to add the last digit.
+		if (simcomdata.iCom1Freq % 50 == 20) simcomdata.iCom1Freq += 5;
+		if (simcomdata.iCom1Sby % 50 == 20) simcomdata.iCom1Sby += 5;
+	}
+
+	if (simCom2Is833)
+	{
+		// No fancy stuff here (yet) - just pull the latest values.
 		simcomdata.iCom2Freq = (int)(0.001 * cCom2Freq833);
 		simcomdata.iCom2Sby = (int)(0.001 * cCom2Sby833);
 	}
+	else
+	{
+		simcomdata.iCom2Freq = 100000 + 10000 * ((cCom2Freq & 0xf000) >> 12) + 1000 * ((cCom2Freq & 0x0f00) >> 8) + 100 * ((cCom2Freq & 0x00f0) >> 4) + 10 * (cCom2Freq & 0x000f);
+		simcomdata.iCom2Sby = 100000 + 10000 * ((cCom2Sby & 0xf000) >> 12) + 1000 * ((cCom2Sby & 0x0f00) >> 8) + 100 * ((cCom2Sby & 0x00f0) >> 4) + 10 * (cCom2Sby & 0x000f);
 
+		// If it's a 25KHz frequency, then we might need to add the last digit.
+		if (simcomdata.iCom2Freq % 50 == 20) simcomdata.iCom2Freq += 5;
+		if (simcomdata.iCom2Sby % 50 == 20) simcomdata.iCom2Sby += 5;
+	}
 	// This is a kluge because XPUIPC doesn't report the correct channel and the config file that comes with it doesn't seem to work as advertised.
 	// Look for a FSUIPC_Version with an most significant half word of 0x50000000 AND an FS Version of 8 (FSX).
 	// FSUIPC 5 is specific to P3D which has an FS version of 10.
@@ -274,7 +307,8 @@ FSUIPCWrapper::SimComData FSUIPCWrapper::getSimComData(bool blComChanged, bool b
 
 	simcomdata.blOtherChanged = blOtherChanged;
 
-	simcomdata.bl833Capable = simIs833Capable;
+	simcomdata.blCom1833kHz = simCom1Is833;
+	simcomdata.blCom2833kHz = simCom2Is833;
 
 	return simcomdata;
 };

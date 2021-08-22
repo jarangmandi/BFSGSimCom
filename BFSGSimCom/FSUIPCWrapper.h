@@ -28,15 +28,24 @@ public:
         double dLon;
         bool blComChanged;
         bool blPosChanged;
-		bool blOtherChanged;
-		bool bl833Capable;
+        bool blOtherChanged;
+        bool blCom1833kHz;
+        bool blCom2833kHz;
+    };
+
+    struct SimComConfig {
+        bool blForce833;
+        bool blForce25;
     };
 
 private:
     static bool cFSUIPCConnected;
     static bool cRun;
 
-	bool simIs833Capable;
+//	bool simIs833Capable;
+    bool simCom1Is833;
+    bool simCom2Is833;
+
 	bool simIsXPlane;
     bool simIsMSFS;
 
@@ -45,6 +54,8 @@ private:
     DWORD cCom2Freq;
     DWORD cCom2Sby;
     BYTE cSelectedCom;
+    BYTE cCom1Is833;
+    BYTE cCom2Is833;
     WORD cWoW;
 	DWORD cLatitude;
 	DWORD cLongitude;
@@ -59,6 +70,7 @@ private:
     double currentLon;
 
     void (*callback)(SimComData);
+    SimComConfig* simComConfig;
 
     BOOL checkConnection(DWORD*);
     void workerThread(void);
@@ -67,7 +79,7 @@ private:
 
 public:
 
-    FSUIPCWrapper(void (*cb)(SimComData));
+    FSUIPCWrapper(void (*cb)(SimComData), SimComConfig*);
     ~FSUIPCWrapper();
 
     bool isConnected() {

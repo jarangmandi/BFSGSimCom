@@ -22,18 +22,28 @@ public:
         CONFIG_AUTO
     };
 
+    enum Spacing833Mode
+    {
+        SPACING_833_AUTO,
+        SPACING_833_833,
+        SPACING_833_25
+    };
+
     Config(TS3Channels&);
     ~Config();
     int exec(void);
 
     ConfigMode getMode(void) { return mode; };
     void setMode(ConfigMode m);
-	bool getInfoDetailed(void) { return blInfoDetailed; };
+
+    Spacing833Mode get833Mode(void) { return spacing833Mode; };
+
+    bool getInfoDetailed(void) { return blInfoDetailed; };
+    void setInfoDetailed(bool bl);
     bool getUntuned(void) { return blUntuned; };
+    void setUntuned(bool bl);
     bool getOutOfRangeUntuned(void) { return blOutOfRangeUntuned; };
     bool getConsiderRange(void) { return blConsiderRange; };
-    void setUntuned(bool bl);
-	void setInfoDetailed(bool bl);
     uint64 getRootChannel(void) { return iRoot; };
     uint64 getUntunedChannel(void) { return iUntuned; };
 	string getRootChannelName(void) { return strRoot; };
@@ -52,7 +62,8 @@ protected slots:
 private:
 	// Structure for channel information
     ConfigMode mode;
-	bool blInfoDetailed;
+    Spacing833Mode spacing833Mode;
+    bool blInfoDetailed;
     bool blUntuned;
     bool blConsiderRange;
     bool blOutOfRangeUntuned;

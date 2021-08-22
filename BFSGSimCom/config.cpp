@@ -175,17 +175,21 @@ Config::Config(TS3Channels& tch)
     bool blM;
     bool blA;
 
-	// The set default format line needs to be first because it defines the behaviour of the
-	// QSettings constructor...
-	QSettings settings(QSettings::Format::IniFormat, QSettings::Scope::UserScope, QString(CONF_ORG), QString(CONF_APP));
+    bool bl833Automatic;
+    bool bl833Force833;
+    bool bl833Force25;
 
-	chList = &tch;
+    // The set default format line needs to be first because it defines the behaviour of the
+    // QSettings constructor...
+    QSettings settings(QSettings::Format::IniFormat, QSettings::Scope::UserScope, QString(CONF_ORG), QString(CONF_APP));
+
+    chList = &tch;
 
     setupUi(this);
 
-	// Restore the detailed information checkbox
-	blInfoDetailed = settings.value("info/detailed").toBool();
-	cbInfoDetailed->setChecked(blInfoDetailed);
+    // Restore the detailed information checkbox
+    blInfoDetailed = settings.value("info/detailed").toBool();
+    cbInfoDetailed->setChecked(blInfoDetailed);
 
     // Restore selected channel IDs
     iRoot = settings.value("channel/root", TS3Channels::CHANNEL_ID_NOT_FOUND).toULongLong();
@@ -216,14 +220,28 @@ Config::Config(TS3Channels& tch)
     cbConsiderRange->setChecked(blConsiderRange);
 
     if (!(rbDisabled->isChecked() || rbEasyMode->isChecked() || rbExpertMode->isChecked()))
-    {
         rbDisabled->setChecked(true);
-    }
 
-    mode = CONFIG_DISABLED;
     if (blM) mode = CONFIG_MANUAL;
     else if (blA) mode = CONFIG_AUTO;
+    else mode = CONFIG_DISABLED;
     modeChanged();
+
+    // Restore the 833 handling radio boxes
+    bl833Force833 = settings.value("833/force833").toBool();
+    bl833Force25 = settings.value("833/force25").toBool();
+    bl833Automatic = settings.value("833/automatic").toBool();
+
+    rb833Force25->setChecked(bl833Force25);
+    rb833Force833->setChecked(bl833Force833);
+    rb833Default->setChecked(bl833Automatic);
+
+    if (!(rb833Default->isChecked() || rb833Force833->isChecked() || rb833Force25->isChecked()))
+        rb833Default->setChecked(true);
+
+    if (bl833Force833) spacing833Mode = SPACING_833_833;
+    else if (bl833Force25) spacing833Mode = SPACING_833_25;
+    else spacing833Mode = SPACING_833_AUTO;
 }
 
 Config::~Config()
@@ -239,26 +257,33 @@ void Config::saveSettings()
 	blInfoDetailed = cbInfoDetailed->isChecked();
 	settings.setValue("info/detailed", blInfoDetailed);
 
-    bool blD;
-    bool blM;
-    bool blA;
+    // Save the 833 handling information
+    bool bl833Automatic = rb833Default->isChecked();
+    bool bl833Force833 = rb833Force833->isChecked();
+    bool bl833Force25 = rb833Force25->isChecked();
+    settings.setValue("833/automatic", bl833Automatic);
+    settings.setValue("833/force833", bl833Force833);
+    settings.setValue("833/force25", bl833Force25);
+
+    if (bl833Force833) spacing833Mode = SPACING_833_833;
+    else if (bl833Force25) spacing833Mode = SPACING_833_25;
+    else spacing833Mode = SPACING_833_AUTO;
 
     // Save the state of the operation mode buttons.
-    blD = rbDisabled->isChecked();
+    bool blD = rbDisabled->isChecked();
+    bool blM = rbEasyMode->isChecked();
+    bool blA = rbExpertMode->isChecked();
+
     settings.setValue("mode/disabled", blD);
-
-    blM = rbEasyMode->isChecked();
     settings.setValue("mode/manual", blM);
-
-    blA = rbExpertMode->isChecked();
     settings.setValue("mode/auto", blA);
 
 	blRestartInManualMode = cbManualModeOnStart->isChecked();
 	settings.setValue("mode/manualRestart", blRestartInManualMode);
 
-    mode = CONFIG_DISABLED;
     if (blM) mode = CONFIG_MANUAL;
     else if (blA) mode = CONFIG_AUTO;
+    else mode = CONFIG_DISABLED;
 
 	// Save the state of the "Consider Range" checkbox
 	blConsiderRange = cbConsiderRange->isChecked();

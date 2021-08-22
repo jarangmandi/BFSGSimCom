@@ -50,6 +50,7 @@ char pluginPath[PATH_BUFSIZE];
 static FSUIPCWrapper* fsuipc = NULL;
 TS3Channels* ts3Channels = NULL;
 FSUIPCWrapper::SimComData simComData;
+FSUIPCWrapper::SimComConfig simComConfig{};
 Config* cfg;
 
 bool initialising = true;
@@ -78,7 +79,8 @@ struct pair_hash {
 
 std::unordered_set<std::pair<uint64,uint64>, pair_hash> channelUpdates;
 
-void handleModeChange(Config::ConfigMode mode);
+void handleModeChange(Config::ConfigMode);
+void handle833ModeChange(Config::Spacing833Mode);
 
 #ifdef _WIN32
 /* Helper function to convert wchar_T to Utf-8 encoded strings on Windows */
@@ -110,7 +112,6 @@ void decodeChannel(std::ostringstream& ostr, string label, uint64 channel)
 		break;
 	}
 }
-
 
 void callback(FSUIPCWrapper::SimComData data)
 {
@@ -168,6 +169,7 @@ void callback(FSUIPCWrapper::SimComData data)
         else
         {
 			uint32_t frequency;
+			bool bl833Capable;
 
 			TS3Channels::StationInfo newTargetChannel;
 
@@ -226,12 +228,15 @@ void callback(FSUIPCWrapper::SimComData data)
 				{
 				case FSUIPCWrapper::Com1:
 					frequency = data.iCom1Freq;
+					bl833Capable = data.blCom1833kHz;
 					break;
 				case FSUIPCWrapper::Com2:
 					frequency = data.iCom2Freq;
+					bl833Capable = data.blCom2833kHz;
 					break;
 				default:
 					frequency = 0;
+					bl833Capable = false;
 				}
 
 				// Get the target channel based on relevant information
@@ -241,7 +246,7 @@ void callback(FSUIPCWrapper::SimComData data)
 					adjustedRootChannel.ch,
 					cfg->getConsiderRange(),
 					cfg->getOutOfRangeUntuned(),
-					data.bl833Capable,
+					bl833Capable,
 					data.dLat,
 					data.dLon
 				);
@@ -569,7 +574,7 @@ int ts3plugin_init() {
 	// Establish what's required to connect to a simulator
     if (fsuipc == NULL)
     {
-		if (fsuipc = new FSUIPCWrapper(&callback))
+		if (fsuipc = new FSUIPCWrapper(&callback, &simComConfig))
 		{
 			fsuipc->start();
 		}
@@ -631,6 +636,8 @@ void ts3plugin_configure(void* handle, void* qParentWidget) {
     cfg->exec();
 
 	handleModeChange(cfg->getMode());
+	handle833ModeChange(cfg->get833Mode());
+
 }
 
 /*
@@ -760,7 +767,7 @@ void ts3plugin_infoData(uint64 serverConnectionHandlerID, uint64 id, enum Plugin
 					string strUntuned = "";
 					bool blUntuned = cfg->getUntuned();
 
-					if (blUntuned & !initialising)
+					if (blUntuned && !initialising)
 					{
 						strUntuned = "to \"";
 						strUntuned += cfg->getUntunedChannelName();
@@ -810,11 +817,12 @@ void ts3plugin_infoData(uint64 serverConnectionHandlerID, uint64 id, enum Plugin
 				string strCom2Col = (simComData.selectedCom == FSUIPCWrapper::Com2) ? strCGreen : strCRed;
 
 				// Precision of frequency display
-				int precision = 2 + ((simComData.bl833Capable) ? 1 : 0);
+				int precision1 = 2 + ((simComData.blCom1833kHz) ? 1 : 0);
+				int precision2 = 2 + ((simComData.blCom2833kHz) ? 1 : 0);
 
 				// Com1 Information - frequency, tuned station and range
                 dCom1 = 0.001 * simComData.iCom1Freq;
-				ostr << "\n[b][color=" << strCom1Col << "]Com 1 Freq: " << std::setprecision(precision) << dCom1;
+				ostr << "\n[b][color=" << strCom1Col << "]Com 1 Freq: " << std::setprecision(precision1) << dCom1;
 				if (simComData.selectedCom == FSUIPCWrapper::Com1 && strncmp(strStation, "", 10))
 				{
 					ostr << " - " << strStation;
@@ -825,7 +833,7 @@ void ts3plugin_infoData(uint64 serverConnectionHandlerID, uint64 id, enum Plugin
 
 				// Com2 Information - frequency, tuned station and range
 				dCom2 = 0.001 * simComData.iCom2Freq;
-				ostr << "\n[b][color=" << strCom2Col << "]Com 2 Freq: " << std::setprecision(precision) << dCom2;
+				ostr << "\n[b][color=" << strCom2Col << "]Com 2 Freq: " << std::setprecision(precision2) << dCom2;
 				if (simComData.selectedCom == FSUIPCWrapper::Com2 && strncmp(strStation, "", 10))
 				{
 					ostr << " - " << strStation;
@@ -838,10 +846,10 @@ void ts3plugin_infoData(uint64 serverConnectionHandlerID, uint64 id, enum Plugin
 				if (blAdvancedInfo)
 				{
 					dCom1s = 0.001 * simComData.iCom1Sby;
-					ostr << "\n[color=" << strCom1Col << "]Com 1 Stby: " << std::setprecision(precision) << dCom1s << "[/color]";
+					ostr << "\n[color=" << strCom1Col << "]Com 1 Stby: " << std::setprecision(precision1) << dCom1s << "[/color]";
 
 					dCom2s = 0.001 * simComData.iCom2Sby;
-					ostr << "\n[color=" << strCom2Col << "]Com 2 Stby: " << std::setprecision(precision) << dCom2s << "[/color]";
+					ostr << "\n[color=" << strCom2Col << "]Com 2 Stby: " << std::setprecision(precision2) << dCom2s << "[/color]";
 				}
             }
             else
@@ -1040,6 +1048,14 @@ void handleModeChange(Config::ConfigMode mode)
 
 	callback(simComData);
 }
+
+void handle833ModeChange(Config::Spacing833Mode mode)
+{
+	simComConfig.blForce833 = (mode == Config::Spacing833Mode::SPACING_833_833);
+	simComConfig.blForce25 = (mode == Config::Spacing833Mode::SPACING_833_25);
+}
+
+
 
 /************************** TeamSpeak callbacks ***************************/
 /*
