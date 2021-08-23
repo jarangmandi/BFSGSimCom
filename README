@@ -4,8 +4,20 @@ A TS3 plugin that supports changing channels through tuning of flight simulator 
 Release History
 ===============
 
-v0.13.1 & 0.13.2 - 2020-05-14
+v0.14.0 - 2021-08-23
 --------------------
+
+Enhancements
+
+#54 - Override for automatic 25kHz / 8.33kHz selection logic
+#56 - Support for MSFS
+#57 - Latest SQLite updates
+#58 - Latest Frequency Data
+#59 - Latest version of SQLiteCpp is 3.1.1
+
+
+v0.13.1 & 0.13.2 - 2020-05-14
+-----------------------------
 
 Fixes
 
