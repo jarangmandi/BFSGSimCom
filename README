@@ -4,6 +4,14 @@ A TS3 plugin that supports changing channels through tuning of flight simulator 
 Release History
 ===============
 
+v0.13.1 & 0.13.2 - 2020-05-14
+--------------------
+
+Fixes
+
+#53 - Some stations can't be tuned.
+
+
 v0.13.0 - 2019-06-14
 --------------------
 
