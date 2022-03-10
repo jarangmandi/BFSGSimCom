@@ -47,6 +47,7 @@ private:
     bool simCom2Is833;
 
 	bool simIsXPlane;
+    bool simIsP3D5;
     bool simIsMSFS;
 
     DWORD cCom1Freq;

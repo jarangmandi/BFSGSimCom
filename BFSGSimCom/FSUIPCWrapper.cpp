@@ -94,10 +94,11 @@ void FSUIPCWrapper::workerThread(void)
 			currentLon *= 360.0 / (65536.0 * 65536.0 * 65536.0 * 65536.0);
 
 			simIsXPlane = (FSUIPC_FS_Version == SIM_FSX) && (FSUIPC_Version & 0xf0000000) == 0x50000000;
+			simIsP3D5 = (FSUIPC_FS_Version == SIM_P3D64) && (FSUIPC_Version & 0xf0000000) == 0x60000000;
 			simIsMSFS = (FSUIPC_FS_Version == SIM_MSFS) && (FSUIPC_Version & 0xf0000000) == 0x70000000;
 
-			simCom1Is833 = (simIsXPlane || simCom1833 || simComConfig->blForce833) && !simComConfig->blForce25;
-			simCom2Is833 = (simIsXPlane || simCom2833 || simComConfig->blForce833) && !simComConfig->blForce25;
+			simCom1Is833 = (simIsXPlane || simCom1833 || simIsP3D5 || simComConfig->blForce833) && !simComConfig->blForce25;
+			simCom2Is833 = (simIsXPlane || simCom2833 || simIsP3D5 || simComConfig->blForce833) && !simComConfig->blForce25;
 
 			if (simCom1Is833)
 			{

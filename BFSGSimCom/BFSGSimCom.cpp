@@ -1280,6 +1280,7 @@ void ts3plugin_onMenuItemEvent(uint64 serverConnectionHandlerID, enum PluginMenu
             /* Menu global 1 was triggered */
             cfg->exec();
 			handleModeChange(cfg->getMode());
+			handle833ModeChange(cfg->get833Mode());
             break;
         case MENU_ID_SIMCOM_MODE_DISABLE:
             /* Menu global 1 was triggered */
