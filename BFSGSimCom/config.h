@@ -1,5 +1,4 @@
-#ifndef CONFIG_H
-#define CONFIG_H
+#pragma once
 
 //#include <QtGui/QMainWindow>
 #include <QtWidgets/QDialog>
@@ -15,18 +14,24 @@ class Config : public QDialog, public Ui::Config
     Q_OBJECT
 
 public:
-    enum ConfigMode
+    enum class ConfigMode
     {
         CONFIG_DISABLED,
         CONFIG_MANUAL,
         CONFIG_AUTO
     };
 
-    enum Spacing833Mode
+    enum class Spacing833Mode
     {
         SPACING_833_AUTO,
         SPACING_833_833,
         SPACING_833_25
+    };
+
+    enum class FrequencyMode
+    {
+        FREQUENCY_CIVIL,
+        FREQUENCY_MILITARY
     };
 
     Config(TS3Channels&);
@@ -38,6 +43,8 @@ public:
 
     Spacing833Mode get833Mode(void) { return spacing833Mode; };
 
+    FrequencyMode getFrequencyMode(void) { return frequencyMode; }
+
     bool getInfoDetailed(void) { return blInfoDetailed; };
     void setInfoDetailed(bool bl);
     bool getUntuned(void) { return blUntuned; };
@@ -46,9 +53,9 @@ public:
     bool getConsiderRange(void) { return blConsiderRange; };
     uint64 getRootChannel(void) { return iRoot; };
     uint64 getUntunedChannel(void) { return iUntuned; };
-	string getRootChannelName(void) { return strRoot; };
-	string getUntunedChannelName(void) { return strUntuned; };
-	void populateChannelList(void);
+    string getRootChannelName(void) { return strRoot; };
+    string getUntunedChannelName(void) { return strUntuned; };
+    void populateChannelList(void);
 
 protected slots:
     void accept();
@@ -60,18 +67,19 @@ protected slots:
     void untunedChanged();
 
 private:
-	// Structure for channel information
+    // Structure for channel information
     ConfigMode mode;
     Spacing833Mode spacing833Mode;
+    FrequencyMode frequencyMode;
     bool blInfoDetailed;
     bool blUntuned;
     bool blConsiderRange;
     bool blOutOfRangeUntuned;
-	bool blRestartInManualMode;
+    bool blRestartInManualMode;
     uint64 iRoot;
-	string strRoot;
+    string strRoot;
     uint64 iUntuned;
-	string strUntuned;
+    string strUntuned;
     //bool initialising = true;
 
     TS3Channels* chList = NULL;
@@ -82,5 +90,3 @@ private:
     void saveSettings(void);
 
 };
-
-#endif // CONFIG_H

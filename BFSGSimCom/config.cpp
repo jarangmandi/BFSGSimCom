@@ -179,6 +179,9 @@ Config::Config(TS3Channels& tch)
     bool bl833Force833;
     bool bl833Force25;
 
+    bool blFreqModeMilitary;
+    bool blFreqModeCivil;
+
     // The set default format line needs to be first because it defines the behaviour of the
     // QSettings constructor...
     QSettings settings(QSettings::Format::IniFormat, QSettings::Scope::UserScope, QString(CONF_ORG), QString(CONF_APP));
@@ -222,9 +225,9 @@ Config::Config(TS3Channels& tch)
     if (!(rbDisabled->isChecked() || rbEasyMode->isChecked() || rbExpertMode->isChecked()))
         rbDisabled->setChecked(true);
 
-    if (blM) mode = CONFIG_MANUAL;
-    else if (blA) mode = CONFIG_AUTO;
-    else mode = CONFIG_DISABLED;
+    if (blM) mode = ConfigMode::CONFIG_MANUAL;
+    else if (blA) mode = ConfigMode::CONFIG_AUTO;
+    else mode = ConfigMode::CONFIG_DISABLED;
     modeChanged();
 
     // Restore the 833 handling radio boxes
@@ -239,9 +242,21 @@ Config::Config(TS3Channels& tch)
     if (!(rb833Default->isChecked() || rb833Force833->isChecked() || rb833Force25->isChecked()))
         rb833Default->setChecked(true);
 
-    if (bl833Force833) spacing833Mode = SPACING_833_833;
-    else if (bl833Force25) spacing833Mode = SPACING_833_25;
-    else spacing833Mode = SPACING_833_AUTO;
+    if (bl833Force833) spacing833Mode = Spacing833Mode::SPACING_833_833;
+    else if (bl833Force25) spacing833Mode = Spacing833Mode::SPACING_833_25;
+    else spacing833Mode = Spacing833Mode::SPACING_833_AUTO;
+
+    // Restore the frequency mode radio boxes
+    blFreqModeMilitary = settings.value("freqmode/military").toBool();
+    blFreqModeCivil = settings.value("freqmode/civil").toBool();
+    rbFreqModeCivil->setChecked(blFreqModeCivil);
+    rbFreqModeMilitary->setChecked(blFreqModeMilitary);
+
+    if (!(rbFreqModeCivil->isChecked() || rbFreqModeMilitary->isChecked()))
+        rbFreqModeCivil->setChecked(true);
+
+    if (blFreqModeMilitary) frequencyMode = FrequencyMode::FREQUENCY_MILITARY;
+    else frequencyMode = FrequencyMode::FREQUENCY_CIVIL;
 }
 
 Config::~Config()
@@ -265,9 +280,18 @@ void Config::saveSettings()
     settings.setValue("833/force833", bl833Force833);
     settings.setValue("833/force25", bl833Force25);
 
-    if (bl833Force833) spacing833Mode = SPACING_833_833;
-    else if (bl833Force25) spacing833Mode = SPACING_833_25;
-    else spacing833Mode = SPACING_833_AUTO;
+    if (bl833Force833) spacing833Mode = Spacing833Mode::SPACING_833_833;
+    else if (bl833Force25) spacing833Mode = Spacing833Mode::SPACING_833_25;
+    else spacing833Mode = Spacing833Mode::SPACING_833_AUTO;
+
+    // Save the Frequency mode
+    bool blFreqModeMilitary = rbFreqModeMilitary->isChecked();
+    bool blFreqModeCivil = rbFreqModeCivil->isChecked();
+    settings.setValue("freqmode/military", blFreqModeMilitary);
+    settings.setValue("freqmode/civil", blFreqModeCivil);
+
+    if (blFreqModeMilitary) frequencyMode = FrequencyMode::FREQUENCY_MILITARY;
+    else frequencyMode = FrequencyMode::FREQUENCY_CIVIL;
 
     // Save the state of the operation mode buttons.
     bool blD = rbDisabled->isChecked();
@@ -281,9 +305,9 @@ void Config::saveSettings()
 	blRestartInManualMode = cbManualModeOnStart->isChecked();
 	settings.setValue("mode/manualRestart", blRestartInManualMode);
 
-    if (blM) mode = CONFIG_MANUAL;
-    else if (blA) mode = CONFIG_AUTO;
-    else mode = CONFIG_DISABLED;
+    if (blM) mode = ConfigMode::CONFIG_MANUAL;
+    else if (blA) mode = ConfigMode::CONFIG_AUTO;
+    else mode = ConfigMode::CONFIG_DISABLED;
 
 	// Save the state of the "Consider Range" checkbox
 	blConsiderRange = cbConsiderRange->isChecked();

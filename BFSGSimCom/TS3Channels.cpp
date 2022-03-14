@@ -9,8 +9,11 @@
 
 #include <SQLiteCpp\Transaction.h>
 
+#include "config.h"
 #include "TS3Channels.h"
+
 #include "ICAOData.h"
+
 
 using namespace std;
 
@@ -112,26 +115,29 @@ int TS3Channels::initDatabase()
 }
 
 
-vector<tuple<uint32_t, bool>> TS3Channels::getFrequenciesFromString(string str1)
+vector<tuple<uint32_t, bool>> TS3Channels::getFrequenciesFromString(string str1, bool blMilitary = false)
 {
 	const vector<string> strs = { str1 };
-	return getFrequenciesFromStrings(strs);
+	return getFrequenciesFromStrings(strs, blMilitary);
 }
 
 
-vector<tuple<uint32_t, bool>> TS3Channels::getFrequenciesFromStrings(string str1, string str2, string str3)
+vector<tuple<uint32_t, bool>> TS3Channels::getFrequenciesFromStrings(string str1, string str2, string str3, bool blMilitary = false)
 {
 	const vector<string> strs = { str1, str2, str3 };
-	return getFrequenciesFromStrings(strs);
+	return getFrequenciesFromStrings(strs, blMilitary);
 }
 
 
-vector<tuple<uint32_t, bool>> TS3Channels::getFrequenciesFromStrings(const vector<string> &strs)
+vector<tuple<uint32_t, bool>> TS3Channels::getFrequenciesFromStrings(const vector<string> &strs, bool blMilitary = false)
 {
 	// A valid frequency is quite complicated!.
 	// This first one also matches nav frequencies for when ATIS is transmitted on them. Future enhancement!
 	//static regex r("(1((?:(?:(?:0[89])|(?:1[0-7]))\\.[0-9][05]?0?)|(?:(?:1[89]|2[0-9]|3[0-6])\\.(?:[0-9](?:(?:(?:(?:0|1|3|4|5|6|8|9)0)|(?:(?:0|1|2|3|5|6|7|8)5)|[0257]))))))\\s*");
-	static regex r("(1(?:(?:(?:1[89]|2[0-9]|3[0-6])\\.(?:[0-9](?:(?:((?:(?:0|1|3|4|5|6|8|9)0)|(?:(?:0|1|2|3|5|6|7|8)5))|([0257])))))))\\s*");
+	static regex rC("(1(?:(?:(?:1[89]|2[0-9]|3[0-6])\\.(?:[0-9](?:(?:((?:(?:0|1|3|4|5|6|8|9)0)|(?:(?:0|1|2|3|5|6|7|8)5))|([0257])))))))\\s*");
+	static regex rM("((?:[12][0-9]{2}|3[0-9]{1,2}|4[0-9])\\.(?:[0-9](?:(?:((?:(?:0|1|3|4|5|6|8|9)0)|(?:(?:0|1|2|3|5|6|7|8)5))|([0257])))))\\s*");
+
+	regex r;
 
 	smatch matchedFrequency;
 	vector<tuple<uint32_t, bool>> frequency;
@@ -141,6 +147,12 @@ vector<tuple<uint32_t, bool>> TS3Channels::getFrequenciesFromStrings(const vecto
 	vector<uint32_t> freq25or833;
 	vector<uint32_t> freq833;
 	
+	if (blMilitary)
+		r = rM;
+	else
+		r = rC;
+
+
 	//Iterating through each string in the vector we were sent.
 	for (string str : strs)
 	{
@@ -311,7 +323,7 @@ const string TS3Channels::aAddInsertClosure2 = \
 ";" \
 "";
 
-uint16_t TS3Channels::addOrUpdateChannel(string& strC, string cName, string cTopic, string cDesc, uint64 channelID, uint64 parentChannel, uint64 order)
+uint16_t TS3Channels::addOrUpdateChannel(string& strC, string cName, string cTopic, string cDesc, uint64 channelID, uint64 parentChannel, uint64 order, bool blMilitary)
 {
     double lat;
     double lon;
@@ -335,7 +347,7 @@ uint16_t TS3Channels::addOrUpdateChannel(string& strC, string cName, string cTop
     ident = getAirportIdentFromStrings(cName, cTopic, cDesc);
     blIdentFromTS = (ident != "");
 
-    frequencies = getFrequenciesFromStrings(cName, cTopic, cDesc);
+    frequencies = getFrequenciesFromStrings(cName, cTopic, cDesc, blMilitary);
     blFreqFromTS = (frequencies.size() != 0);
 
     latlon = getLatLonFromStrings(cName, cTopic, cDesc);

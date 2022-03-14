@@ -36,6 +36,7 @@ public:
     struct SimComConfig {
         bool blForce833;
         bool blForce25;
+        bool blFreqModeMilitary;
     };
 
 private:

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>391</width>
-    <height>718</height>
+    <width>770</width>
+    <height>458</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -20,8 +20,8 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>680</y>
-     <width>371</width>
+     <y>420</y>
+     <width>751</width>
      <height>31</height>
     </rect>
    </property>
@@ -30,6 +30,9 @@
    </property>
    <property name="standardButtons">
     <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+   </property>
+   <property name="centerButtons">
+    <bool>true</bool>
    </property>
   </widget>
   <widget class="QGroupBox" name="gbChannelControl">
@@ -203,10 +206,10 @@
   <widget class="QGroupBox" name="gbUntuned">
    <property name="geometry">
     <rect>
-     <x>10</x>
-     <y>360</y>
+     <x>390</x>
+     <y>70</y>
      <width>371</width>
-     <height>251</height>
+     <height>281</height>
     </rect>
    </property>
    <property name="font">
@@ -329,7 +332,7 @@
     <rect>
      <x>10</x>
      <y>10</y>
-     <width>371</width>
+     <width>751</width>
      <height>51</height>
     </rect>
    </property>
@@ -366,7 +369,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>620</y>
+     <y>360</y>
      <width>371</width>
      <height>51</height>
     </rect>
@@ -438,11 +441,69 @@
     </property>
    </widget>
   </widget>
+  <widget class="QGroupBox" name="gbFrequencyMode">
+   <property name="geometry">
+    <rect>
+     <x>390</x>
+     <y>360</y>
+     <width>371</width>
+     <height>51</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="title">
+    <string>Frequency Mode</string>
+   </property>
+   <widget class="QRadioButton" name="rbFreqModeCivil">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>20</y>
+      <width>181</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <weight>50</weight>
+      <bold>false</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>Commercial (118.000 - 136.975)</string>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="rbFreqModeMilitary">
+    <property name="geometry">
+     <rect>
+      <x>210</x>
+      <y>20</y>
+      <width>151</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <weight>50</weight>
+      <bold>false</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>Military (30.000 - 399.975)</string>
+    </property>
+   </widget>
+  </widget>
   <zorder>gbUntuned</zorder>
   <zorder>buttonBox</zorder>
   <zorder>gbChannelControl</zorder>
   <zorder>gbInformation</zorder>
   <zorder>gb833Handling</zorder>
+  <zorder>gbFrequencyMode</zorder>
  </widget>
  <tabstops>
   <tabstop>rbDisabled</tabstop>

@@ -61,6 +61,7 @@ anyID myTS3ID;
 TS3Channels::StationInfo targetChannel(TS3Channels::CHANNEL_ID_NOT_FOUND);
 TS3Channels::StationInfo currentChannel;
 Config::ConfigMode lastMode;
+Config::FrequencyMode lastFreqMode;
 
 PluginItemType infoDataType = PluginItemType::PLUGIN_SERVER;
 uint64 infoDataId = 0;
@@ -81,6 +82,7 @@ std::unordered_set<std::pair<uint64,uint64>, pair_hash> channelUpdates;
 
 void handleModeChange(Config::ConfigMode);
 void handle833ModeChange(Config::Spacing833Mode);
+void handleFrequencyModeChange(Config::FrequencyMode);
 
 #ifdef _WIN32
 /* Helper function to convert wchar_T to Utf-8 encoded strings on Windows */
@@ -135,7 +137,24 @@ void callback(FSUIPCWrapper::SimComData data)
 
 		if (blConnectedToTeamspeak)
 		{
-			ostr << "Mode: " << cfg->getMode() << " | ";
+			int mode;
+			switch (cfg->getMode())
+			{
+			case Config::ConfigMode::CONFIG_AUTO:
+				mode = 0;
+				break;
+			case Config::ConfigMode::CONFIG_MANUAL:
+				mode = 1;
+				break;
+			case Config::ConfigMode::CONFIG_DISABLED:
+				mode = 2;
+				break;
+			default:
+				mode = -1;
+				break;
+			}
+
+			ostr << "Mode: " << mode << " | ";
 			ostr << FSUIPCWrapper::toString(simComData);
 		}
 
@@ -148,7 +167,7 @@ void callback(FSUIPCWrapper::SimComData data)
 
 		Config::ConfigMode operationMode = cfg->getMode();
 
-        if (operationMode == Config::CONFIG_DISABLED)
+        if (operationMode == Config::ConfigMode::CONFIG_DISABLED)
         {
 
 			if (blExtendedLoggingEnabled)
@@ -196,8 +215,8 @@ void callback(FSUIPCWrapper::SimComData data)
 			{
 					
 				// And now into the processing...
-				bool blConsiderAutoMove = (operationMode == Config::CONFIG_AUTO);
-				bool blConsiderManualMove = (operationMode == Config::CONFIG_MANUAL && data.blComChanged);
+				bool blConsiderAutoMove = (operationMode == Config::ConfigMode::CONFIG_AUTO);
+				bool blConsiderManualMove = (operationMode == Config::ConfigMode::CONFIG_MANUAL && data.blComChanged);
 
 				if (rootChannel == TS3Channels::StationInfo(TS3Channels::CHANNEL_ID_NOT_FOUND))
 				{
@@ -284,8 +303,8 @@ void callback(FSUIPCWrapper::SimComData data)
 						// The operation mode says we can move...
 						(
 							// ...either AUTO, or MANUAL if the tuning has changed or the position has changed AND the last channel move was not manual
-							operationMode == Config::CONFIG_AUTO ||
-							operationMode == Config::CONFIG_MANUAL && (data.blComChanged || (data.blPosChanged && !blLastChannelMoveManual)) && blTargetUnderCurrentRoot
+							operationMode == Config::ConfigMode::CONFIG_AUTO ||
+							operationMode == Config::ConfigMode::CONFIG_MANUAL && (data.blComChanged || (data.blPosChanged && !blLastChannelMoveManual)) && blTargetUnderCurrentRoot
 						) &&
 						// ...We're only interested if the target channel has changed and is under the currently specified root
 						blTargetChannelChanged
@@ -387,7 +406,7 @@ const char* ts3plugin_name() {
 
 /* Plugin version */
 const char* ts3plugin_version() {
-    return "0.14.0";
+    return "0.15.0 beta";
 }
 
 /* Plugin API version. Must be the same as the clients API major version, else the plugin fails to load. */
@@ -434,7 +453,7 @@ void loadChannel(uint64 serverConnectionHandlerID, uint64 channel, uint64 parent
     ts3Functions.getChannelVariableAsString(serverConnectionHandlerID, channel, CHANNEL_TOPIC, &cTopic);
 	ts3Functions.getChannelVariableAsString(serverConnectionHandlerID, channel, CHANNEL_DESCRIPTION, &cDesc);
 	ts3Functions.getChannelVariableAsUInt64(serverConnectionHandlerID, channel, CHANNEL_ORDER, &order);
-    ts3Channels->addOrUpdateChannel(strComment, cName, cTopic, cDesc, channel, parent, order);
+    ts3Channels->addOrUpdateChannel(strComment, cName, cTopic, cDesc, channel, parent, order, cfg->getFrequencyMode() == Config::FrequencyMode::FREQUENCY_MILITARY);
 
     // Not forgetting to free up the memory we've used for the channel name.
 	ts3Functions.freeMemory(cName);
@@ -566,6 +585,7 @@ int ts3plugin_init() {
 	// Initialise the plugin configuration dialog
 	cfg = new Config(*ts3Channels);
 	lastMode = cfg->getMode();
+	lastFreqMode = cfg->getFrequencyMode();
 
 	// Load channel data from the server connection. This needs to be done before
 	// we start looking at tuned channels once the simulator connection is started.
@@ -637,6 +657,7 @@ void ts3plugin_configure(void* handle, void* qParentWidget) {
 
 	handleModeChange(cfg->getMode());
 	handle833ModeChange(cfg->get833Mode());
+	handleFrequencyModeChange(cfg->getFrequencyMode());
 
 }
 
@@ -721,14 +742,14 @@ void ts3plugin_infoData(uint64 serverConnectionHandlerID, uint64 id, enum Plugin
             Config::ConfigMode mode = cfg->getMode();
             switch (mode)
             {
-            case Config::CONFIG_DISABLED:
+            case Config::ConfigMode::CONFIG_DISABLED:
                 strMode += strCRed + "]Disabled";
                 break;
-            case Config::CONFIG_MANUAL:
+            case Config::ConfigMode::CONFIG_MANUAL:
 				strMode += strCGreen + "]Enabled";
 				if (blAdvancedInfo) strMode += " but not locked";
                 break;
-            case Config::CONFIG_AUTO:
+            case Config::ConfigMode::CONFIG_AUTO:
 				if (blAdvancedInfo)
 				{
 					strMode += strCGreen + "]Enabled and locked";
@@ -749,7 +770,7 @@ void ts3plugin_infoData(uint64 serverConnectionHandlerID, uint64 id, enum Plugin
 
 			// Only build the "root" information when initialisation is complete, when
 			// we want advanced info and the plugin isn't disabled.
-			if (mode != Config::CONFIG_DISABLED && blAdvancedInfo && !initialising) strMode += " with root \"" + cfg->getRootChannelName() + "\"";
+			if (mode != Config::ConfigMode::CONFIG_DISABLED && blAdvancedInfo && !initialising) strMode += " with root \"" + cfg->getRootChannelName() + "\"";
 
 			ostr << strMode << "[/color]";
 
@@ -758,7 +779,7 @@ void ts3plugin_infoData(uint64 serverConnectionHandlerID, uint64 id, enum Plugin
 			// START OF OPERATIONAL INFORMATION
 
 			// Only required if the state is not Disabled
-			if (mode != Config::CONFIG_DISABLED)
+			if (mode != Config::ConfigMode::CONFIG_DISABLED)
             {
 				// Advanced info includes a detailed description of how the plugin will behave
 				// as a result of the selections made in the Configuration dialog
@@ -1055,6 +1076,40 @@ void handle833ModeChange(Config::Spacing833Mode mode)
 	simComConfig.blForce25 = (mode == Config::Spacing833Mode::SPACING_833_25);
 }
 
+void handleFrequencyModeChange(Config::FrequencyMode freqMode)
+{
+	simComConfig.blFreqModeMilitary = (freqMode == Config::FrequencyMode::FREQUENCY_MILITARY);
+
+	// if the frequency mode has changed, we should process this as if we've disconnected and reconnected.
+	if (freqMode != lastFreqMode)
+	{
+		// DISCONNECT
+		ts3Channels->deleteAllChannels();
+
+		// RECONNECT
+		uint64 serverConnectionHandlerID = ts3Functions.getCurrentServerConnectionHandlerID();
+		loadChannels(serverConnectionHandlerID);
+
+		ts3Functions.getClientID(serverConnectionHandlerID, &myTS3ID);
+		ts3Functions.getChannelOfClient(serverConnectionHandlerID, myTS3ID, &currentChannel.ch);
+
+		// Assume that our last target channel is where we started.
+		targetChannel = currentChannel;
+
+		// Force the information window to update
+		ts3Functions.requestServerVariables(serverConnectionHandlerID);
+
+		// Just in case we need to move when we first start...
+		if (fsuipc->isConnected())
+		{
+			callback(simComData);
+		}
+
+	}
+
+	lastFreqMode = freqMode;
+}
+
 
 
 /************************** TeamSpeak callbacks ***************************/
@@ -1146,7 +1201,7 @@ void ts3plugin_onConnectStatusChangeEvent(uint64 serverConnectionHandlerID, int 
         ts3Functions.getClientID(serverConnectionHandlerID, &myTS3ID);
 		ts3Functions.getChannelOfClient(serverConnectionHandlerID, myTS3ID, &currentChannel.ch);
 
-		// Assume that our last target channel is were we started.
+		// Assume that our last target channel is where we started.
 		targetChannel = currentChannel;
 
 		// Force the information window to update
@@ -1281,6 +1336,7 @@ void ts3plugin_onMenuItemEvent(uint64 serverConnectionHandlerID, enum PluginMenu
             cfg->exec();
 			handleModeChange(cfg->getMode());
 			handle833ModeChange(cfg->get833Mode());
+			handleFrequencyModeChange(cfg->getFrequencyMode());
             break;
         case MENU_ID_SIMCOM_MODE_DISABLE:
             /* Menu global 1 was triggered */

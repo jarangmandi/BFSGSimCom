@@ -42,9 +42,9 @@ private:
 
     int initDatabase(void);
 
-	vector<tuple<uint32_t, bool>> getFrequenciesFromString(string);
-	vector<tuple<uint32_t, bool>> getFrequenciesFromStrings(string, string, string);
-	vector<tuple<uint32_t, bool>> getFrequenciesFromStrings(const vector<string>&);
+	vector<tuple<uint32_t, bool>> getFrequenciesFromString(string, bool);
+	vector<tuple<uint32_t, bool>> getFrequenciesFromStrings(string, string, string, bool);
+	vector<tuple<uint32_t, bool>> getFrequenciesFromStrings(const vector<string>&, bool);
 	string TS3Channels::getAirportIdentFromString(string);
     string TS3Channels::getAirportIdentFromStrings(string, string, string);
     string TS3Channels::getAirportIdentFromStrings(const vector<string>&);
@@ -91,7 +91,7 @@ public:
 
     int deleteChannel(uint64);
     void deleteAllChannels(void);
-    uint16_t addOrUpdateChannel(string& str, string, string, string, uint64, uint64 parentChannel = 0, uint64 order = 0);
+    uint16_t addOrUpdateChannel(string& str, string, string, string, uint64, uint64 parentChannel = 0, uint64 order = 0, bool blMilitary = false);
 	int updateChannelDescription(string& str, uint64, string);
 	TS3Channels::StationInfo getChannelID(uint32_t frequency, uint64 current = 0, uint64 root = 0, bool blConsiderRange = false, bool blOutOfRangeUntuned = false, bool bl833capable = false, double lat = -999.9, double lon = -999.0);
 	TS3Channels::StationInfo getChannelID(double frequency, uint64 current = 0, uint64 root = 0, bool blConsiderRange = false, bool blOutOfRangeUntuned = false, bool bl833capable = false, double lat = -999.9, double lon = -999.0);
