@@ -93,7 +93,8 @@ void FSUIPCWrapper::workerThread(void)
 			currentLon = double(simLongitude);
 			currentLon *= 360.0 / (65536.0 * 65536.0 * 65536.0 * 65536.0);
 
-			simIsXPlane = (FSUIPC_FS_Version == SIM_FSX) && (FSUIPC_Version & 0xf0000000) == 0x50000000;
+			simIsXPlane =	((FSUIPC_FS_Version == SIM_FSX) && (FSUIPC_Version & 0xf0000000) == 0x50000000) ||
+							FSUIPC_FS_Version >= SIM_CIX_XP;
 			simIsP3D5 = (FSUIPC_FS_Version == SIM_P3D64) && (FSUIPC_Version & 0xf0000000) == 0x60000000;
 			simIsMSFS = (FSUIPC_FS_Version == SIM_MSFS) && (FSUIPC_Version & 0xf0000000) == 0x70000000;
 
