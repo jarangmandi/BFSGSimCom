@@ -4,6 +4,19 @@ A TS3 plugin that supports changing channels through tuning of flight simulator 
 Release History
 ===============
 
+v0.15.0 - 2022-12-08
+--------------------
+
+Enhancements
+
+#64 - Added (optional) support for military COM radios (30MHz to 399.975MHz)
+
+
+Fixes
+
+#63 - Fixed support for P3Dv5 and fixed auto 25kHz / 8.33lHz selection logic
+
+
 v0.14.0 - 2021-08-23
 --------------------
 
