@@ -17,6 +17,8 @@
 #define SIM_P3D64	12
 #define SIM_MSFS	13
 
+#define SIM_CIX_XP	100
+
 // Error numbers
 #define FSUIPC_ERR_OK		0
 #define FSUIPC_ERR_OPEN		1	// Attempt to Open when already Open
